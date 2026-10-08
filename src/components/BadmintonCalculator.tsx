@@ -467,10 +467,8 @@ export function BadmintonCalculator() {
               🏸
             </span>
           </button>
-          <div className="text-[10px] sm:text-[11px] font-bold uppercase tracking-wider text-[var(--accent)] mt-1.5 flex items-center gap-1.5">
-            <span>FC Rất Chuyên</span>
-            <span className="text-[var(--muted)]">•</span>
-            <span className="text-[var(--muted)]">2026 Tournament</span>
+          <div className="text-[10px] sm:text-[11px] font-bold uppercase tracking-wider text-[var(--accent)] mt-1.5">
+            FC Rất Chuyên
           </div>
         </div>
 
@@ -1327,7 +1325,7 @@ export function BadmintonCalculator() {
             <div className="flex items-center justify-between mb-2.5">
               <span className="text-xs font-bold uppercase tracking-wider text-[var(--muted)] flex items-center gap-1.5">
                 <Trophy className="w-3.5 h-3.5 text-amber-500 fill-amber-500" />
-                <span>FC Rất Chuyên (2026)</span>
+                <span>FC Rất Chuyên</span>
               </span>
               <button
                 type="button"
@@ -1342,7 +1340,7 @@ export function BadmintonCalculator() {
             <div
               onClick={() => setIsTeamPhotoOpen(true)}
               className="group relative rounded-[12px] overflow-hidden border border-[var(--border)] cursor-pointer bg-black/40"
-              title="Bấm để mở ảnh lớn giải đấu"
+              title="Bấm để mở ảnh lớn"
             >
               {/* eslint-disable-next-line @next/next/no-img-element */}
               <img
@@ -1352,7 +1350,7 @@ export function BadmintonCalculator() {
               />
               <div className="absolute inset-0 bg-gradient-to-t from-black/85 via-black/30 to-transparent flex flex-col justify-end p-3 text-white">
                 <div className="text-xs font-bold flex items-center gap-1.5">
-                  <span>2026 Badminton Tournament</span>
+                  <span>CLB Cầu Lông Rất Chuyên</span>
                 </div>
                 <div className="text-[10px] text-slate-300">
                   115 Quán Thánh, Hà Nội • Bấm để phóng to

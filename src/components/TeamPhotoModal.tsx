@@ -48,7 +48,7 @@ export function TeamPhotoModal({ isOpen, onClose }: TeamPhotoModalProps) {
               FC Rất Chuyên
             </h3>
             <p className="text-xs text-[var(--muted)]">
-              2026 Badminton Tournament • Kỷ niệm giải đấu nội bộ
+              CLB Cầu Lông Rất Chuyên • Ảnh kỷ niệm nhóm
             </p>
           </div>
         </div>
@@ -59,7 +59,7 @@ export function TeamPhotoModal({ isOpen, onClose }: TeamPhotoModalProps) {
             {/* eslint-disable-next-line @next/next/no-img-element */}
             <img
               src="/team-photo.jpg"
-              alt="FC Rất Chuyên - 2026 Badminton Tournament"
+              alt="FC Rất Chuyên"
               className="w-full h-auto max-h-[60vh] object-contain rounded-[14px]"
             />
           </div>
@@ -75,7 +75,7 @@ export function TeamPhotoModal({ isOpen, onClose }: TeamPhotoModalProps) {
           <div className="flex items-center gap-2">
             <a
               href="/team-photo.jpg"
-              download="FC-Rat-Chuyen-2026-Tournament.jpg"
+              download="FC-Rat-Chuyen.jpg"
               className="py-1.5 px-3 rounded-[10px] bg-[var(--bg)] border border-[var(--border)] hover:border-[var(--accent)] text-[var(--text)] text-xs font-semibold flex items-center gap-1.5 transition-colors cursor-pointer"
             >
               <Download className="w-3.5 h-3.5 text-[var(--accent)]" />
