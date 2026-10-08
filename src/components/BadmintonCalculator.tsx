@@ -23,6 +23,8 @@ import {
   Plus,
   X,
   User,
+  Crown,
+  CreditCard,
 } from "lucide-react";
 import { PixelCat, PixelRacket } from "./PixelArt";
 import { ThemeToggle } from "./ThemeToggle";
@@ -35,6 +37,7 @@ import {
   DEFAULT_DATA,
   DEFAULT_BANK,
   getTodayDateString,
+  getCurrentMonthString,
   getBadmintonSnapshot,
   setBadmintonState,
   subscribeBadminton,
@@ -45,6 +48,11 @@ import {
   subscribeHistory,
   getMembersSnapshot,
   subscribeMembers,
+  getMonthlyHostsSnapshot,
+  subscribeMonthlyHosts,
+  setMonthlyHost,
+  setDailyHost,
+  updateMemberBank,
   getSyncStatusSnapshot,
   subscribeSyncStatus,
   initSupabaseSync,
@@ -83,6 +91,12 @@ export function BadmintonCalculator() {
     subscribeMembers,
     getMembersSnapshot,
     () => []
+  );
+
+  const monthlyHosts = useSyncExternalStore(
+    subscribeMonthlyHosts,
+    getMonthlyHostsSnapshot,
+    (): Record<string, string> => ({})
   );
 
   const syncStatus = useSyncExternalStore(
@@ -124,6 +138,67 @@ export function BadmintonCalculator() {
     }
     return data.matchDate;
   }, [data.matchDate]);
+
+  // Current month in YYYY-MM (e.g. "2026-10")
+  const currentMonth = useMemo(() => {
+    if (data.matchDate) {
+      return data.matchDate.slice(0, 7);
+    }
+    return getCurrentMonthString();
+  }, [data.matchDate]);
+
+  // Format month MM/YYYY
+  const displayMonth = useMemo(() => {
+    if (!currentMonth) return "";
+    const parts = currentMonth.split("-");
+    if (parts.length === 2) return `${parts[1]}/${parts[0]}`;
+    return currentMonth;
+  }, [currentMonth]);
+
+  // Monthly default host ID for this month
+  const monthlyHostId = monthlyHosts[currentMonth] || "";
+  const monthlyHostMember = useMemo(
+    () => members.find((m) => m.id === monthlyHostId),
+    [members, monthlyHostId]
+  );
+
+  // Active host for today: daily override if set -> data.hostMemberId, else monthly host, else first member
+  const activeHostId =
+    data.hostMemberId || monthlyHostId || (members[0]?.id ?? "");
+  const activeHostMember = useMemo(
+    () => members.find((m) => m.id === activeHostId),
+    [members, activeHostId]
+  );
+
+  const isHostOverridden = Boolean(
+    data.hostMemberId && data.hostMemberId !== monthlyHostId
+  );
+
+  // Effective bank config prioritizing active host's bank info
+  const effectiveBankConfig = useMemo((): BankConfig => {
+    if (activeHostMember?.account_no) {
+      return {
+        bankId: activeHostMember.bank_id || "MB",
+        accountNo: activeHostMember.account_no,
+        accountName:
+          activeHostMember.account_name || activeHostMember.name.toUpperCase(),
+        enabled: true,
+      };
+    }
+    return bankConfig;
+  }, [activeHostMember, bankConfig]);
+
+  const handleDailyHostChange = (newHostId: string) => {
+    if (!newHostId || newHostId === monthlyHostId) {
+      setDailyHost("");
+    } else {
+      setDailyHost(newHostId);
+    }
+  };
+
+  const handleMonthlyHostChange = async (month: string, newHostId: string) => {
+    await setMonthlyHost(month, newHostId);
+  };
 
   // Calculations exactly matching original HTML
   const calculations = useMemo(() => {
@@ -216,8 +291,17 @@ export function BadmintonCalculator() {
 
   const generateShareMessage = () => {
     let msg = `🏸 CẦU LÔNG RẤT CHUYÊN 🏸\n`;
-    msg += `📅 Ngày: ${displayDate}\n\n`;
-    msg += `👥 Người chơi (${calculations.namCount + calculations.nuCount} bạn):\n`;
+    msg += `📅 Ngày: ${displayDate}\n`;
+    if (activeHostMember) {
+      msg += `👑 Chủ xị nhận tiền: ${activeHostMember.name}${
+        isHostOverridden
+          ? " (thay đổi riêng hôm nay)"
+          : displayMonth
+          ? ` (Chủ xị T${displayMonth})`
+          : ""
+      }\n`;
+    }
+    msg += `\n👥 Người chơi (${calculations.namCount + calculations.nuCount} bạn):\n`;
     msg += `• ${calculations.namCount} Nam${data.noteNam ? `: ${data.noteNam}` : ""}\n`;
     msg += `• ${calculations.nuCount} Nữ${data.noteNu ? `: ${data.noteNu}` : ""}\n\n`;
 
@@ -235,8 +319,8 @@ export function BadmintonCalculator() {
         : ""
     }\n`;
 
-    if (bankConfig.enabled && bankConfig.accountNo) {
-      msg += `\n💳 Chuyển khoản:\n• STK: ${bankConfig.accountNo} (${bankConfig.bankId})\n• Tên: ${bankConfig.accountName}`;
+    if (effectiveBankConfig.accountNo) {
+      msg += `\n💳 Chuyển khoản cho ${activeHostMember ? activeHostMember.name : "Chủ xị"}:\n• STK: ${effectiveBankConfig.accountNo} (${effectiveBankConfig.bankId})\n• Tên: ${effectiveBankConfig.accountName}`;
     }
 
     msg += `\n\n🔗 caulongratchuyen.vercel.app`;
@@ -456,35 +540,204 @@ export function BadmintonCalculator() {
         </div>
       </header>
 
-      {/* Date Picker Bar */}
-      <div className="app-card p-3 mb-4 flex items-center justify-between gap-3 flex-wrap">
-        <div className="flex items-center gap-2">
-          <div className="p-1.5 rounded-lg bg-[var(--bg)] text-[var(--accent)]">
-            <Calendar className="w-4 h-4" />
+      {/* Session & Host Information Card */}
+      <div className="app-card p-3.5 mb-4 space-y-3">
+        {/* Top row: Date Picker & Month info */}
+        <div className="flex items-center justify-between gap-3 flex-wrap">
+          <div className="flex items-center gap-2 flex-wrap">
+            <div className="p-1.5 rounded-lg bg-[var(--bg)] text-[var(--accent)]">
+              <Calendar className="w-4 h-4" />
+            </div>
+            <span className="text-xs font-bold uppercase tracking-wider text-[var(--muted)]">
+              Ngày chơi:
+            </span>
+            <input
+              type="date"
+              value={data.matchDate}
+              onChange={(e) => updateField("matchDate", e.target.value)}
+              className="py-1 px-2.5 text-xs font-semibold rounded-[8px] border border-[var(--border)] bg-[var(--bg)] text-[var(--text)] outline-none focus:border-[var(--accent)] cursor-pointer"
+            />
+            <button
+              type="button"
+              onClick={() => {
+                const today = getTodayDateString();
+                if (today) updateField("matchDate", today);
+              }}
+              className="text-xs py-1 px-2 rounded-[8px] border border-[var(--border)] bg-[var(--bg)] text-[var(--muted)] hover:text-[var(--text)] hover:border-[var(--accent)] transition-colors cursor-pointer"
+            >
+              Hôm nay
+            </button>
           </div>
-          <span className="text-xs font-bold uppercase tracking-wider text-[var(--muted)]">
-            Ngày chơi:
-          </span>
-          <input
-            type="date"
-            value={data.matchDate}
-            onChange={(e) => updateField("matchDate", e.target.value)}
-            className="py-1 px-2.5 text-xs font-semibold rounded-[8px] border border-[var(--border)] bg-[var(--bg)] text-[var(--text)] outline-none focus:border-[var(--accent)] cursor-pointer"
-          />
+
+          {/* Month selector / indicator */}
+          <div className="flex items-center gap-2 text-xs">
+            <span className="text-[var(--muted)]">Tháng:</span>
+            <span className="font-bold text-[var(--accent)] bg-[var(--bg)] px-2 py-0.5 rounded-[6px] border border-[var(--border)]">
+              {displayMonth || "Hiện tại"}
+            </span>
+          </div>
         </div>
 
-        <div className="flex items-center gap-1.5">
-          <button
-            type="button"
-            onClick={() => {
-              const today = getTodayDateString();
-              if (today) updateField("matchDate", today);
-            }}
-            className="text-xs py-1 px-2.5 rounded-[8px] border border-[var(--border)] bg-[var(--bg)] text-[var(--muted)] hover:text-[var(--text)] hover:border-[var(--accent)] transition-colors cursor-pointer"
+        {/* Host Section: Monthly Host & Daily Host Override */}
+        <div className="pt-2.5 border-t border-[var(--border)] grid grid-cols-1 md:grid-cols-2 gap-2.5">
+          {/* 1. Monthly Default Host Setting */}
+          <div className="p-2.5 rounded-[10px] bg-[var(--bg)] border border-[var(--border)] flex items-center justify-between gap-2 flex-wrap sm:flex-nowrap">
+            <div className="flex items-center gap-2 min-w-0">
+              <div className="p-1.5 rounded-lg bg-amber-500/10 text-amber-500 shrink-0">
+                <Crown className="w-4 h-4 fill-amber-500" />
+              </div>
+              <div className="truncate">
+                <div className="text-[10px] uppercase font-bold text-[var(--muted)] tracking-wider">
+                  Chủ xị mặc định Tháng {displayMonth}
+                </div>
+                <div className="text-xs font-semibold text-[var(--text)] truncate">
+                  {monthlyHostMember ? (
+                    <span className="text-amber-500 font-bold">
+                      👑 {monthlyHostMember.name}
+                    </span>
+                  ) : (
+                    <span className="text-[var(--muted)] italic">
+                      Chưa chọn chủ xị tháng
+                    </span>
+                  )}
+                </div>
+              </div>
+            </div>
+
+            <select
+              value={monthlyHostId || ""}
+              onChange={(e) =>
+                handleMonthlyHostChange(currentMonth, e.target.value)
+              }
+              className="py-1 px-2 text-xs rounded-[8px] border border-[var(--border)] bg-[var(--card)] text-[var(--text)] outline-none focus:border-amber-500 cursor-pointer max-w-[150px] shrink-0"
+              title="Chọn chủ xị mặc định cho cả tháng này"
+            >
+              <option value="">-- Chọn thành viên --</option>
+              {members.map((m) => (
+                <option key={m.id} value={m.id}>
+                  {m.name}
+                </option>
+              ))}
+            </select>
+          </div>
+
+          {/* 2. Today's Active Host & Override Option */}
+          <div
+            className={`p-2.5 rounded-[10px] border flex items-center justify-between gap-2 flex-wrap sm:flex-nowrap ${
+              isHostOverridden
+                ? "bg-purple-500/10 border-purple-500/30"
+                : "bg-[var(--bg)] border-[var(--border)]"
+            }`}
           >
-            Hôm nay
-          </button>
+            <div className="flex items-center gap-2 min-w-0">
+              <div
+                className={`p-1.5 rounded-lg shrink-0 ${
+                  isHostOverridden
+                    ? "bg-purple-500/20 text-purple-400"
+                    : "bg-[var(--accent)]/10 text-[var(--accent)]"
+                }`}
+              >
+                <UserCheck className="w-4 h-4" />
+              </div>
+              <div className="truncate">
+                <div className="flex items-center gap-1.5">
+                  <span className="text-[10px] uppercase font-bold tracking-wider text-[var(--muted)]">
+                    Chủ xị ngày {displayDate}
+                  </span>
+                  {isHostOverridden ? (
+                    <span className="text-[9px] font-bold px-1.5 py-0.2 rounded-full bg-purple-500 text-white">
+                      Đổi riêng hôm nay
+                    </span>
+                  ) : (
+                    <span className="text-[9px] font-medium px-1.5 py-0.2 rounded-full bg-[var(--card)] text-[var(--muted)] border border-[var(--border)]">
+                      Theo tháng
+                    </span>
+                  )}
+                </div>
+                <div className="text-xs font-semibold text-[var(--text)] truncate flex items-center gap-1.5">
+                  {activeHostMember ? (
+                    <>
+                      <span className="font-bold text-[var(--accent2)]">
+                        {activeHostMember.name}
+                      </span>
+                      {activeHostMember.account_no && (
+                        <span className="text-[10px] text-[var(--muted)] font-normal hidden sm:inline">
+                          ({activeHostMember.bank_id}: {activeHostMember.account_no})
+                        </span>
+                      )}
+                    </>
+                  ) : (
+                    <span className="text-[var(--muted)] italic">
+                      Chưa chọn
+                    </span>
+                  )}
+                </div>
+              </div>
+            </div>
+
+            <div className="flex items-center gap-1 shrink-0">
+              <select
+                value={data.hostMemberId || ""}
+                onChange={(e) => handleDailyHostChange(e.target.value)}
+                className="py-1 px-2 text-xs rounded-[8px] border border-[var(--border)] bg-[var(--card)] text-[var(--text)] outline-none focus:border-[var(--accent)] cursor-pointer max-w-[140px]"
+                title="Thay đổi chủ xị riêng cho buổi hôm nay nếu có sự cố cá nhân"
+              >
+                <option value="">
+                  {monthlyHostMember
+                    ? `Theo tháng (${monthlyHostMember.name})`
+                    : "-- Theo tháng --"}
+                </option>
+                {members.map((m) => (
+                  <option key={m.id} value={m.id}>
+                    {m.name} {m.id === monthlyHostId ? "(Chủ xị tháng)" : ""}
+                  </option>
+                ))}
+              </select>
+
+              {isHostOverridden && (
+                <button
+                  type="button"
+                  onClick={() => handleDailyHostChange("")}
+                  className="p-1 rounded-[6px] text-xs text-[var(--muted)] hover:text-purple-400 hover:bg-[var(--card)] cursor-pointer transition-colors"
+                  title="Đặt lại về chủ xị mặc định tháng"
+                >
+                  <RotateCcw className="w-3.5 h-3.5" />
+                </button>
+              )}
+            </div>
+          </div>
         </div>
+
+        {/* Bank quick banner for active host */}
+        {activeHostMember && (
+          <div className="pt-2 border-t border-[var(--border)]/60 flex items-center justify-between text-xs text-[var(--muted)] flex-wrap gap-2">
+            <div className="flex items-center gap-1.5">
+              <CreditCard className="w-3.5 h-3.5 text-[var(--accent)]" />
+              <span>STK nhận tiền ({activeHostMember.name}):</span>
+              {effectiveBankConfig.accountNo ? (
+                <span className="font-semibold text-[var(--text)]">
+                  {effectiveBankConfig.bankId} • {effectiveBankConfig.accountNo}{" "}
+                  {effectiveBankConfig.accountName
+                    ? `(${effectiveBankConfig.accountName})`
+                    : ""}
+                </span>
+              ) : (
+                <span className="text-amber-500 font-medium">Chưa lưu STK</span>
+              )}
+            </div>
+
+            <div className="flex items-center gap-2">
+              <button
+                type="button"
+                onClick={() => setIsVietQROpen(true)}
+                className="text-[11px] font-semibold text-[var(--accent)] hover:underline flex items-center gap-1 cursor-pointer"
+              >
+                <QrCode className="w-3 h-3" />
+                <span>Mã QR &amp; Cài STK</span>
+              </button>
+            </div>
+          </div>
+        )}
       </div>
 
       {/* Responsive Grid: 1 column on Mobile, 2 columns on Laptop/Desktop */}
@@ -1107,10 +1360,13 @@ export function BadmintonCalculator() {
       <VietQRModal
         isOpen={isVietQROpen}
         onClose={() => setIsVietQROpen(false)}
-        bankConfig={bankConfig}
+        bankConfig={effectiveBankConfig}
         onSaveBankConfig={handleSaveBankConfig}
         amountNam={calculations.finalNam}
         amountNu={calculations.finalNu}
+        hostName={activeHostMember?.name}
+        activeHostMember={activeHostMember}
+        onUpdateMemberBank={updateMemberBank}
       />
 
       {/* Member Manager Modal */}
@@ -1120,6 +1376,10 @@ export function BadmintonCalculator() {
         members={members}
         onAddMember={addMember}
         onDeleteMember={deleteMember}
+        onUpdateMemberBank={updateMemberBank}
+        currentMonth={currentMonth}
+        monthlyHostId={monthlyHostId}
+        onSetMonthlyHost={handleMonthlyHostChange}
       />
 
       {/* History Drawer */}

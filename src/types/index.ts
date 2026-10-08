@@ -2,6 +2,9 @@ export interface Member {
   id: string;
   name: string;
   gender: "male" | "female";
+  bank_id?: string;
+  account_no?: string;
+  account_name?: string;
   created_at?: string;
 }
 
@@ -11,8 +14,14 @@ export interface GuestAttendee {
   gender: "male" | "female";
 }
 
+export interface MonthlyHost {
+  month: string; // YYYY-MM
+  host_member_id: string;
+}
+
 export interface BadmintonData {
   matchDate: string; // YYYY-MM-DD
+  hostMemberId: string; // daily host override (or empty to follow monthly host)
   attendeeIds: string[]; // IDs of stable members attending today
   guests: GuestAttendee[]; // non-stable guests joining ONLY for this date
   nam: number;
@@ -47,3 +56,18 @@ export interface HistoryItem {
   waterCost: number;
   notes: string;
 }
+
+export const POPULAR_BANKS = [
+  { id: "MB", name: "MB Bank (Quân Đội)" },
+  { id: "VCB", name: "Vietcombank" },
+  { id: "TCB", name: "Techcombank" },
+  { id: "VPB", name: "VPBank" },
+  { id: "TPB", name: "TPBank" },
+  { id: "ACB", name: "ACB" },
+  { id: "BIDV", name: "BIDV" },
+  { id: "ICB", name: "VietinBank" },
+  { id: "STB", name: "Sacombank" },
+  { id: "VIB", name: "VIB" },
+  { id: "SHB", name: "SHB" },
+];
+
