@@ -29,6 +29,9 @@ export const DEFAULT_DATA: BadmintonData = {
   hostMemberId: "",
   attendeeIds: [],
   guests: [],
+  courtName: "Nhà Thi Đấu Quán Thánh",
+  courtAddress: "115 Quán Thánh, Ba Đình, Hà Nội",
+  courtNumber: "Sân 1",
   nam: 4,
   nu: 2,
   tienSan: 520,
@@ -65,6 +68,9 @@ export function getBadmintonSnapshot(): BadmintonData {
           hostMemberId: parsed.hostMemberId || "",
           attendeeIds: Array.isArray(parsed.attendeeIds) ? parsed.attendeeIds : [],
           guests: Array.isArray(parsed.guests) ? parsed.guests : [],
+          courtName: parsed.courtName || DEFAULT_DATA.courtName,
+          courtAddress: parsed.courtAddress || DEFAULT_DATA.courtAddress,
+          courtNumber: parsed.courtNumber || DEFAULT_DATA.courtNumber,
           nam: parsed.nam !== undefined ? Number(parsed.nam) : DEFAULT_DATA.nam,
           nu: parsed.nu !== undefined ? Number(parsed.nu) : DEFAULT_DATA.nu,
           tienSan:
@@ -353,6 +359,9 @@ async function saveSessionToSupabase(
       host_member_id: calcData.hostMemberId || "",
       attendee_ids: calcData.attendeeIds || [],
       guests: calcData.guests || [],
+      court_name: calcData.courtName || DEFAULT_DATA.courtName,
+      court_address: calcData.courtAddress || DEFAULT_DATA.courtAddress,
+      court_number: calcData.courtNumber || DEFAULT_DATA.courtNumber,
       nam: calcData.nam,
       nu: calcData.nu,
       tien_san: calcData.tienSan,
@@ -762,6 +771,9 @@ export function initSupabaseSync() {
           hostMemberId: s.host_member_id || "",
           attendeeIds: Array.isArray(s.attendee_ids) ? s.attendee_ids : [],
           guests: Array.isArray(s.guests) ? s.guests : [],
+          courtName: s.court_name || DEFAULT_DATA.courtName,
+          courtAddress: s.court_address || DEFAULT_DATA.courtAddress,
+          courtNumber: s.court_number || DEFAULT_DATA.courtNumber,
           nam: Number(s.nam) ?? DEFAULT_DATA.nam,
           nu: Number(s.nu) ?? DEFAULT_DATA.nu,
           tienSan: Number(s.tien_san) ?? DEFAULT_DATA.tienSan,
@@ -841,6 +853,11 @@ export function initSupabaseSync() {
               guests: Array.isArray(s.guests)
                 ? (s.guests as GuestAttendee[])
                 : [],
+              courtName: (s.court_name as string) || DEFAULT_DATA.courtName,
+              courtAddress:
+                (s.court_address as string) || DEFAULT_DATA.courtAddress,
+              courtNumber:
+                (s.court_number as string) || DEFAULT_DATA.courtNumber,
               nam: Number(s.nam),
               nu: Number(s.nu),
               tienSan: Number(s.tien_san),

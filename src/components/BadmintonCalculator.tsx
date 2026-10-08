@@ -3,8 +3,6 @@
 import React, { useState, useMemo, useSyncExternalStore, useEffect } from "react";
 import confetti from "canvas-confetti";
 import {
-  Share2,
-  Copy,
   Check,
   RotateCcw,
   QrCode,
@@ -12,7 +10,6 @@ import {
   ChevronDown,
   ChevronUp,
   SlidersHorizontal,
-  BookmarkPlus,
   ArrowUpRight,
   Cloud,
   CloudCheck,
@@ -35,6 +32,8 @@ import { VietQRModal } from "./VietQRModal";
 import { HistoryDrawer } from "./HistoryDrawer";
 import { MemberManagerModal } from "./MemberManagerModal";
 import { TeamPhotoModal } from "./TeamPhotoModal";
+import { CostcoReceipt } from "./CostcoReceipt";
+import { CourtPickerAndMap } from "./CourtPickerAndMap";
 import { BadmintonData, BankConfig, HistoryItem } from "@/types";
 import {
   DEFAULT_DATA,
@@ -296,6 +295,12 @@ export function BadmintonCalculator() {
   const generateShareMessage = () => {
     let msg = `🏸 CẦU LÔNG RẤT CHUYÊN 🏸\n`;
     msg += `📅 Ngày: ${displayDate}\n`;
+    if (data.courtName) {
+      msg += `🏟️ Sân: ${data.courtName}${data.courtNumber ? ` (${data.courtNumber})` : ""}\n`;
+      if (data.courtAddress) {
+        msg += `📍 Địa chỉ: ${data.courtAddress}\n`;
+      }
+    }
     if (activeHostMember) {
       msg += `👑 Chủ xị nhận tiền: ${activeHostMember.name}${
         isHostOverridden
@@ -786,6 +791,21 @@ export function BadmintonCalculator() {
       <div className="grid grid-cols-1 md:grid-cols-12 gap-4 md:gap-6 items-start">
         {/* Left Column: Inputs (Người chơi, Chi phí, Ghi chú) */}
         <div className="md:col-span-7 space-y-4">
+          {/* Card: Sân Thi Đấu & Bản Đồ Địa Chỉ */}
+          <CourtPickerAndMap
+            courtName={data.courtName}
+            courtAddress={data.courtAddress}
+            courtNumber={data.courtNumber}
+            onCourtChange={(name, address, courtNum) => {
+              setBadmintonState((prev) => ({
+                ...prev,
+                courtName: name,
+                courtAddress: address,
+                courtNumber: courtNum || prev.courtNumber || "Sân 1",
+              }));
+            }}
+          />
+
           {/* Card: Người chơi & Điểm danh thành viên & Khách ngày hôm nay */}
           <section className="app-card p-5">
             <div className="flex items-center justify-between mb-3.5 flex-wrap gap-2">
@@ -1229,117 +1249,31 @@ export function BadmintonCalculator() {
           </section>
         </div>
 
-        {/* Right Column: Kết quả (Sticky on Desktop) */}
+        {/* Right Column: Costco Receipt Results (Sticky on Desktop) */}
         <div className="md:col-span-5 md:sticky md:top-6 space-y-4">
-          <section className="app-card p-5">
-            <div className="flex items-center justify-between mb-3.5">
-              <h2 className="text-[0.95rem] font-bold uppercase tracking-[.04em] text-[var(--muted)] m-0">
-                Kết quả ({displayDate})
-              </h2>
-              {calculations.mauSo === 0 && (
-                <span className="text-xs text-amber-500 font-medium">
-                  Chưa có người chơi
-                </span>
-              )}
-            </div>
-
-            {/* Results breakdown */}
-            <div className="space-y-1">
-              <div className="flex justify-between items-center py-2.5 border-b border-[var(--border)]">
-                <div>
-                  <span className="text-[0.9rem] text-[var(--muted)]">
-                    Mỗi Nam trả
-                  </span>
-                  <div className="text-[11px] text-[var(--muted)] opacity-75">
-                    {calculations.namCount} người
-                  </div>
-                </div>
-                <span className="font-bold text-[1.15rem] text-[var(--accent)]">
-                  {calculations.finalNam.toLocaleString("vi-VN")} đ
-                </span>
-              </div>
-
-              <div className="flex justify-between items-center py-2.5 border-b border-[var(--border)]">
-                <div>
-                  <span className="text-[0.9rem] text-[var(--muted)]">
-                    Mỗi Nữ trả
-                  </span>
-                  <div className="text-[11px] text-[var(--muted)] opacity-75">
-                    {calculations.nuCount} người ({Math.round(calculations.ratio * 100)}%)
-                  </div>
-                </div>
-                <span className="font-bold text-[1.15rem] text-[var(--female)]">
-                  {calculations.finalNu.toLocaleString("vi-VN")} đ
-                </span>
-              </div>
-
-              {/* Total line */}
-              <div className="mt-2.5 pt-3.5 border-t-2 border-dashed border-[var(--border)] flex justify-between items-center">
-                <div>
-                  <span className="font-bold text-sm text-[var(--text)]">
-                    Tổng chi phí
-                  </span>
-                  <div className="text-[11px] text-[var(--muted)]">
-                    Sân + Cầu ({data.soQua} quả) + Nước
-                  </div>
-                </div>
-                <span className="text-[1.35rem] font-extrabold text-[var(--accent2)]">
-                  {calculations.tongChiPhi.toLocaleString("vi-VN")} đ
-                </span>
-              </div>
-            </div>
-
-            {/* Actions: Copy & Share */}
-            <div className="mt-5 pt-4 border-t border-[var(--border)] grid grid-cols-2 gap-2">
-              <button
-                type="button"
-                onClick={handleCopy}
-                className="flex items-center justify-center gap-1.5 py-2.5 px-3 rounded-[10px] bg-[var(--accent)] hover:opacity-90 active:scale-98 text-white font-semibold text-xs transition-all cursor-pointer shadow-xs"
-              >
-                {copied ? (
-                  <>
-                    <Check className="w-4 h-4 text-emerald-300" />
-                    <span>Đã sao chép!</span>
-                  </>
-                ) : (
-                  <>
-                    <Copy className="w-4 h-4" />
-                    <span>Sao chép Zalo</span>
-                  </>
-                )}
-              </button>
-
-              <button
-                type="button"
-                onClick={handleShare}
-                className="flex items-center justify-center gap-1.5 py-2.5 px-3 rounded-[10px] bg-[var(--bg)] border border-[var(--border)] hover:border-[var(--accent)] text-[var(--text)] font-semibold text-xs transition-all cursor-pointer"
-              >
-                <Share2 className="w-4 h-4 text-[var(--accent)]" />
-                <span>Chia sẻ</span>
-              </button>
-            </div>
-
-            {/* Quick Actions: VietQR & Save to Supabase */}
-            <div className="mt-2 grid grid-cols-2 gap-2">
-              <button
-                type="button"
-                onClick={() => setIsVietQROpen(true)}
-                className="flex items-center justify-center gap-1.5 py-2 px-2.5 rounded-[10px] bg-[var(--bg)] border border-[var(--border)] hover:border-[var(--accent)] text-[var(--text)] font-medium text-[11px] transition-colors cursor-pointer"
-              >
-                <QrCode className="w-3.5 h-3.5 text-[var(--accent)]" />
-                <span>Mã VietQR</span>
-              </button>
-
-              <button
-                type="button"
-                onClick={handleSaveToHistory}
-                className="flex items-center justify-center gap-1.5 py-2 px-2.5 rounded-[10px] bg-[var(--bg)] border border-[var(--border)] hover:border-[var(--accent2)] text-[var(--text)] font-medium text-[11px] transition-colors cursor-pointer"
-              >
-                <BookmarkPlus className="w-3.5 h-3.5 text-[var(--accent2)]" />
-                <span>Lưu DB Supabase</span>
-              </button>
-            </div>
-          </section>
+          <CostcoReceipt
+            date={displayDate}
+            courtName={data.courtName}
+            courtAddress={data.courtAddress}
+            courtNumber={data.courtNumber}
+            hostMember={activeHostMember}
+            bankConfig={effectiveBankConfig}
+            namCount={calculations.namCount}
+            nuCount={calculations.nuCount}
+            courtCost={calculations.tongTienSan}
+            shuttleCost={calculations.tongTienCau}
+            soQua={data.soQua}
+            waterCost={calculations.tongTienNuoc}
+            totalCost={calculations.tongChiPhi}
+            finalNam={calculations.finalNam}
+            finalNu={calculations.finalNu}
+            ratio={calculations.ratio}
+            onCopy={handleCopy}
+            copied={copied}
+            onShare={handleShare}
+            onOpenVietQR={() => setIsVietQROpen(true)}
+            onSaveToHistory={handleSaveToHistory}
+          />
 
           {/* Recent History Preview (Connected to Supabase Database) */}
           {history.length > 0 && (
