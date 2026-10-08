@@ -944,60 +944,62 @@ export function BadmintonCalculator() {
 
             {/* Guest Attendees Section (Single-day guests / non-stable person) */}
             <div className="mb-4 p-3 rounded-[12px] bg-[var(--bg)] border border-[var(--border)] space-y-2.5">
-              <div className="flex items-center justify-between text-xs">
+              <div className="flex items-center justify-between text-xs flex-wrap gap-1">
                 <span className="font-semibold text-[var(--text)] flex items-center gap-1.5">
-                  <User className="w-3.5 h-3.5 text-amber-500" />
-                  Khách ngoài hôm nay (chỉ tính buổi này):
+                  <User className="w-3.5 h-3.5 text-amber-500 shrink-0" />
+                  <span>Khách ngoài hôm nay (chỉ tính buổi này):</span>
                 </span>
-                <span className="text-[11px] text-[var(--muted)]">
+                <span className="text-[11px] text-[var(--muted)] shrink-0">
                   {(data.guests || []).length} khách
                 </span>
               </div>
 
               {/* Add guest form */}
-              <form onSubmit={handleAddGuest} className="flex items-center gap-2">
+              <form onSubmit={handleAddGuest} className="space-y-2 sm:space-y-0 sm:flex sm:items-center sm:gap-2">
                 <input
                   type="text"
                   value={guestName}
                   placeholder="Tên khách (VD: Minh, Hương...)"
                   onChange={(e) => setGuestName(e.target.value)}
-                  className="flex-1 py-1.5 px-2.5 text-xs rounded-[8px] border border-[var(--border)] bg-[var(--card)] text-[var(--text)] outline-none focus:border-[var(--accent)]"
+                  className="w-full sm:flex-1 py-2 sm:py-1.5 px-3 text-xs rounded-[8px] border border-[var(--border)] bg-[var(--card)] text-[var(--text)] outline-none focus:border-[var(--accent)]"
                 />
 
-                {/* Gender toggle */}
-                <div className="flex rounded-[8px] border border-[var(--border)] p-0.5 bg-[var(--card)]">
+                <div className="flex items-center justify-between sm:justify-start gap-2 shrink-0">
+                  {/* Gender toggle */}
+                  <div className="inline-flex rounded-[8px] border border-[var(--border)] p-0.5 bg-[var(--card)] shrink-0">
+                    <button
+                      type="button"
+                      onClick={() => setGuestGender("male")}
+                      className={`py-1 px-3 text-[11px] font-semibold rounded-[6px] transition-all cursor-pointer ${
+                        guestGender === "male"
+                          ? "bg-[var(--accent)] text-white shadow-xs"
+                          : "text-[var(--muted)] hover:text-[var(--text)]"
+                      }`}
+                    >
+                      Nam
+                    </button>
+                    <button
+                      type="button"
+                      onClick={() => setGuestGender("female")}
+                      className={`py-1 px-3 text-[11px] font-semibold rounded-[6px] transition-all cursor-pointer ${
+                        guestGender === "female"
+                          ? "bg-[var(--female)] text-white shadow-xs"
+                          : "text-[var(--muted)] hover:text-[var(--text)]"
+                      }`}
+                    >
+                      Nữ
+                    </button>
+                  </div>
+
                   <button
-                    type="button"
-                    onClick={() => setGuestGender("male")}
-                    className={`py-1 px-2 text-[11px] font-semibold rounded-[6px] transition-all cursor-pointer ${
-                      guestGender === "male"
-                        ? "bg-[var(--accent)] text-white shadow-xs"
-                        : "text-[var(--muted)] hover:text-[var(--text)]"
-                    }`}
+                    type="submit"
+                    disabled={!guestName.trim()}
+                    className="py-1.5 px-3 text-xs font-semibold rounded-[8px] bg-[var(--accent2)] hover:opacity-90 active:scale-95 text-white transition-all cursor-pointer disabled:opacity-40 flex items-center justify-center gap-1 shadow-xs shrink-0 flex-1 sm:flex-initial"
                   >
-                    Nam
-                  </button>
-                  <button
-                    type="button"
-                    onClick={() => setGuestGender("female")}
-                    className={`py-1 px-2 text-[11px] font-semibold rounded-[6px] transition-all cursor-pointer ${
-                      guestGender === "female"
-                        ? "bg-[var(--female)] text-white shadow-xs"
-                        : "text-[var(--muted)] hover:text-[var(--text)]"
-                    }`}
-                  >
-                    Nữ
+                    <Plus className="w-3.5 h-3.5" />
+                    <span>Thêm</span>
                   </button>
                 </div>
-
-                <button
-                  type="submit"
-                  disabled={!guestName.trim()}
-                  className="py-1.5 px-3 text-xs font-semibold rounded-[8px] bg-[var(--accent2)] hover:opacity-90 active:scale-95 text-white transition-all cursor-pointer disabled:opacity-40 flex items-center gap-1 shadow-xs"
-                >
-                  <Plus className="w-3.5 h-3.5" />
-                  <span>Thêm</span>
-                </button>
               </form>
 
               {/* Guests pills list */}
