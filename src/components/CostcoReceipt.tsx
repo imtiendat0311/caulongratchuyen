@@ -82,7 +82,7 @@ export function CostcoReceipt({
     ? `**** **** **** ${bankAcc.slice(-4) || bankAcc}`
     : "**** **** **** 8371";
 
-  const hostDisplayName = hostMember ? hostMember.name : "Chủ xị nhóm";
+  const hostDisplayName = hostMember ? hostMember.name : "Host nhóm";
 
   const handlePrint = () => {
     window.print();
@@ -206,7 +206,7 @@ export function CostcoReceipt({
               </span>
             </div>
             <div className="flex justify-between items-baseline gap-1">
-              <span className="text-[var(--receipt-muted)] shrink-0">Host (Chủ xị):</span>
+              <span className="text-[var(--receipt-muted)] shrink-0">Host:</span>
               <span className="font-bold truncate text-right">
                 👑 {hostDisplayName}
               </span>

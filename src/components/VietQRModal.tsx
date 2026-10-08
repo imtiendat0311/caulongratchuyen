@@ -143,7 +143,7 @@ function VietQRContent({
               Mã VietQR Nhận Tiền
             </h3>
             <p className="text-xs text-[var(--muted)]">
-              Quét mã ngân hàng để chuyển tiền cho chủ xị
+              Quét mã ngân hàng để chuyển tiền cho Host
             </p>
           </div>
         </div>
@@ -153,7 +153,7 @@ function VietQRContent({
           <div className="mb-3 p-2 rounded-[10px] bg-amber-500/10 border border-amber-500/30 flex items-center gap-2 text-xs">
             <Crown className="w-4 h-4 fill-amber-500 text-amber-500 shrink-0" />
             <div>
-              <span className="font-bold text-amber-500">Chủ xị nhận tiền:</span>{" "}
+              <span className="font-bold text-amber-500">Host nhận tiền:</span>{" "}
               <span className="font-semibold text-[var(--text)]">{hostName}</span>
             </div>
           </div>

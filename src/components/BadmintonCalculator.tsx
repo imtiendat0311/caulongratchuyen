@@ -208,9 +208,9 @@ export function BadmintonCalculator() {
   const handleMonthlyHostChange = async (month: string, newHostId: string) => {
     const res = await setMonthlyHost(month, newHostId);
     if (res.success) {
-      showToast(`✓ Đã lưu chủ xị Tháng ${month.split("-")[1]}/${month.split("-")[0]} lên Cloud!`);
+      showToast(`✓ Đã lưu Host Tháng ${month.split("-")[1]}/${month.split("-")[0]} lên Cloud!`);
     } else {
-      showToast(`Lỗi lưu chủ xị tháng: ${res.message || "Lỗi mạng"}`, "error");
+      showToast(`Lỗi lưu Host tháng: ${res.message || "Lỗi mạng"}`, "error");
     }
   };
 
@@ -356,11 +356,11 @@ export function BadmintonCalculator() {
       }
     }
     if (activeHostMember) {
-      msg += `👑 Chủ xị nhận tiền: ${activeHostMember.name}${
+      msg += `👑 Host nhận tiền: ${activeHostMember.name}${
         isHostOverridden
           ? " (thay đổi riêng hôm nay)"
           : displayMonth
-          ? ` (Chủ xị T${displayMonth})`
+          ? ` (Host T${displayMonth})`
           : ""
       }\n`;
     }
@@ -383,7 +383,7 @@ export function BadmintonCalculator() {
     }\n`;
 
     if (effectiveBankConfig.accountNo) {
-      msg += `\n💳 Chuyển khoản cho ${activeHostMember ? activeHostMember.name : "Chủ xị"}:\n• STK: ${effectiveBankConfig.accountNo} (${effectiveBankConfig.bankId})\n• Tên: ${effectiveBankConfig.accountName}`;
+      msg += `\n💳 Chuyển khoản cho ${activeHostMember ? activeHostMember.name : "Host"}:\n• STK: ${effectiveBankConfig.accountNo} (${effectiveBankConfig.bankId})\n• Tên: ${effectiveBankConfig.accountName}`;
     }
 
     msg += `\n\n🔗 caulongratchuyen.vercel.app`;
@@ -708,7 +708,7 @@ export function BadmintonCalculator() {
             <div className="truncate">
               <div className="flex items-center gap-1.5 flex-wrap">
                 <span className="text-[10px] uppercase font-bold tracking-wider text-[var(--muted)]">
-                  Chủ xị buổi hôm nay ({displayDate})
+                  Host buổi hôm nay ({displayDate})
                 </span>
                 {isHostOverridden ? (
                   <span className="text-[9px] font-bold px-1.5 py-0.2 rounded-full bg-purple-500 text-white">
@@ -735,7 +735,7 @@ export function BadmintonCalculator() {
                   </>
                 ) : (
                   <span className="text-[var(--muted)] italic font-normal">
-                    Chưa chọn chủ xị
+                    Chưa chọn Host
                   </span>
                 )}
               </div>
@@ -748,16 +748,16 @@ export function BadmintonCalculator() {
               value={data.hostMemberId || ""}
               onChange={(e) => handleDailyHostChange(e.target.value)}
               className="py-1 px-2.5 text-xs rounded-[8px] border border-[var(--border)] bg-[var(--card)] text-[var(--text)] outline-none focus:border-[var(--accent)] cursor-pointer max-w-[170px]"
-              title="Đổi chủ xị riêng cho buổi hôm nay nếu có sự cố"
+              title="Đổi Host riêng cho buổi hôm nay nếu có sự cố"
             >
               <option value="">
                 {monthlyHostMember
                   ? `Mặc định (${monthlyHostMember.name})`
-                  : "-- Chọn chủ xị hôm nay --"}
+                  : "-- Chọn Host hôm nay --"}
               </option>
               {members.map((m) => (
                 <option key={m.id} value={m.id}>
-                  {m.name} {m.id === monthlyHostId ? "(Chủ xị tháng)" : ""}
+                  {m.name} {m.id === monthlyHostId ? "(Host tháng)" : ""}
                 </option>
               ))}
             </select>
@@ -767,7 +767,7 @@ export function BadmintonCalculator() {
                 type="button"
                 onClick={() => handleDailyHostChange("")}
                 className="p-1.5 rounded-[8px] border border-[var(--border)] text-xs text-[var(--muted)] hover:text-purple-400 hover:bg-[var(--card)] cursor-pointer transition-colors"
-                title="Khôi phục về chủ xị mặc định tháng"
+                title="Khôi phục về Host mặc định tháng"
               >
                 <RotateCcw className="w-3.5 h-3.5" />
               </button>
@@ -777,7 +777,7 @@ export function BadmintonCalculator() {
               type="button"
               onClick={() => setIsMemberModalOpen(true)}
               className="flex items-center gap-1 py-1 px-2 rounded-[8px] border border-[var(--border)] text-xs text-[var(--muted)] hover:text-[var(--text)] hover:bg-[var(--card)] cursor-pointer transition-colors"
-              title="Cài đặt chủ xị mặc định theo tháng & Thành viên"
+              title="Cài đặt Host mặc định theo tháng & Thành viên"
             >
               <Settings className="w-3.5 h-3.5 text-amber-500" />
               <span className="text-[10px] hidden sm:inline">Cài đặt tháng</span>

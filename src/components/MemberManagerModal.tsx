@@ -188,7 +188,7 @@ export function MemberManagerModal({
               Danh Sách Thành Viên Cố Định
             </h3>
             <p className="text-xs text-[var(--muted)]">
-              FC Rất Chuyên • Quản lý thành viên cố định, STK &amp; chủ xị mỗi tháng
+              FC Rất Chuyên • Quản lý thành viên cố định, STK &amp; Host mỗi tháng
             </p>
           </div>
         </div>
@@ -199,15 +199,15 @@ export function MemberManagerModal({
             <div className="flex items-center justify-between flex-wrap gap-1">
               <div className="flex items-center gap-1.5 text-xs font-bold text-amber-500">
                 <Crown className="w-4 h-4 fill-amber-500 text-amber-500 shrink-0" />
-                <span>Chủ xị mặc định theo tháng</span>
+                <span>Host mặc định theo tháng</span>
               </div>
               <span className="text-[10px] text-amber-600/80 dark:text-amber-400/80 font-medium">
-                (Chỉ lưu khi bấm &quot;Lưu Chủ Xị&quot;)
+                (Chỉ lưu khi bấm &quot;Lưu Host&quot;)
               </span>
             </div>
 
             <p className="text-[11px] text-[var(--muted)] leading-relaxed m-0">
-              Chọn chủ xị đại diện thu tiền cho tháng này. Không tự động sync khi vừa chọn nhằm tránh xung đột khi nhiều người cùng mở app.
+              Chọn Host đại diện thu tiền cho tháng này. Không tự động sync khi vừa chọn nhằm tránh xung đột khi nhiều người cùng mở app.
             </p>
 
             <div className="grid grid-cols-1 sm:grid-cols-12 gap-2 items-center pt-1">
@@ -225,7 +225,7 @@ export function MemberManagerModal({
 
               <div className="sm:col-span-5">
                 <label className="block text-[10px] text-[var(--muted)] mb-0.5 font-medium">
-                  Thành viên chủ xị
+                  Thành viên Host
                 </label>
                 <select
                   value={stagedHostId}
@@ -265,7 +265,7 @@ export function MemberManagerModal({
                   ) : (
                     <>
                       <Save className="w-3.5 h-3.5" />
-                      <span>Lưu Chủ Xị</span>
+                      <span>Lưu Host</span>
                     </>
                   )}
                 </button>
@@ -325,7 +325,7 @@ export function MemberManagerModal({
               <span>
                 {showBankForm
                   ? "Ẩn thông tin ngân hàng"
-                  : "+ Thêm thông tin STK ngân hàng (để thu tiền khi làm chủ xị)"}
+                  : "+ Thêm thông tin STK ngân hàng (để thu tiền khi làm Host)"}
               </span>
             </button>
 
@@ -394,7 +394,7 @@ export function MemberManagerModal({
                 Chưa có thành viên nào trong danh sách cố định
               </p>
               <p className="text-[11px] text-[var(--muted)] mt-1 mb-3">
-                Thêm tên các bạn thường xuyên tham gia để điểm danh 1 chạm và chọn làm chủ xị.
+                Thêm tên các bạn thường xuyên tham gia để điểm danh 1 chạm và chọn làm Host.
               </p>
 
               {/* Quick suggestions */}
@@ -461,7 +461,7 @@ export function MemberManagerModal({
                               {isMonthlyHost && (
                                 <span className="inline-flex items-center gap-0.5 px-1.5 py-0.2 rounded-full text-[10px] font-bold bg-amber-500 text-white shadow-2xs">
                                   <Crown className="w-2.5 h-2.5 fill-current" />
-                                  <span>Chủ xị T{displayMonth}</span>
+                                  <span>Host T{displayMonth}</span>
                                 </span>
                               )}
 
@@ -490,17 +490,15 @@ export function MemberManagerModal({
                             </div>
 
                             <div className="flex items-center gap-1">
-                              {currentMonth && onSetMonthlyHost && !isMonthlyHost && (
+                              {onSetMonthlyHost && !isMonthlyHost && (
                                 <button
                                   type="button"
-                                  onClick={() =>
-                                    onSetMonthlyHost(currentMonth, m.id)
-                                  }
+                                  onClick={() => setUserSelectedHostId(m.id)}
                                   className="text-[11px] py-0.5 px-1.5 rounded-[6px] text-amber-500 hover:bg-amber-500/10 cursor-pointer flex items-center gap-1 font-medium"
-                                  title="Đặt làm chủ xị mặc định tháng"
+                                  title="Chọn làm Host mặc định tháng"
                                 >
                                   <Crown className="w-3 h-3" />
-                                  <span className="hidden sm:inline">Làm chủ xị</span>
+                                  <span className="hidden sm:inline">Làm Host</span>
                                 </button>
                               )}
 
@@ -627,7 +625,7 @@ export function MemberManagerModal({
                               {isMonthlyHost && (
                                 <span className="inline-flex items-center gap-0.5 px-1.5 py-0.2 rounded-full text-[10px] font-bold bg-amber-500 text-white shadow-2xs">
                                   <Crown className="w-2.5 h-2.5 fill-current" />
-                                  <span>Chủ xị T{displayMonth}</span>
+                                  <span>Host T{displayMonth}</span>
                                 </span>
                               )}
 
@@ -656,17 +654,15 @@ export function MemberManagerModal({
                             </div>
 
                             <div className="flex items-center gap-1">
-                              {currentMonth && onSetMonthlyHost && !isMonthlyHost && (
+                              {onSetMonthlyHost && !isMonthlyHost && (
                                 <button
                                   type="button"
-                                  onClick={() =>
-                                    onSetMonthlyHost(currentMonth, m.id)
-                                  }
+                                  onClick={() => setUserSelectedHostId(m.id)}
                                   className="text-[11px] py-0.5 px-1.5 rounded-[6px] text-amber-500 hover:bg-amber-500/10 cursor-pointer flex items-center gap-1 font-medium"
-                                  title="Đặt làm chủ xị mặc định tháng"
+                                  title="Chọn làm Host mặc định tháng"
                                 >
                                   <Crown className="w-3 h-3" />
-                                  <span className="hidden sm:inline">Làm chủ xị</span>
+                                  <span className="hidden sm:inline">Làm Host</span>
                                 </button>
                               )}
 
