@@ -24,6 +24,7 @@ import {
   CreditCard,
   Camera,
   Trophy,
+  Calculator,
 } from "lucide-react";
 import { PixelCat, PixelRacket } from "./PixelArt";
 import { ThemeToggle } from "./ThemeToggle";
@@ -33,7 +34,7 @@ import { HistoryDrawer } from "./HistoryDrawer";
 import { MemberManagerModal } from "./MemberManagerModal";
 import { TeamPhotoModal } from "./TeamPhotoModal";
 import { CostcoReceipt } from "./CostcoReceipt";
-import { CourtPickerAndMap } from "./CourtPickerAndMap";
+import { CourtPickerAndMap, parseCourtsList } from "./CourtPickerAndMap";
 import { BadmintonData, BankConfig, HistoryItem } from "@/types";
 import {
   DEFAULT_DATA,
@@ -253,6 +254,12 @@ export function BadmintonCalculator() {
     };
   }, [data]);
 
+  const courtsList = useMemo(
+    () => parseCourtsList(data.courtNumber),
+    [data.courtNumber]
+  );
+  const courtsCount = Math.max(1, courtsList.length);
+
   const updateField = <K extends keyof BadmintonData>(
     field: K,
     val: BadmintonData[K]
@@ -296,7 +303,13 @@ export function BadmintonCalculator() {
     let msg = `🏸 CẦU LÔNG RẤT CHUYÊN 🏸\n`;
     msg += `📅 Ngày: ${displayDate}\n`;
     if (data.courtName) {
-      msg += `🏟️ Sân: ${data.courtName}${data.courtNumber ? ` (${data.courtNumber})` : ""}\n`;
+      const courtsBadge =
+        courtsList.length > 1
+          ? ` (${courtsList.length} sân: ${data.courtNumber})`
+          : data.courtNumber
+          ? ` (${data.courtNumber})`
+          : "";
+      msg += `🏟️ Sân: ${data.courtName}${courtsBadge}\n`;
       if (data.courtAddress) {
         msg += `📍 Địa chỉ: ${data.courtAddress}\n`;
       }
@@ -799,9 +812,10 @@ export function BadmintonCalculator() {
                 ...prev,
                 courtName: name,
                 courtAddress: address,
-                courtNumber: courtNum || prev.courtNumber || "Sân 1",
+                courtNumber: courtNum || prev.courtNumber || "Sân 1, Sân 2",
               }));
             }}
+            onApplyCourtCost={(cost) => updateField("tienSan", cost)}
           />
 
           {/* Card: Người chơi & Điểm danh thành viên & Khách ngày hôm nay */}
@@ -1071,16 +1085,43 @@ export function BadmintonCalculator() {
             </div>
 
             <div className="space-y-3">
-              <NumberInput
-                id="tienSan"
-                label="Tiền sân (x1000 đồng)"
-                hint="VD: 520k = 520"
-                value={data.tienSan}
-                min={0}
-                step={10}
-                unit="k"
-                onChange={(val) => updateField("tienSan", val)}
-              />
+              <div>
+                <NumberInput
+                  id="tienSan"
+                  label="Tiền sân (x1000 đồng)"
+                  hint={`Đang thuê ${courtsCount} sân (${data.courtNumber || "Sân 1, Sân 2"})`}
+                  value={data.tienSan}
+                  min={0}
+                  step={10}
+                  unit="k"
+                  onChange={(val) => updateField("tienSan", val)}
+                />
+
+                <div className="mt-1.5 flex items-center justify-between p-2 rounded-[10px] bg-[var(--bg)] border border-[var(--border)] text-xs flex-wrap gap-2">
+                  <div className="flex items-center gap-1.5 text-[var(--muted)]">
+                    <Calculator className="w-3.5 h-3.5 text-emerald-500" />
+                    <span>
+                      Gợi ý: <strong>{courtsCount} sân</strong> × 2h × 130k/h ={" "}
+                      <strong className="text-[var(--text)]">
+                        {courtsCount * 260}k
+                      </strong>
+                    </span>
+                  </div>
+                  {data.tienSan !== courtsCount * 260 ? (
+                    <button
+                      type="button"
+                      onClick={() => updateField("tienSan", courtsCount * 260)}
+                      className="py-1 px-2.5 rounded-[6px] bg-emerald-500/10 hover:bg-emerald-500/20 text-emerald-600 dark:text-emerald-400 font-semibold text-[11px] border border-emerald-500/30 transition-colors cursor-pointer"
+                    >
+                      Áp dụng {courtsCount * 260}k
+                    </button>
+                  ) : (
+                    <span className="text-[11px] font-semibold text-emerald-600 dark:text-emerald-400">
+                      ✓ Đã khớp ({courtsCount * 260}k)
+                    </span>
+                  )}
+                </div>
+              </div>
 
               <div className="grid grid-cols-2 gap-3">
                 <NumberInput

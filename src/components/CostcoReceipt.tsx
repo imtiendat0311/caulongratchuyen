@@ -10,6 +10,7 @@ import {
   Printer,
 } from "lucide-react";
 import { Member, BankConfig } from "@/types";
+import { parseCourtsList } from "./CourtPickerAndMap";
 
 interface CostcoReceiptProps {
   date: string; // DD/MM/YYYY
@@ -60,7 +61,10 @@ export function CostcoReceipt({
 }: CostcoReceiptProps) {
 
   const totalPlayers = namCount + nuCount;
-  const storeNum = courtNumber ? courtNumber.replace(/[^0-9]/g, "") || "01" : "01";
+  const courtsList = parseCourtsList(courtNumber);
+  const courtsCount = Math.max(1, courtsList.length);
+  const rawDigits = courtNumber ? courtNumber.replace(/[^0-9]/g, "") : "";
+  const storeNum = rawDigits.slice(0, 4) || "01";
   const refNum = "73928" + (date ? date.replace(/\//g, "") : "102026") + "8472";
 
   // Account display
@@ -118,7 +122,7 @@ export function CostcoReceipt({
             {/* Store & Court Address */}
             <div className="mt-2 text-center text-[10.5px] leading-tight space-y-0.5">
               <div className="font-bold">
-                Store #{storeNum.padStart(4, "0")} • {courtNumber || "Sân 1"}
+                Store #{storeNum.padStart(4, "0")} • {courtsCount > 1 ? `${courtsCount} SÂN (${courtNumber})` : (courtNumber || "Sân 1, Sân 2")}
               </div>
               <div className="font-semibold text-neutral-800 uppercase">
                 {courtName || "Nhà Thi Đấu Quán Thánh"}
@@ -155,7 +159,9 @@ export function CostcoReceipt({
           {/* Items Section */}
           <div className="space-y-1 my-2">
             <div className="flex justify-between items-baseline">
-              <span className="truncate pr-2">E TIEN SAN {courtNumber || "2H"}</span>
+              <span className="truncate pr-2">
+                E TIEN SAN ({courtsCount > 1 ? `${courtsCount} SAN • ${courtNumber}` : (courtNumber || "2H")})
+              </span>
               <span className="font-semibold shrink-0">
                 {courtCost.toLocaleString("vi-VN")} đ
               </span>

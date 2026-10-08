@@ -31,7 +31,7 @@ export const DEFAULT_DATA: BadmintonData = {
   guests: [],
   courtName: "Nhà Thi Đấu Quán Thánh",
   courtAddress: "115 Quán Thánh, Ba Đình, Hà Nội",
-  courtNumber: "Sân 1",
+  courtNumber: "Sân 1, Sân 2",
   nam: 4,
   nu: 2,
   tienSan: 520,
