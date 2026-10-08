@@ -1,11 +1,19 @@
-import { BadmintonData, BankConfig, HistoryItem } from "@/types";
+import { BadmintonData, BankConfig, HistoryItem, Member } from "@/types";
 import { supabase } from "./supabase";
 
 export const STORAGE_KEY = "cau-long-rat-chuyen-data";
 export const BANK_STORAGE_KEY = "cau-long-bank-data";
 export const HISTORY_STORAGE_KEY = "cau-long-history-data";
+export const MEMBERS_STORAGE_KEY = "cau-long-members-data";
+
+export const getTodayDateString = () => {
+  if (typeof window === "undefined") return "";
+  return new Date().toLocaleDateString("sv-SE"); // YYYY-MM-DD
+};
 
 export const DEFAULT_DATA: BadmintonData = {
+  matchDate: "",
+  attendeeIds: [],
   nam: 4,
   nu: 2,
   tienSan: 520,
@@ -38,6 +46,8 @@ export function getBadmintonSnapshot(): BadmintonData {
         const parsed = JSON.parse(raw);
         badmintonState = {
           ...DEFAULT_DATA,
+          matchDate: parsed.matchDate || getTodayDateString(),
+          attendeeIds: Array.isArray(parsed.attendeeIds) ? parsed.attendeeIds : [],
           nam: parsed.nam !== undefined ? Number(parsed.nam) : DEFAULT_DATA.nam,
           nu: parsed.nu !== undefined ? Number(parsed.nu) : DEFAULT_DATA.nu,
           tienSan:
@@ -71,7 +81,6 @@ export function getBadmintonSnapshot(): BadmintonData {
   return badmintonState ?? DEFAULT_DATA;
 }
 
-// Debounce timer for saving session settings to DB
 let saveTimeout: NodeJS.Timeout | null = null;
 
 export function setBadmintonState(
@@ -147,6 +156,44 @@ export function subscribeBank(listener: () => void) {
   };
 }
 
+// --- Members Store ---
+let membersState: Member[] | null = null;
+const membersListeners = new Set<() => void>();
+
+export function getMembersSnapshot(): Member[] {
+  if (typeof window === "undefined") return [];
+  if (!membersState) {
+    try {
+      const raw = localStorage.getItem(MEMBERS_STORAGE_KEY);
+      if (raw) {
+        membersState = JSON.parse(raw);
+      } else {
+        membersState = [];
+      }
+    } catch {
+      membersState = [];
+    }
+  }
+  return membersState ?? [];
+}
+
+export function setMembersState(next: Member[]) {
+  membersState = next;
+  try {
+    localStorage.setItem(MEMBERS_STORAGE_KEY, JSON.stringify(next));
+  } catch {
+    // ignore
+  }
+  membersListeners.forEach((l) => l());
+}
+
+export function subscribeMembers(listener: () => void) {
+  membersListeners.add(listener);
+  return () => {
+    membersListeners.delete(listener);
+  };
+}
+
 // --- History Store ---
 let historyState: HistoryItem[] | null = null;
 const historyListeners = new Set<() => void>();
@@ -215,6 +262,8 @@ async function saveSessionToSupabase(
   try {
     const { error } = await supabase.from("session_settings").upsert({
       id: "default",
+      match_date: calcData.matchDate || getTodayDateString(),
+      attendee_ids: calcData.attendeeIds || [],
       nam: calcData.nam,
       nu: calcData.nu,
       tien_san: calcData.tienSan,
@@ -241,6 +290,91 @@ async function saveSessionToSupabase(
     console.warn("Supabase session network error:", err);
     setSyncStatus("error");
   }
+}
+
+// Member CRUD
+export async function addMember(name: string, gender: "male" | "female") {
+  const newMember: Member = {
+    id: "mem-" + Date.now() + "-" + Math.random().toString(36).slice(2, 6),
+    name: name.trim(),
+    gender,
+    created_at: new Date().toISOString(),
+  };
+
+  const current = getMembersSnapshot();
+  const updated = [...current, newMember];
+  setMembersState(updated);
+
+  setSyncStatus("syncing");
+  try {
+    const { error } = await supabase.from("members").insert({
+      id: newMember.id,
+      name: newMember.name,
+      gender: newMember.gender,
+      created_at: newMember.created_at,
+    });
+
+    if (error) {
+      console.warn("Supabase member insert error:", error.message);
+      setSyncStatus("error");
+    } else {
+      setSyncStatus("synced");
+    }
+  } catch (err) {
+    console.warn("Supabase member network error:", err);
+    setSyncStatus("error");
+  }
+}
+
+export async function deleteMember(id: string) {
+  const current = getMembersSnapshot();
+  const updated = current.filter((m) => m.id !== id);
+  setMembersState(updated);
+
+  // If member was selected as attendee, remove from attendee list
+  const currentData = getBadmintonSnapshot();
+  if (currentData.attendeeIds.includes(id)) {
+    toggleAttendee(id);
+  }
+
+  setSyncStatus("syncing");
+  try {
+    const { error } = await supabase.from("members").delete().eq("id", id);
+    if (error) {
+      console.warn("Supabase member delete error:", error.message);
+      setSyncStatus("error");
+    } else {
+      setSyncStatus("synced");
+    }
+  } catch (err) {
+    console.warn("Supabase member delete network error:", err);
+    setSyncStatus("error");
+  }
+}
+
+// Toggle attendance for a member
+export function toggleAttendee(memberId: string) {
+  const currentData = getBadmintonSnapshot();
+  const members = getMembersSnapshot();
+
+  const isAttending = currentData.attendeeIds.includes(memberId);
+  const nextAttendees = isAttending
+    ? currentData.attendeeIds.filter((id) => id !== memberId)
+    : [...currentData.attendeeIds, memberId];
+
+  // Filter attending members
+  const attendingList = members.filter((m) => nextAttendees.includes(m.id));
+  const maleList = attendingList.filter((m) => m.gender === "male");
+  const femaleList = attendingList.filter((m) => m.gender === "female");
+
+  setBadmintonState((prev) => ({
+    ...prev,
+    attendeeIds: nextAttendees,
+    nam: maleList.length,
+    nu: femaleList.length,
+    noteNam: maleList.map((m) => m.name).join(", "),
+    noteNu: femaleList.map((m) => m.name).join(", "),
+  }));
 }
 
 export async function addHistoryItem(item: HistoryItem) {
@@ -339,11 +473,17 @@ export function initSupabaseSync() {
       .from("match_history")
       .select("*")
       .order("created_at", { ascending: false }),
+    supabase
+      .from("members")
+      .select("*")
+      .order("name", { ascending: true }),
   ])
-    .then(([sessionRes, historyRes]) => {
+    .then(([sessionRes, historyRes, membersRes]) => {
       if (sessionRes.data) {
         const s = sessionRes.data;
         const loadedData: BadmintonData = {
+          matchDate: s.match_date || getTodayDateString(),
+          attendeeIds: Array.isArray(s.attendee_ids) ? s.attendee_ids : [],
           nam: Number(s.nam) ?? DEFAULT_DATA.nam,
           nu: Number(s.nu) ?? DEFAULT_DATA.nu,
           tienSan: Number(s.tien_san) ?? DEFAULT_DATA.tienSan,
@@ -385,6 +525,10 @@ export function initSupabaseSync() {
         setHistoryState(loadedHistory);
       }
 
+      if (membersRes.data && Array.isArray(membersRes.data)) {
+        setMembersState(membersRes.data);
+      }
+
       setSyncStatus("synced");
     })
     .catch((err) => {
@@ -403,6 +547,10 @@ export function initSupabaseSync() {
           const s = payload.new as Record<string, unknown>;
           if (s.id === "default") {
             const nextData: BadmintonData = {
+              matchDate: (s.match_date as string) || getTodayDateString(),
+              attendeeIds: Array.isArray(s.attendee_ids)
+                ? (s.attendee_ids as string[])
+                : [],
               nam: Number(s.nam),
               nu: Number(s.nu),
               tienSan: Number(s.tien_san),
@@ -432,9 +580,23 @@ export function initSupabaseSync() {
     )
     .on(
       "postgres_changes",
+      { event: "*", schema: "public", table: "members" },
+      () => {
+        supabase
+          .from("members")
+          .select("*")
+          .order("name", { ascending: true })
+          .then((res) => {
+            if (res.data) {
+              setMembersState(res.data);
+            }
+          });
+      }
+    )
+    .on(
+      "postgres_changes",
       { event: "*", schema: "public", table: "match_history" },
       () => {
-        // Refetch history when changes occur
         supabase
           .from("match_history")
           .select("*")

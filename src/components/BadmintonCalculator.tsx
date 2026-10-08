@@ -17,16 +17,21 @@ import {
   Cloud,
   CloudCheck,
   RefreshCw,
+  Calendar,
+  UserCheck,
+  UserPlus,
 } from "lucide-react";
 import { PixelCat, PixelRacket } from "./PixelArt";
 import { ThemeToggle } from "./ThemeToggle";
 import { NumberInput } from "./NumberInput";
 import { VietQRModal } from "./VietQRModal";
 import { HistoryDrawer } from "./HistoryDrawer";
+import { MemberManagerModal } from "./MemberManagerModal";
 import { BadmintonData, BankConfig, HistoryItem } from "@/types";
 import {
   DEFAULT_DATA,
   DEFAULT_BANK,
+  getTodayDateString,
   getBadmintonSnapshot,
   setBadmintonState,
   subscribeBadminton,
@@ -35,12 +40,17 @@ import {
   subscribeBank,
   getHistorySnapshot,
   subscribeHistory,
+  getMembersSnapshot,
+  subscribeMembers,
   getSyncStatusSnapshot,
   subscribeSyncStatus,
   initSupabaseSync,
   addHistoryItem,
   deleteHistoryItem,
   clearAllHistory,
+  addMember,
+  deleteMember,
+  toggleAttendee,
 } from "@/lib/store";
 
 export function BadmintonCalculator() {
@@ -62,6 +72,12 @@ export function BadmintonCalculator() {
     () => []
   );
 
+  const members = useSyncExternalStore(
+    subscribeMembers,
+    getMembersSnapshot,
+    () => []
+  );
+
   const syncStatus = useSyncExternalStore(
     subscribeSyncStatus,
     getSyncStatusSnapshot,
@@ -71,12 +87,32 @@ export function BadmintonCalculator() {
   const [copied, setCopied] = useState(false);
   const [isVietQROpen, setIsVietQROpen] = useState(false);
   const [isHistoryOpen, setIsHistoryOpen] = useState(false);
+  const [isMemberModalOpen, setIsMemberModalOpen] = useState(false);
   const [showAdvanced, setShowAdvanced] = useState(false);
 
   // Initialize Supabase sync on client mount
   useEffect(() => {
     initSupabaseSync();
+    if (!getBadmintonSnapshot().matchDate) {
+      const today = getTodayDateString();
+      if (today) {
+        setBadmintonState((prev) => ({
+          ...prev,
+          matchDate: prev.matchDate || today,
+        }));
+      }
+    }
   }, []);
+
+  // Format date helper: YYYY-MM-DD -> DD/MM/YYYY
+  const displayDate = useMemo(() => {
+    if (!data.matchDate) return "";
+    const parts = data.matchDate.split("-");
+    if (parts.length === 3) {
+      return `${parts[2]}/${parts[1]}/${parts[0]}`;
+    }
+    return data.matchDate;
+  }, [data.matchDate]);
 
   // Calculations exactly matching original HTML
   const calculations = useMemo(() => {
@@ -137,7 +173,10 @@ export function BadmintonCalculator() {
 
   const handleReset = () => {
     if (window.confirm("Đặt lại toàn bộ về mặc định?")) {
-      setBadmintonState(DEFAULT_DATA);
+      setBadmintonState({
+        ...DEFAULT_DATA,
+        matchDate: getTodayDateString(),
+      });
     }
   };
 
@@ -158,14 +197,8 @@ export function BadmintonCalculator() {
   };
 
   const generateShareMessage = () => {
-    const today = new Date().toLocaleDateString("vi-VN", {
-      day: "2-digit",
-      month: "2-digit",
-      year: "numeric",
-    });
-
     let msg = `🏸 CẦU LÔNG RẤT CHUYÊN 🏸\n`;
-    msg += `📅 Ngày: ${today}\n\n`;
+    msg += `📅 Ngày: ${displayDate}\n\n`;
     msg += `👥 Người chơi (${calculations.namCount + calculations.nuCount} bạn):\n`;
     msg += `• ${calculations.namCount} Nam\n`;
     msg += `• ${calculations.nuCount} Nữ\n\n`;
@@ -239,13 +272,7 @@ export function BadmintonCalculator() {
   const handleSaveToHistory = async () => {
     const newItem: HistoryItem = {
       id: Date.now().toString(),
-      date: new Date().toLocaleDateString("vi-VN", {
-        hour: "2-digit",
-        minute: "2-digit",
-        day: "2-digit",
-        month: "2-digit",
-        year: "numeric",
-      }),
+      date: displayDate,
       totalCost: calculations.tongChiPhi,
       costPerMale: calculations.finalNam,
       costPerFemale: calculations.finalNu,
@@ -259,7 +286,7 @@ export function BadmintonCalculator() {
 
     await addHistoryItem(newItem);
     fireConfetti();
-    alert("Đã lưu buổi chơi vào cơ sở dữ liệu Supabase!");
+    alert(`Đã lưu buổi chơi ngày ${displayDate} vào cơ sở dữ liệu Supabase!`);
   };
 
   const handleDeleteHistory = async (id: string) => {
@@ -288,6 +315,15 @@ export function BadmintonCalculator() {
     setIsHistoryOpen(false);
   };
 
+  const maleMembers = useMemo(
+    () => members.filter((m) => m.gender === "male"),
+    [members]
+  );
+  const femaleMembers = useMemo(
+    () => members.filter((m) => m.gender === "female"),
+    [members]
+  );
+
   return (
     <div className="w-full max-w-[460px] md:max-w-4xl lg:max-w-5xl mx-auto px-4 py-6 md:py-8 lg:py-10">
       {/* Header with Mascots, Title, and Action Toolbar */}
@@ -305,7 +341,7 @@ export function BadmintonCalculator() {
           </div>
         </div>
 
-        <div className="flex items-center justify-center gap-2 text-xs sm:text-sm text-[var(--muted)] mb-3.5">
+        <div className="flex items-center justify-center gap-2 text-xs sm:text-sm text-[var(--muted)] mb-3.5 flex-wrap">
           <span>Tính tiền chia sau mỗi buổi chơi</span>
           <span>•</span>
           {/* Cloud Sync Status Indicator */}
@@ -338,7 +374,23 @@ export function BadmintonCalculator() {
         </div>
 
         {/* Compact action toolbar */}
-        <div className="inline-flex items-center gap-1.5 p-1 rounded-2xl bg-[var(--card)] border border-[var(--border)] shadow-[var(--shadow)]">
+        <div className="inline-flex items-center gap-1.5 p-1 rounded-2xl bg-[var(--card)] border border-[var(--border)] shadow-[var(--shadow)] flex-wrap justify-center">
+          {/* Members manager button */}
+          <button
+            onClick={() => setIsMemberModalOpen(true)}
+            className="flex items-center gap-1.5 h-8 px-2.5 rounded-xl text-xs font-medium text-[var(--text)] hover:bg-[var(--bg)] transition-colors cursor-pointer"
+            title="Quản lý thành viên cố định"
+          >
+            <UserCheck className="w-3.5 h-3.5 text-[var(--accent)]" />
+            <span>Thành viên</span>
+            {members.length > 0 && (
+              <span className="px-1.5 py-0.2 rounded-full bg-[var(--bg)] border border-[var(--border)] text-[10px] font-bold text-[var(--accent)]">
+                {members.length}
+              </span>
+            )}
+          </button>
+
+          {/* History button */}
           <button
             onClick={() => setIsHistoryOpen(true)}
             className="flex items-center gap-1.5 h-8 px-2.5 rounded-xl text-xs font-medium text-[var(--text)] hover:bg-[var(--bg)] transition-colors cursor-pointer"
@@ -353,6 +405,7 @@ export function BadmintonCalculator() {
             )}
           </button>
 
+          {/* QR button */}
           <button
             onClick={() => setIsVietQROpen(true)}
             className="flex items-center gap-1.5 h-8 px-2.5 rounded-xl text-xs font-medium text-[var(--text)] hover:bg-[var(--bg)] transition-colors cursor-pointer"
@@ -362,6 +415,7 @@ export function BadmintonCalculator() {
             <span>Mã QR</span>
           </button>
 
+          {/* Reset button */}
           <button
             onClick={handleReset}
             className="flex items-center gap-1.5 h-8 px-2.5 rounded-xl text-xs font-medium text-[var(--muted)] hover:text-[var(--text)] hover:bg-[var(--bg)] transition-colors cursor-pointer"
@@ -377,25 +431,141 @@ export function BadmintonCalculator() {
         </div>
       </header>
 
+      {/* Date Picker Bar */}
+      <div className="app-card p-3 mb-4 flex items-center justify-between gap-3 flex-wrap">
+        <div className="flex items-center gap-2">
+          <div className="p-1.5 rounded-lg bg-[var(--bg)] text-[var(--accent)]">
+            <Calendar className="w-4 h-4" />
+          </div>
+          <span className="text-xs font-bold uppercase tracking-wider text-[var(--muted)]">
+            Ngày chơi:
+          </span>
+          <input
+            type="date"
+            value={data.matchDate}
+            onChange={(e) => updateField("matchDate", e.target.value)}
+            className="py-1 px-2.5 text-xs font-semibold rounded-[8px] border border-[var(--border)] bg-[var(--bg)] text-[var(--text)] outline-none focus:border-[var(--accent)] cursor-pointer"
+          />
+        </div>
+
+        <div className="flex items-center gap-1.5">
+          <button
+            type="button"
+            onClick={() => {
+              const today = getTodayDateString();
+              if (today) updateField("matchDate", today);
+            }}
+            className="text-xs py-1 px-2.5 rounded-[8px] border border-[var(--border)] bg-[var(--bg)] text-[var(--muted)] hover:text-[var(--text)] hover:border-[var(--accent)] transition-colors cursor-pointer"
+          >
+            Hôm nay
+          </button>
+        </div>
+      </div>
+
       {/* Responsive Grid: 1 column on Mobile, 2 columns on Laptop/Desktop */}
       <div className="grid grid-cols-1 md:grid-cols-12 gap-4 md:gap-6 items-start">
         {/* Left Column: Inputs (Người chơi, Chi phí, Ghi chú) */}
         <div className="md:col-span-7 space-y-4">
-          {/* Card: Người chơi */}
+          {/* Card: Người chơi & Điểm danh thành viên */}
           <section className="app-card p-5">
             <div className="flex items-center justify-between mb-3.5">
               <h2 className="text-[0.95rem] font-bold uppercase tracking-[.04em] text-[var(--muted)] m-0">
                 Người chơi
               </h2>
-              <span className="text-xs font-semibold px-2 py-0.5 rounded-full bg-[var(--bg)] border border-[var(--border)] text-[var(--muted)]">
-                Tổng {calculations.namCount + calculations.nuCount} bạn
-              </span>
+              <div className="flex items-center gap-2">
+                <button
+                  type="button"
+                  onClick={() => setIsMemberModalOpen(true)}
+                  className="text-xs font-medium text-[var(--accent)] hover:underline flex items-center gap-1 cursor-pointer"
+                >
+                  <UserPlus className="w-3.5 h-3.5" />
+                  <span>DS thành viên ({members.length})</span>
+                </button>
+                <span className="text-xs font-semibold px-2 py-0.5 rounded-full bg-[var(--bg)] border border-[var(--border)] text-[var(--muted)]">
+                  Tổng {calculations.namCount + calculations.nuCount} bạn
+                </span>
+              </div>
             </div>
 
+            {/* Stable Members Attendance Check Section */}
+            {members.length > 0 && (
+              <div className="mb-4 p-3 rounded-[12px] bg-[var(--bg)] border border-[var(--border)] space-y-2.5">
+                <div className="flex items-center justify-between text-xs">
+                  <span className="font-semibold text-[var(--text)] flex items-center gap-1.5">
+                    <UserCheck className="w-3.5 h-3.5 text-[var(--accent2)]" />
+                    Điểm danh hôm nay (chạm để chọn):
+                  </span>
+                  <span className="text-[11px] text-[var(--muted)]">
+                    Đã chọn {data.attendeeIds?.length || 0}/{members.length}
+                  </span>
+                </div>
+
+                {/* Male attendees */}
+                {maleMembers.length > 0 && (
+                  <div>
+                    <span className="block text-[10px] font-bold uppercase tracking-wider text-[var(--accent)] mb-1.5">
+                      Nam ({maleMembers.filter((m) => data.attendeeIds.includes(m.id)).length}/{maleMembers.length}):
+                    </span>
+                    <div className="flex flex-wrap gap-1.5">
+                      {maleMembers.map((m) => {
+                        const isSelected = data.attendeeIds.includes(m.id);
+                        return (
+                          <button
+                            key={m.id}
+                            type="button"
+                            onClick={() => toggleAttendee(m.id)}
+                            className={`py-1 px-2.5 rounded-full text-xs font-semibold transition-all cursor-pointer flex items-center gap-1 ${
+                              isSelected
+                                ? "bg-[var(--accent)] text-white shadow-xs"
+                                : "bg-[var(--card)] border border-[var(--border)] text-[var(--text)] hover:border-[var(--accent)]"
+                            }`}
+                          >
+                            {isSelected && <Check className="w-3 h-3 stroke-[3]" />}
+                            <span>{m.name}</span>
+                          </button>
+                        );
+                      })}
+                    </div>
+                  </div>
+                )}
+
+                {/* Female attendees */}
+                {femaleMembers.length > 0 && (
+                  <div className="pt-1.5 border-t border-[var(--border)]">
+                    <span className="block text-[10px] font-bold uppercase tracking-wider text-[var(--female)] mb-1.5">
+                      Nữ ({femaleMembers.filter((m) => data.attendeeIds.includes(m.id)).length}/{femaleMembers.length}):
+                    </span>
+                    <div className="flex flex-wrap gap-1.5">
+                      {femaleMembers.map((m) => {
+                        const isSelected = data.attendeeIds.includes(m.id);
+                        return (
+                          <button
+                            key={m.id}
+                            type="button"
+                            onClick={() => toggleAttendee(m.id)}
+                            className={`py-1 px-2.5 rounded-full text-xs font-semibold transition-all cursor-pointer flex items-center gap-1 ${
+                              isSelected
+                                ? "bg-[var(--female)] text-white shadow-xs"
+                                : "bg-[var(--card)] border border-[var(--border)] text-[var(--text)] hover:border-[var(--female)]"
+                            }`}
+                          >
+                            {isSelected && <Check className="w-3 h-3 stroke-[3]" />}
+                            <span>{m.name}</span>
+                          </button>
+                        );
+                      })}
+                    </div>
+                  </div>
+                )}
+              </div>
+            )}
+
+            {/* Manual steppers / Total count */}
             <div className="grid grid-cols-2 gap-3">
               <NumberInput
                 id="nam"
                 label="Số Nam"
+                hint={members.length > 0 ? "Bao gồm khách ngoài" : undefined}
                 value={data.nam}
                 min={0}
                 step={1}
@@ -405,6 +575,7 @@ export function BadmintonCalculator() {
               <NumberInput
                 id="nu"
                 label="Số Nữ"
+                hint={members.length > 0 ? "Bao gồm khách ngoài" : undefined}
                 value={data.nu}
                 min={0}
                 step={1}
@@ -577,7 +748,7 @@ export function BadmintonCalculator() {
                 id="noteNam"
                 rows={2}
                 value={data.noteNam}
-                placeholder="Tên các bạn Nam..."
+                placeholder="Tên các bạn Nam tham gia..."
                 onChange={(e) => updateField("noteNam", e.target.value)}
                 className="w-full p-2.5 text-sm rounded-[10px] border border-[var(--border)] bg-[var(--bg)] text-[var(--text)] outline-none focus:border-[var(--accent)] transition-colors resize-y min-h-[60px]"
               />
@@ -594,7 +765,7 @@ export function BadmintonCalculator() {
                 id="noteNu"
                 rows={2}
                 value={data.noteNu}
-                placeholder="Tên các bạn Nữ..."
+                placeholder="Tên các bạn Nữ tham gia..."
                 onChange={(e) => updateField("noteNu", e.target.value)}
                 className="w-full p-2.5 text-sm rounded-[10px] border border-[var(--border)] bg-[var(--bg)] text-[var(--text)] outline-none focus:border-[var(--accent)] transition-colors resize-y min-h-[60px]"
               />
@@ -607,7 +778,7 @@ export function BadmintonCalculator() {
           <section className="app-card p-5">
             <div className="flex items-center justify-between mb-3.5">
               <h2 className="text-[0.95rem] font-bold uppercase tracking-[.04em] text-[var(--muted)] m-0">
-                Kết quả
+                Kết quả ({displayDate})
               </h2>
               {calculations.mauSo === 0 && (
                 <span className="text-xs text-amber-500 font-medium">
@@ -779,6 +950,15 @@ export function BadmintonCalculator() {
         onSaveBankConfig={handleSaveBankConfig}
         amountNam={calculations.finalNam}
         amountNu={calculations.finalNu}
+      />
+
+      {/* Member Manager Modal */}
+      <MemberManagerModal
+        isOpen={isMemberModalOpen}
+        onClose={() => setIsMemberModalOpen(false)}
+        members={members}
+        onAddMember={addMember}
+        onDeleteMember={deleteMember}
       />
 
       {/* History Drawer */}

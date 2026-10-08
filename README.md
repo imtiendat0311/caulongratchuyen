@@ -11,6 +11,9 @@ Chuyển đổi từ file đơn lẻ HTML sang dự án **Next.js 16 (App Router
   - Công thức chia tiền hợp lý: Nữ mặc định đóng 75% so với Nam (`Tiền Nam = Tổng / (Nam + 0.75 * Nữ)`).
   - Tùy chỉnh linh hoạt tỉ lệ đóng cho Nữ (75%, 80%, 50%, hoặc 100% chia đều).
   - Tùy chọn làm tròn tiền: Chuẩn xác, Tròn 1.000 đ hoặc Tròn 5.000 đ.
+- 📅 **Chọn ngày buổi chơi (Date Picker)**: Mặc định luôn là ngày hôm nay, hỗ trợ chọn ngày bất kỳ (hôm qua, tuần trước) và tự động điền vào tin nhắn chia sẻ Zalo & lịch sử.
+- 👥 **Quản lý danh sách thành viên cố định**: Thêm/xóa thành viên thường trực của nhóm (phân biệt Nam & Nữ), lưu vĩnh viễn trên Supabase database.
+- 🏷️ **Điểm danh 1 chạm**: Bấm chọn tên các bạn đi chơi hôm nay để tự động đếm số lượng Nam/Nữ và tự động điền danh sách vào ô Ghi chú.
 - 🐈🏸 **Mascot Pixel Art độc quyền**: Render SVG sắc nét hình chú mèo và vợt cầu lông bằng pixel art thuần.
 - ☁️ **Lưu trữ đám mây Supabase (PostgreSQL)**: Dữ liệu tính toán, cấu hình STK và toàn bộ lịch sử buổi chơi được lưu trực tiếp vào cơ sở dữ liệu Supabase, đồng bộ xuyên suốt mọi thiết bị & trình duyệt.
 - 🔄 **Real-time Sync & Offline Fallback**: Tự động nhận thay đổi theo thời gian thực và vẫn lưu trữ cục bộ khi mất mạng.

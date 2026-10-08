@@ -1,4 +1,13 @@
+export interface Member {
+  id: string;
+  name: string;
+  gender: "male" | "female";
+  created_at?: string;
+}
+
 export interface BadmintonData {
+  matchDate: string; // YYYY-MM-DD
+  attendeeIds: string[]; // member IDs attending
   nam: number;
   nu: number;
   tienSan: number; // in thousands (k VND)
