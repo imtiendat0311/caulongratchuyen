@@ -5,9 +5,16 @@ export interface Member {
   created_at?: string;
 }
 
+export interface GuestAttendee {
+  id: string;
+  name: string;
+  gender: "male" | "female";
+}
+
 export interface BadmintonData {
   matchDate: string; // YYYY-MM-DD
-  attendeeIds: string[]; // member IDs attending
+  attendeeIds: string[]; // IDs of stable members attending today
+  guests: GuestAttendee[]; // non-stable guests joining ONLY for this date
   nam: number;
   nu: number;
   tienSan: number; // in thousands (k VND)

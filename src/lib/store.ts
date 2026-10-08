@@ -1,4 +1,4 @@
-import { BadmintonData, BankConfig, HistoryItem, Member } from "@/types";
+import { BadmintonData, BankConfig, HistoryItem, Member, GuestAttendee } from "@/types";
 import { supabase } from "./supabase";
 
 export const STORAGE_KEY = "cau-long-rat-chuyen-data";
@@ -14,6 +14,7 @@ export const getTodayDateString = () => {
 export const DEFAULT_DATA: BadmintonData = {
   matchDate: "",
   attendeeIds: [],
+  guests: [],
   nam: 4,
   nu: 2,
   tienSan: 520,
@@ -48,6 +49,7 @@ export function getBadmintonSnapshot(): BadmintonData {
           ...DEFAULT_DATA,
           matchDate: parsed.matchDate || getTodayDateString(),
           attendeeIds: Array.isArray(parsed.attendeeIds) ? parsed.attendeeIds : [],
+          guests: Array.isArray(parsed.guests) ? parsed.guests : [],
           nam: parsed.nam !== undefined ? Number(parsed.nam) : DEFAULT_DATA.nam,
           nu: parsed.nu !== undefined ? Number(parsed.nu) : DEFAULT_DATA.nu,
           tienSan:
@@ -264,6 +266,7 @@ async function saveSessionToSupabase(
       id: "default",
       match_date: calcData.matchDate || getTodayDateString(),
       attendee_ids: calcData.attendeeIds || [],
+      guests: calcData.guests || [],
       nam: calcData.nam,
       nu: calcData.nu,
       tien_san: calcData.tienSan,
@@ -292,7 +295,7 @@ async function saveSessionToSupabase(
   }
 }
 
-// Member CRUD
+// Member CRUD for Stable Members
 export async function addMember(name: string, gender: "male" | "female") {
   const newMember: Member = {
     id: "mem-" + Date.now() + "-" + Math.random().toString(36).slice(2, 6),
@@ -331,7 +334,6 @@ export async function deleteMember(id: string) {
   const updated = current.filter((m) => m.id !== id);
   setMembersState(updated);
 
-  // If member was selected as attendee, remove from attendee list
   const currentData = getBadmintonSnapshot();
   if (currentData.attendeeIds.includes(id)) {
     toggleAttendee(id);
@@ -352,28 +354,146 @@ export async function deleteMember(id: string) {
   }
 }
 
-// Toggle attendance for a member
+// Attendance Calculation Helper
+function recalculateAttendees(attendeeIds: string[], guests: GuestAttendee[]) {
+  const members = getMembersSnapshot();
+  const attendingMembers = members.filter((m) => attendeeIds.includes(m.id));
+
+  const maleMembers = attendingMembers.filter((m) => m.gender === "male");
+  const femaleMembers = attendingMembers.filter((m) => m.gender === "female");
+
+  const maleGuests = guests.filter((g) => g.gender === "male");
+  const femaleGuests = guests.filter((g) => g.gender === "female");
+
+  const totalNam = maleMembers.length + maleGuests.length;
+  const totalNu = femaleMembers.length + femaleGuests.length;
+
+  const noteNamParts = [
+    ...maleMembers.map((m) => m.name),
+    ...maleGuests.map((g) => `${g.name} (Khách)`),
+  ];
+
+  const noteNuParts = [
+    ...femaleMembers.map((m) => m.name),
+    ...femaleGuests.map((g) => `${g.name} (Khách)`),
+  ];
+
+  return {
+    nam: totalNam,
+    nu: totalNu,
+    noteNam: noteNamParts.join(", "),
+    noteNu: noteNuParts.join(", "),
+  };
+}
+
+// Toggle attendance for a stable member
 export function toggleAttendee(memberId: string) {
   const currentData = getBadmintonSnapshot();
-  const members = getMembersSnapshot();
-
   const isAttending = currentData.attendeeIds.includes(memberId);
   const nextAttendees = isAttending
     ? currentData.attendeeIds.filter((id) => id !== memberId)
     : [...currentData.attendeeIds, memberId];
 
-  // Filter attending members
-  const attendingList = members.filter((m) => nextAttendees.includes(m.id));
-  const maleList = attendingList.filter((m) => m.gender === "male");
-  const femaleList = attendingList.filter((m) => m.gender === "female");
+  const { nam, nu, noteNam, noteNu } = recalculateAttendees(
+    nextAttendees,
+    currentData.guests || []
+  );
 
   setBadmintonState((prev) => ({
     ...prev,
     attendeeIds: nextAttendees,
-    nam: maleList.length,
-    nu: femaleList.length,
-    noteNam: maleList.map((m) => m.name).join(", "),
-    noteNu: femaleList.map((m) => m.name).join(", "),
+    nam,
+    nu,
+    noteNam,
+    noteNu,
+  }));
+}
+
+// Select all stable members
+export function selectAllAttendees() {
+  const members = getMembersSnapshot();
+  const allIds = members.map((m) => m.id);
+  const currentData = getBadmintonSnapshot();
+
+  const { nam, nu, noteNam, noteNu } = recalculateAttendees(
+    allIds,
+    currentData.guests || []
+  );
+
+  setBadmintonState((prev) => ({
+    ...prev,
+    attendeeIds: allIds,
+    nam,
+    nu,
+    noteNam,
+    noteNu,
+  }));
+}
+
+// Clear all stable attendees for today
+export function clearAllAttendees() {
+  const currentData = getBadmintonSnapshot();
+  const { nam, nu, noteNam, noteNu } = recalculateAttendees(
+    [],
+    currentData.guests || []
+  );
+
+  setBadmintonState((prev) => ({
+    ...prev,
+    attendeeIds: [],
+    nam,
+    nu,
+    noteNam,
+    noteNu,
+  }));
+}
+
+// Add a single-day guest attendee (NOT added to stable member roster)
+export function addGuestAttendee(name: string, gender: "male" | "female") {
+  const trimmed = name.trim();
+  if (!trimmed) return;
+
+  const newGuest: GuestAttendee = {
+    id: "guest-" + Date.now() + "-" + Math.random().toString(36).slice(2, 6),
+    name: trimmed,
+    gender,
+  };
+
+  const currentData = getBadmintonSnapshot();
+  const nextGuests = [...(currentData.guests || []), newGuest];
+
+  const { nam, nu, noteNam, noteNu } = recalculateAttendees(
+    currentData.attendeeIds || [],
+    nextGuests
+  );
+
+  setBadmintonState((prev) => ({
+    ...prev,
+    guests: nextGuests,
+    nam,
+    nu,
+    noteNam,
+    noteNu,
+  }));
+}
+
+// Remove a single-day guest attendee
+export function removeGuestAttendee(guestId: string) {
+  const currentData = getBadmintonSnapshot();
+  const nextGuests = (currentData.guests || []).filter((g) => g.id !== guestId);
+
+  const { nam, nu, noteNam, noteNu } = recalculateAttendees(
+    currentData.attendeeIds || [],
+    nextGuests
+  );
+
+  setBadmintonState((prev) => ({
+    ...prev,
+    guests: nextGuests,
+    nam,
+    nu,
+    noteNam,
+    noteNu,
   }));
 }
 
@@ -484,6 +604,7 @@ export function initSupabaseSync() {
         const loadedData: BadmintonData = {
           matchDate: s.match_date || getTodayDateString(),
           attendeeIds: Array.isArray(s.attendee_ids) ? s.attendee_ids : [],
+          guests: Array.isArray(s.guests) ? s.guests : [],
           nam: Number(s.nam) ?? DEFAULT_DATA.nam,
           nu: Number(s.nu) ?? DEFAULT_DATA.nu,
           tienSan: Number(s.tien_san) ?? DEFAULT_DATA.tienSan,
@@ -550,6 +671,9 @@ export function initSupabaseSync() {
               matchDate: (s.match_date as string) || getTodayDateString(),
               attendeeIds: Array.isArray(s.attendee_ids)
                 ? (s.attendee_ids as string[])
+                : [],
+              guests: Array.isArray(s.guests)
+                ? (s.guests as GuestAttendee[])
                 : [],
               nam: Number(s.nam),
               nu: Number(s.nu),

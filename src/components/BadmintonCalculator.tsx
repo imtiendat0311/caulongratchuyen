@@ -20,6 +20,9 @@ import {
   Calendar,
   UserCheck,
   UserPlus,
+  Plus,
+  X,
+  User,
 } from "lucide-react";
 import { PixelCat, PixelRacket } from "./PixelArt";
 import { ThemeToggle } from "./ThemeToggle";
@@ -51,6 +54,10 @@ import {
   addMember,
   deleteMember,
   toggleAttendee,
+  selectAllAttendees,
+  clearAllAttendees,
+  addGuestAttendee,
+  removeGuestAttendee,
 } from "@/lib/store";
 
 export function BadmintonCalculator() {
@@ -89,6 +96,10 @@ export function BadmintonCalculator() {
   const [isHistoryOpen, setIsHistoryOpen] = useState(false);
   const [isMemberModalOpen, setIsMemberModalOpen] = useState(false);
   const [showAdvanced, setShowAdvanced] = useState(false);
+
+  // New guest state for single-day attendance
+  const [guestName, setGuestName] = useState("");
+  const [guestGender, setGuestGender] = useState<"male" | "female">("male");
 
   // Initialize Supabase sync on client mount
   useEffect(() => {
@@ -196,12 +207,19 @@ export function BadmintonCalculator() {
     }
   };
 
+  const handleAddGuest = (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!guestName.trim()) return;
+    addGuestAttendee(guestName, guestGender);
+    setGuestName("");
+  };
+
   const generateShareMessage = () => {
     let msg = `🏸 CẦU LÔNG RẤT CHUYÊN 🏸\n`;
     msg += `📅 Ngày: ${displayDate}\n\n`;
     msg += `👥 Người chơi (${calculations.namCount + calculations.nuCount} bạn):\n`;
-    msg += `• ${calculations.namCount} Nam\n`;
-    msg += `• ${calculations.nuCount} Nữ\n\n`;
+    msg += `• ${calculations.namCount} Nam${data.noteNam ? `: ${data.noteNam}` : ""}\n`;
+    msg += `• ${calculations.nuCount} Nữ${data.noteNu ? `: ${data.noteNu}` : ""}\n\n`;
 
     msg += `💰 Chi phí buổi chơi:\n`;
     msg += `• Sân: ${calculations.tongTienSan.toLocaleString("vi-VN")} đ\n`;
@@ -217,15 +235,8 @@ export function BadmintonCalculator() {
         : ""
     }\n`;
 
-    if (data.noteNam?.trim()) {
-      msg += `\n📝 Nam: ${data.noteNam.trim()}`;
-    }
-    if (data.noteNu?.trim()) {
-      msg += `\n📝 Nữ: ${data.noteNu.trim()}`;
-    }
-
     if (bankConfig.enabled && bankConfig.accountNo) {
-      msg += `\n\n💳 Chuyển khoản:\n• STK: ${bankConfig.accountNo} (${bankConfig.bankId})\n• Tên: ${bankConfig.accountName}`;
+      msg += `\n💳 Chuyển khoản:\n• STK: ${bankConfig.accountNo} (${bankConfig.bankId})\n• Tên: ${bankConfig.accountName}`;
     }
 
     msg += `\n\n🔗 caulongratchuyen.vercel.app`;
@@ -324,6 +335,20 @@ export function BadmintonCalculator() {
     [members]
   );
 
+  const maleGuests = useMemo(
+    () => (data.guests || []).filter((g) => g.gender === "male"),
+    [data.guests]
+  );
+  const femaleGuests = useMemo(
+    () => (data.guests || []).filter((g) => g.gender === "female"),
+    [data.guests]
+  );
+
+  const selectedStableMembersCount = useMemo(
+    () => (data.attendeeIds || []).filter((id) => members.some((m) => m.id === id)).length,
+    [data.attendeeIds, members]
+  );
+
   return (
     <div className="w-full max-w-[460px] md:max-w-4xl lg:max-w-5xl mx-auto px-4 py-6 md:py-8 lg:py-10">
       {/* Header with Mascots, Title, and Action Toolbar */}
@@ -379,10 +404,10 @@ export function BadmintonCalculator() {
           <button
             onClick={() => setIsMemberModalOpen(true)}
             className="flex items-center gap-1.5 h-8 px-2.5 rounded-xl text-xs font-medium text-[var(--text)] hover:bg-[var(--bg)] transition-colors cursor-pointer"
-            title="Quản lý thành viên cố định"
+            title="Quản lý danh sách thành viên cố định"
           >
             <UserCheck className="w-3.5 h-3.5 text-[var(--accent)]" />
-            <span>Thành viên</span>
+            <span>Thành viên cố định</span>
             {members.length > 0 && (
               <span className="px-1.5 py-0.2 rounded-full bg-[var(--bg)] border border-[var(--border)] text-[10px] font-bold text-[var(--accent)]">
                 {members.length}
@@ -466,9 +491,9 @@ export function BadmintonCalculator() {
       <div className="grid grid-cols-1 md:grid-cols-12 gap-4 md:gap-6 items-start">
         {/* Left Column: Inputs (Người chơi, Chi phí, Ghi chú) */}
         <div className="md:col-span-7 space-y-4">
-          {/* Card: Người chơi & Điểm danh thành viên */}
+          {/* Card: Người chơi & Điểm danh thành viên & Khách ngày hôm nay */}
           <section className="app-card p-5">
-            <div className="flex items-center justify-between mb-3.5">
+            <div className="flex items-center justify-between mb-3.5 flex-wrap gap-2">
               <h2 className="text-[0.95rem] font-bold uppercase tracking-[.04em] text-[var(--muted)] m-0">
                 Người chơi
               </h2>
@@ -488,84 +513,216 @@ export function BadmintonCalculator() {
             </div>
 
             {/* Stable Members Attendance Check Section */}
-            {members.length > 0 && (
-              <div className="mb-4 p-3 rounded-[12px] bg-[var(--bg)] border border-[var(--border)] space-y-2.5">
-                <div className="flex items-center justify-between text-xs">
-                  <span className="font-semibold text-[var(--text)] flex items-center gap-1.5">
-                    <UserCheck className="w-3.5 h-3.5 text-[var(--accent2)]" />
-                    Điểm danh hôm nay (chạm để chọn):
-                  </span>
-                  <span className="text-[11px] text-[var(--muted)]">
-                    Đã chọn {data.attendeeIds?.length || 0}/{members.length}
+            <div className="mb-4 p-3 rounded-[12px] bg-[var(--bg)] border border-[var(--border)] space-y-2.5">
+              <div className="flex items-center justify-between text-xs flex-wrap gap-1">
+                <span className="font-semibold text-[var(--text)] flex items-center gap-1.5">
+                  <UserCheck className="w-3.5 h-3.5 text-[var(--accent2)]" />
+                  Thành viên cố định đi hôm nay:
+                </span>
+                <div className="flex items-center gap-2">
+                  <button
+                    type="button"
+                    onClick={selectAllAttendees}
+                    className="text-[11px] text-[var(--accent)] hover:underline cursor-pointer"
+                  >
+                    Chọn hết
+                  </button>
+                  <span className="text-[10px] text-[var(--muted)]">|</span>
+                  <button
+                    type="button"
+                    onClick={clearAllAttendees}
+                    className="text-[11px] text-[var(--muted)] hover:text-red-500 cursor-pointer"
+                  >
+                    Bỏ chọn
+                  </button>
+                  <span className="text-[11px] font-bold text-[var(--accent2)] bg-[var(--card)] px-1.5 py-0.5 rounded-[6px] border border-[var(--border)]">
+                    {selectedStableMembersCount}/{members.length}
                   </span>
                 </div>
-
-                {/* Male attendees */}
-                {maleMembers.length > 0 && (
-                  <div>
-                    <span className="block text-[10px] font-bold uppercase tracking-wider text-[var(--accent)] mb-1.5">
-                      Nam ({maleMembers.filter((m) => data.attendeeIds.includes(m.id)).length}/{maleMembers.length}):
-                    </span>
-                    <div className="flex flex-wrap gap-1.5">
-                      {maleMembers.map((m) => {
-                        const isSelected = data.attendeeIds.includes(m.id);
-                        return (
-                          <button
-                            key={m.id}
-                            type="button"
-                            onClick={() => toggleAttendee(m.id)}
-                            className={`py-1 px-2.5 rounded-full text-xs font-semibold transition-all cursor-pointer flex items-center gap-1 ${
-                              isSelected
-                                ? "bg-[var(--accent)] text-white shadow-xs"
-                                : "bg-[var(--card)] border border-[var(--border)] text-[var(--text)] hover:border-[var(--accent)]"
-                            }`}
-                          >
-                            {isSelected && <Check className="w-3 h-3 stroke-[3]" />}
-                            <span>{m.name}</span>
-                          </button>
-                        );
-                      })}
-                    </div>
-                  </div>
-                )}
-
-                {/* Female attendees */}
-                {femaleMembers.length > 0 && (
-                  <div className="pt-1.5 border-t border-[var(--border)]">
-                    <span className="block text-[10px] font-bold uppercase tracking-wider text-[var(--female)] mb-1.5">
-                      Nữ ({femaleMembers.filter((m) => data.attendeeIds.includes(m.id)).length}/{femaleMembers.length}):
-                    </span>
-                    <div className="flex flex-wrap gap-1.5">
-                      {femaleMembers.map((m) => {
-                        const isSelected = data.attendeeIds.includes(m.id);
-                        return (
-                          <button
-                            key={m.id}
-                            type="button"
-                            onClick={() => toggleAttendee(m.id)}
-                            className={`py-1 px-2.5 rounded-full text-xs font-semibold transition-all cursor-pointer flex items-center gap-1 ${
-                              isSelected
-                                ? "bg-[var(--female)] text-white shadow-xs"
-                                : "bg-[var(--card)] border border-[var(--border)] text-[var(--text)] hover:border-[var(--female)]"
-                            }`}
-                          >
-                            {isSelected && <Check className="w-3 h-3 stroke-[3]" />}
-                            <span>{m.name}</span>
-                          </button>
-                        );
-                      })}
-                    </div>
-                  </div>
-                )}
               </div>
-            )}
+
+              {members.length === 0 ? (
+                <div className="text-center py-2 text-xs text-[var(--muted)]">
+                  <span>Chưa có thành viên trong danh sách. </span>
+                  <button
+                    type="button"
+                    onClick={() => setIsMemberModalOpen(true)}
+                    className="text-[var(--accent)] underline cursor-pointer"
+                  >
+                    Bấm để thêm thành viên
+                  </button>
+                </div>
+              ) : (
+                <>
+                  {/* Male attendees */}
+                  {maleMembers.length > 0 && (
+                    <div>
+                      <span className="block text-[10px] font-bold uppercase tracking-wider text-[var(--accent)] mb-1.5">
+                        Nam ({maleMembers.filter((m) => data.attendeeIds?.includes(m.id)).length}/{maleMembers.length}):
+                      </span>
+                      <div className="flex flex-wrap gap-1.5">
+                        {maleMembers.map((m) => {
+                          const isSelected = data.attendeeIds?.includes(m.id);
+                          return (
+                            <button
+                              key={m.id}
+                              type="button"
+                              onClick={() => toggleAttendee(m.id)}
+                              className={`py-1 px-2.5 rounded-full text-xs font-semibold transition-all cursor-pointer flex items-center gap-1 ${
+                                isSelected
+                                  ? "bg-[var(--accent)] text-white shadow-xs"
+                                  : "bg-[var(--card)] border border-[var(--border)] text-[var(--text)] hover:border-[var(--accent)]"
+                              }`}
+                            >
+                              {isSelected && <Check className="w-3 h-3 stroke-[3]" />}
+                              <span>{m.name}</span>
+                            </button>
+                          );
+                        })}
+                      </div>
+                    </div>
+                  )}
+
+                  {/* Female attendees */}
+                  {femaleMembers.length > 0 && (
+                    <div className="pt-1.5 border-t border-[var(--border)]">
+                      <span className="block text-[10px] font-bold uppercase tracking-wider text-[var(--female)] mb-1.5">
+                        Nữ ({femaleMembers.filter((m) => data.attendeeIds?.includes(m.id)).length}/{femaleMembers.length}):
+                      </span>
+                      <div className="flex flex-wrap gap-1.5">
+                        {femaleMembers.map((m) => {
+                          const isSelected = data.attendeeIds?.includes(m.id);
+                          return (
+                            <button
+                              key={m.id}
+                              type="button"
+                              onClick={() => toggleAttendee(m.id)}
+                              className={`py-1 px-2.5 rounded-full text-xs font-semibold transition-all cursor-pointer flex items-center gap-1 ${
+                                isSelected
+                                  ? "bg-[var(--female)] text-white shadow-xs"
+                                  : "bg-[var(--card)] border border-[var(--border)] text-[var(--text)] hover:border-[var(--female)]"
+                              }`}
+                            >
+                              {isSelected && <Check className="w-3 h-3 stroke-[3]" />}
+                              <span>{m.name}</span>
+                            </button>
+                          );
+                        })}
+                      </div>
+                    </div>
+                  )}
+                </>
+              )}
+            </div>
+
+            {/* Guest Attendees Section (Single-day guests / non-stable person) */}
+            <div className="mb-4 p-3 rounded-[12px] bg-[var(--bg)] border border-[var(--border)] space-y-2.5">
+              <div className="flex items-center justify-between text-xs">
+                <span className="font-semibold text-[var(--text)] flex items-center gap-1.5">
+                  <User className="w-3.5 h-3.5 text-amber-500" />
+                  Khách ngoài hôm nay (chỉ tính buổi này):
+                </span>
+                <span className="text-[11px] text-[var(--muted)]">
+                  {(data.guests || []).length} khách
+                </span>
+              </div>
+
+              {/* Add guest form */}
+              <form onSubmit={handleAddGuest} className="flex items-center gap-2">
+                <input
+                  type="text"
+                  value={guestName}
+                  placeholder="Tên khách (VD: Minh, Hương...)"
+                  onChange={(e) => setGuestName(e.target.value)}
+                  className="flex-1 py-1.5 px-2.5 text-xs rounded-[8px] border border-[var(--border)] bg-[var(--card)] text-[var(--text)] outline-none focus:border-[var(--accent)]"
+                />
+
+                {/* Gender toggle */}
+                <div className="flex rounded-[8px] border border-[var(--border)] p-0.5 bg-[var(--card)]">
+                  <button
+                    type="button"
+                    onClick={() => setGuestGender("male")}
+                    className={`py-1 px-2 text-[11px] font-semibold rounded-[6px] transition-all cursor-pointer ${
+                      guestGender === "male"
+                        ? "bg-[var(--accent)] text-white shadow-xs"
+                        : "text-[var(--muted)] hover:text-[var(--text)]"
+                    }`}
+                  >
+                    Nam
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => setGuestGender("female")}
+                    className={`py-1 px-2 text-[11px] font-semibold rounded-[6px] transition-all cursor-pointer ${
+                      guestGender === "female"
+                        ? "bg-[var(--female)] text-white shadow-xs"
+                        : "text-[var(--muted)] hover:text-[var(--text)]"
+                    }`}
+                  >
+                    Nữ
+                  </button>
+                </div>
+
+                <button
+                  type="submit"
+                  disabled={!guestName.trim()}
+                  className="py-1.5 px-3 text-xs font-semibold rounded-[8px] bg-[var(--accent2)] hover:opacity-90 active:scale-95 text-white transition-all cursor-pointer disabled:opacity-40 flex items-center gap-1 shadow-xs"
+                >
+                  <Plus className="w-3.5 h-3.5" />
+                  <span>Thêm</span>
+                </button>
+              </form>
+
+              {/* Guests pills list */}
+              {(data.guests || []).length > 0 && (
+                <div className="flex flex-wrap gap-1.5 pt-1">
+                  {maleGuests.map((g) => (
+                    <span
+                      key={g.id}
+                      className="inline-flex items-center gap-1.5 py-1 px-2.5 rounded-full text-xs font-medium border border-blue-400/50 bg-blue-50/20 dark:bg-blue-950/40 text-[var(--accent)]"
+                    >
+                      <span>👨 {g.name} (Khách)</span>
+                      <button
+                        type="button"
+                        onClick={() => removeGuestAttendee(g.id)}
+                        className="p-0.5 rounded-full hover:bg-[var(--border)] text-[var(--muted)] hover:text-red-500 cursor-pointer transition-colors"
+                        title="Xóa khách này"
+                      >
+                        <X className="w-3 h-3" />
+                      </button>
+                    </span>
+                  ))}
+
+                  {femaleGuests.map((g) => (
+                    <span
+                      key={g.id}
+                      className="inline-flex items-center gap-1.5 py-1 px-2.5 rounded-full text-xs font-medium border border-pink-400/50 bg-pink-50/20 dark:bg-pink-950/40 text-[var(--female)]"
+                    >
+                      <span>👩 {g.name} (Khách)</span>
+                      <button
+                        type="button"
+                        onClick={() => removeGuestAttendee(g.id)}
+                        className="p-0.5 rounded-full hover:bg-[var(--border)] text-[var(--muted)] hover:text-red-500 cursor-pointer transition-colors"
+                        title="Xóa khách này"
+                      >
+                        <X className="w-3 h-3" />
+                      </button>
+                    </span>
+                  ))}
+                </div>
+              )}
+            </div>
 
             {/* Manual steppers / Total count */}
             <div className="grid grid-cols-2 gap-3">
               <NumberInput
                 id="nam"
-                label="Số Nam"
-                hint={members.length > 0 ? "Bao gồm khách ngoài" : undefined}
+                label="Tổng số Nam"
+                hint={
+                  maleGuests.length > 0 || selectedStableMembersCount > 0
+                    ? `${selectedStableMembersCount} CĐ + ${maleGuests.length} Khách`
+                    : undefined
+                }
                 value={data.nam}
                 min={0}
                 step={1}
@@ -574,8 +731,12 @@ export function BadmintonCalculator() {
               />
               <NumberInput
                 id="nu"
-                label="Số Nữ"
-                hint={members.length > 0 ? "Bao gồm khách ngoài" : undefined}
+                label="Tổng số Nữ"
+                hint={
+                  femaleGuests.length > 0 || femaleMembers.some((m) => data.attendeeIds?.includes(m.id))
+                    ? `${femaleMembers.filter((m) => data.attendeeIds?.includes(m.id)).length} CĐ + ${femaleGuests.length} Khách`
+                    : undefined
+                }
                 value={data.nu}
                 min={0}
                 step={1}
@@ -734,7 +895,7 @@ export function BadmintonCalculator() {
           {/* Card: Ghi chú */}
           <section className="app-card p-5 space-y-3">
             <h2 className="text-[0.95rem] font-bold uppercase tracking-[.04em] text-[var(--muted)] m-0">
-              Ghi chú
+              Ghi chú danh sách
             </h2>
 
             <div>
