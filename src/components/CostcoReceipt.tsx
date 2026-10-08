@@ -176,7 +176,7 @@ export function CostcoReceipt({
                 <div className="h-[2px] bg-[var(--receipt-brand-line)] flex-1 min-w-[20px]" />
               </div>
               <div className="text-[9px] font-bold tracking-widest uppercase text-[var(--receipt-muted)] mt-0.5">
-                ≡ WHOLESALE CLUB ≡
+                ≡ BADMINTON CLUB ≡
               </div>
             </div>
 
