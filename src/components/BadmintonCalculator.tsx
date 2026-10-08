@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useState, useMemo, useSyncExternalStore } from "react";
+import React, { useState, useMemo, useSyncExternalStore, useEffect } from "react";
 import confetti from "canvas-confetti";
 import {
   Share2,
@@ -14,6 +14,9 @@ import {
   SlidersHorizontal,
   BookmarkPlus,
   ArrowUpRight,
+  Cloud,
+  CloudCheck,
+  RefreshCw,
 } from "lucide-react";
 import { PixelCat, PixelRacket } from "./PixelArt";
 import { ThemeToggle } from "./ThemeToggle";
@@ -31,8 +34,13 @@ import {
   setBankState,
   subscribeBank,
   getHistorySnapshot,
-  setHistoryState,
   subscribeHistory,
+  getSyncStatusSnapshot,
+  subscribeSyncStatus,
+  initSupabaseSync,
+  addHistoryItem,
+  deleteHistoryItem,
+  clearAllHistory,
 } from "@/lib/store";
 
 export function BadmintonCalculator() {
@@ -54,10 +62,21 @@ export function BadmintonCalculator() {
     () => []
   );
 
+  const syncStatus = useSyncExternalStore(
+    subscribeSyncStatus,
+    getSyncStatusSnapshot,
+    () => "idle"
+  );
+
   const [copied, setCopied] = useState(false);
   const [isVietQROpen, setIsVietQROpen] = useState(false);
   const [isHistoryOpen, setIsHistoryOpen] = useState(false);
   const [showAdvanced, setShowAdvanced] = useState(false);
+
+  // Initialize Supabase sync on client mount
+  useEffect(() => {
+    initSupabaseSync();
+  }, []);
 
   // Calculations exactly matching original HTML
   const calculations = useMemo(() => {
@@ -217,7 +236,7 @@ export function BadmintonCalculator() {
     }
   };
 
-  const handleSaveToHistory = () => {
+  const handleSaveToHistory = async () => {
     const newItem: HistoryItem = {
       id: Date.now().toString(),
       date: new Date().toLocaleDateString("vi-VN", {
@@ -238,20 +257,18 @@ export function BadmintonCalculator() {
       notes: [data.noteNam, data.noteNu].filter(Boolean).join(" | "),
     };
 
-    const updated = [newItem, ...history];
-    setHistoryState(updated);
+    await addHistoryItem(newItem);
     fireConfetti();
-    alert("Đã lưu buổi chơi vào Lịch sử!");
+    alert("Đã lưu buổi chơi vào cơ sở dữ liệu Supabase!");
   };
 
-  const handleDeleteHistory = (id: string) => {
-    const updated = history.filter((h) => h.id !== id);
-    setHistoryState(updated);
+  const handleDeleteHistory = async (id: string) => {
+    await deleteHistoryItem(id);
   };
 
-  const handleClearHistory = () => {
-    if (window.confirm("Xóa toàn bộ lịch sử các buổi chơi?")) {
-      setHistoryState([]);
+  const handleClearHistory = async () => {
+    if (window.confirm("Xóa toàn bộ lịch sử các buổi chơi trên database?")) {
+      await clearAllHistory();
     }
   };
 
@@ -288,8 +305,36 @@ export function BadmintonCalculator() {
           </div>
         </div>
 
-        <div className="text-xs sm:text-sm text-[var(--muted)] mb-3.5">
-          Tính tiền chia sau mỗi buổi chơi
+        <div className="flex items-center justify-center gap-2 text-xs sm:text-sm text-[var(--muted)] mb-3.5">
+          <span>Tính tiền chia sau mỗi buổi chơi</span>
+          <span>•</span>
+          {/* Cloud Sync Status Indicator */}
+          <span className="inline-flex items-center gap-1 text-[11px]">
+            {syncStatus === "syncing" && (
+              <>
+                <RefreshCw className="w-3 h-3 text-[var(--accent)] animate-spin" />
+                <span className="text-[var(--accent)]">Đang lưu Cloud...</span>
+              </>
+            )}
+            {syncStatus === "synced" && (
+              <>
+                <CloudCheck className="w-3.5 h-3.5 text-[var(--accent2)]" />
+                <span className="text-[var(--accent2)]">Đã đồng bộ Supabase</span>
+              </>
+            )}
+            {syncStatus === "error" && (
+              <>
+                <Cloud className="w-3 h-3 text-amber-500" />
+                <span className="text-amber-500">Lưu cục bộ</span>
+              </>
+            )}
+            {syncStatus === "idle" && (
+              <>
+                <Cloud className="w-3 h-3 text-[var(--muted)]" />
+                <span>Cloud DB</span>
+              </>
+            )}
+          </span>
         </div>
 
         {/* Compact action toolbar */}
@@ -647,7 +692,7 @@ export function BadmintonCalculator() {
               </button>
             </div>
 
-            {/* Quick Actions: VietQR & Save */}
+            {/* Quick Actions: VietQR & Save to Supabase */}
             <div className="mt-2 grid grid-cols-2 gap-2">
               <button
                 type="button"
@@ -664,17 +709,17 @@ export function BadmintonCalculator() {
                 className="flex items-center justify-center gap-1.5 py-2 px-2.5 rounded-[10px] bg-[var(--bg)] border border-[var(--border)] hover:border-[var(--accent2)] text-[var(--text)] font-medium text-[11px] transition-colors cursor-pointer"
               >
                 <BookmarkPlus className="w-3.5 h-3.5 text-[var(--accent2)]" />
-                <span>Lưu buổi này</span>
+                <span>Lưu DB Supabase</span>
               </button>
             </div>
           </section>
 
-          {/* Recent History Preview (Visible on desktop/laptop for rich UX) */}
+          {/* Recent History Preview (Connected to Supabase Database) */}
           {history.length > 0 && (
             <section className="app-card p-4 hidden md:block">
               <div className="flex items-center justify-between mb-2.5">
                 <span className="text-xs font-bold uppercase tracking-wider text-[var(--muted)]">
-                  Lịch sử gần đây
+                  Lịch sử gần đây (DB)
                 </span>
                 <button
                   onClick={() => setIsHistoryOpen(true)}
@@ -686,7 +731,7 @@ export function BadmintonCalculator() {
               </div>
 
               <div className="space-y-2">
-                {history.slice(0, 2).map((item) => (
+                {history.slice(0, 3).map((item) => (
                   <div
                     key={item.id}
                     className="p-2.5 rounded-[10px] bg-[var(--bg)] border border-[var(--border)] flex items-center justify-between text-xs"
@@ -720,7 +765,7 @@ export function BadmintonCalculator() {
 
       {/* Footer Info */}
       <footer className="mt-10 text-center text-xs text-[var(--muted)] space-y-1">
-        <p>Cầu Lông Rất Chuyên • Tự động lưu &amp; hỗ trợ mọi thiết bị</p>
+        <p>Cầu Lông Rất Chuyên • Lưu trữ đám mây Supabase &amp; Tự động đồng bộ</p>
         <p className="text-[11px] opacity-80">
           Công thức: Tiền Nam = Tổng / (Nam + 0.75 * Nữ) • Tiền Nữ = 75% Nam
         </p>

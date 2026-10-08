@@ -1,4 +1,5 @@
 import { BadmintonData, BankConfig, HistoryItem } from "@/types";
+import { supabase } from "./supabase";
 
 export const STORAGE_KEY = "cau-long-rat-chuyen-data";
 export const BANK_STORAGE_KEY = "cau-long-bank-data";
@@ -70,8 +71,12 @@ export function getBadmintonSnapshot(): BadmintonData {
   return badmintonState ?? DEFAULT_DATA;
 }
 
+// Debounce timer for saving session settings to DB
+let saveTimeout: NodeJS.Timeout | null = null;
+
 export function setBadmintonState(
-  next: BadmintonData | ((prev: BadmintonData) => BadmintonData)
+  next: BadmintonData | ((prev: BadmintonData) => BadmintonData),
+  skipDb = false
 ) {
   const current = getBadmintonSnapshot();
   const updated = typeof next === "function" ? next(current) : next;
@@ -82,6 +87,14 @@ export function setBadmintonState(
     // ignore
   }
   badmintonListeners.forEach((l) => l());
+
+  if (!skipDb) {
+    setSyncStatus("syncing");
+    if (saveTimeout) clearTimeout(saveTimeout);
+    saveTimeout = setTimeout(() => {
+      saveSessionToSupabase(updated, getBankSnapshot());
+    }, 600);
+  }
 }
 
 export function subscribeBadminton(listener: () => void) {
@@ -112,7 +125,7 @@ export function getBankSnapshot(): BankConfig {
   return bankState ?? DEFAULT_BANK;
 }
 
-export function setBankState(next: BankConfig) {
+export function setBankState(next: BankConfig, skipDb = false) {
   bankState = next;
   try {
     localStorage.setItem(BANK_STORAGE_KEY, JSON.stringify(next));
@@ -120,6 +133,11 @@ export function setBankState(next: BankConfig) {
     // ignore
   }
   bankListeners.forEach((l) => l());
+
+  if (!skipDb) {
+    setSyncStatus("syncing");
+    saveSessionToSupabase(getBadmintonSnapshot(), next);
+  }
 }
 
 export function subscribeBank(listener: () => void) {
@@ -165,4 +183,281 @@ export function subscribeHistory(listener: () => void) {
   return () => {
     historyListeners.delete(listener);
   };
+}
+
+// --- Sync Status Store ---
+export type SyncStatus = "idle" | "syncing" | "synced" | "error";
+let syncStatusState: SyncStatus = "idle";
+const syncStatusListeners = new Set<() => void>();
+
+export function getSyncStatusSnapshot(): SyncStatus {
+  return syncStatusState;
+}
+
+export function setSyncStatus(next: SyncStatus) {
+  syncStatusState = next;
+  syncStatusListeners.forEach((l) => l());
+}
+
+export function subscribeSyncStatus(listener: () => void) {
+  syncStatusListeners.add(listener);
+  return () => {
+    syncStatusListeners.delete(listener);
+  };
+}
+
+// --- Supabase Persistence Operations ---
+
+async function saveSessionToSupabase(
+  calcData: BadmintonData,
+  bank: BankConfig
+) {
+  try {
+    const { error } = await supabase.from("session_settings").upsert({
+      id: "default",
+      nam: calcData.nam,
+      nu: calcData.nu,
+      tien_san: calcData.tienSan,
+      so_qua: calcData.soQua,
+      gia_qua: calcData.giaQua,
+      tien_nuoc: calcData.tienNuoc,
+      note_nam: calcData.noteNam || "",
+      note_nu: calcData.noteNu || "",
+      female_ratio: calcData.femaleRatio,
+      round_mode: calcData.roundMode,
+      bank_id: bank.bankId || "MB",
+      bank_account_no: bank.accountNo || "",
+      bank_account_name: bank.accountName || "",
+      updated_at: new Date().toISOString(),
+    });
+
+    if (error) {
+      console.warn("Supabase session save error:", error.message);
+      setSyncStatus("error");
+    } else {
+      setSyncStatus("synced");
+    }
+  } catch (err) {
+    console.warn("Supabase session network error:", err);
+    setSyncStatus("error");
+  }
+}
+
+export async function addHistoryItem(item: HistoryItem) {
+  const current = getHistorySnapshot();
+  const updated = [item, ...current];
+  setHistoryState(updated);
+
+  setSyncStatus("syncing");
+  try {
+    const { error } = await supabase.from("match_history").insert({
+      id: item.id,
+      date: item.date,
+      total_cost: item.totalCost,
+      cost_per_male: item.costPerMale,
+      cost_per_female: item.costPerFemale,
+      male_count: item.maleCount,
+      female_count: item.femaleCount,
+      court_cost: item.courtCost,
+      shuttle_cost: item.shuttleCost,
+      water_cost: item.waterCost,
+      notes: item.notes || "",
+    });
+
+    if (error) {
+      console.warn("Supabase history insert error:", error.message);
+      setSyncStatus("error");
+    } else {
+      setSyncStatus("synced");
+    }
+  } catch (err) {
+    console.warn("Supabase history network error:", err);
+    setSyncStatus("error");
+  }
+}
+
+export async function deleteHistoryItem(id: string) {
+  const current = getHistorySnapshot();
+  const updated = current.filter((h) => h.id !== id);
+  setHistoryState(updated);
+
+  setSyncStatus("syncing");
+  try {
+    const { error } = await supabase
+      .from("match_history")
+      .delete()
+      .eq("id", id);
+    if (error) {
+      console.warn("Supabase history delete error:", error.message);
+      setSyncStatus("error");
+    } else {
+      setSyncStatus("synced");
+    }
+  } catch (err) {
+    console.warn("Supabase delete network error:", err);
+    setSyncStatus("error");
+  }
+}
+
+export async function clearAllHistory() {
+  setHistoryState([]);
+  setSyncStatus("syncing");
+  try {
+    const { error } = await supabase
+      .from("match_history")
+      .delete()
+      .neq("id", "");
+    if (error) {
+      console.warn("Supabase history clear error:", error.message);
+      setSyncStatus("error");
+    } else {
+      setSyncStatus("synced");
+    }
+  } catch (err) {
+    console.warn("Supabase clear network error:", err);
+    setSyncStatus("error");
+  }
+}
+
+// Initial Sync & Real-time Subscription
+let syncInitialized = false;
+
+export function initSupabaseSync() {
+  if (syncInitialized || typeof window === "undefined") return;
+  syncInitialized = true;
+
+  setSyncStatus("syncing");
+
+  // Fetch initial data from Supabase
+  Promise.all([
+    supabase
+      .from("session_settings")
+      .select("*")
+      .eq("id", "default")
+      .maybeSingle(),
+    supabase
+      .from("match_history")
+      .select("*")
+      .order("created_at", { ascending: false }),
+  ])
+    .then(([sessionRes, historyRes]) => {
+      if (sessionRes.data) {
+        const s = sessionRes.data;
+        const loadedData: BadmintonData = {
+          nam: Number(s.nam) ?? DEFAULT_DATA.nam,
+          nu: Number(s.nu) ?? DEFAULT_DATA.nu,
+          tienSan: Number(s.tien_san) ?? DEFAULT_DATA.tienSan,
+          soQua: Number(s.so_qua) ?? DEFAULT_DATA.soQua,
+          giaQua: Number(s.gia_qua) ?? DEFAULT_DATA.giaQua,
+          tienNuoc: Number(s.tien_nuoc) ?? DEFAULT_DATA.tienNuoc,
+          noteNam: s.note_nam ?? "",
+          noteNu: s.note_nu ?? "",
+          femaleRatio: Number(s.female_ratio) ?? DEFAULT_DATA.femaleRatio,
+          roundMode: (s.round_mode as BadmintonData["roundMode"]) || "exact",
+        };
+        setBadmintonState(loadedData, true);
+
+        if (s.bank_id || s.bank_account_no) {
+          const loadedBank: BankConfig = {
+            bankId: s.bank_id || "MB",
+            accountNo: s.bank_account_no || "",
+            accountName: s.bank_account_name || "",
+            enabled: Boolean(s.bank_account_no),
+          };
+          setBankState(loadedBank, true);
+        }
+      }
+
+      if (historyRes.data && Array.isArray(historyRes.data)) {
+        const loadedHistory: HistoryItem[] = historyRes.data.map((row) => ({
+          id: row.id,
+          date: row.date,
+          totalCost: Number(row.total_cost),
+          costPerMale: Number(row.cost_per_male),
+          costPerFemale: Number(row.cost_per_female),
+          maleCount: Number(row.male_count),
+          femaleCount: Number(row.female_count),
+          courtCost: Number(row.court_cost),
+          shuttleCost: Number(row.shuttle_cost),
+          waterCost: Number(row.water_cost),
+          notes: row.notes || "",
+        }));
+        setHistoryState(loadedHistory);
+      }
+
+      setSyncStatus("synced");
+    })
+    .catch((err) => {
+      console.warn("Failed to load initial data from Supabase:", err);
+      setSyncStatus("error");
+    });
+
+  // Listen to realtime changes across browsers/tabs
+  supabase
+    .channel("public-db-changes")
+    .on(
+      "postgres_changes",
+      { event: "*", schema: "public", table: "session_settings" },
+      (payload) => {
+        if (payload.new && typeof payload.new === "object") {
+          const s = payload.new as Record<string, unknown>;
+          if (s.id === "default") {
+            const nextData: BadmintonData = {
+              nam: Number(s.nam),
+              nu: Number(s.nu),
+              tienSan: Number(s.tien_san),
+              soQua: Number(s.so_qua),
+              giaQua: Number(s.gia_qua),
+              tienNuoc: Number(s.tien_nuoc),
+              noteNam: (s.note_nam as string) || "",
+              noteNu: (s.note_nu as string) || "",
+              femaleRatio: Number(s.female_ratio),
+              roundMode:
+                (s.round_mode as BadmintonData["roundMode"]) || "exact",
+            };
+            setBadmintonState(nextData, true);
+
+            if (s.bank_id || s.bank_account_no) {
+              const nextBank: BankConfig = {
+                bankId: (s.bank_id as string) || "MB",
+                accountNo: (s.bank_account_no as string) || "",
+                accountName: (s.bank_account_name as string) || "",
+                enabled: Boolean(s.bank_account_no),
+              };
+              setBankState(nextBank, true);
+            }
+          }
+        }
+      }
+    )
+    .on(
+      "postgres_changes",
+      { event: "*", schema: "public", table: "match_history" },
+      () => {
+        // Refetch history when changes occur
+        supabase
+          .from("match_history")
+          .select("*")
+          .order("created_at", { ascending: false })
+          .then((res) => {
+            if (res.data) {
+              const loadedHistory: HistoryItem[] = res.data.map((row) => ({
+                id: row.id,
+                date: row.date,
+                totalCost: Number(row.total_cost),
+                costPerMale: Number(row.cost_per_male),
+                costPerFemale: Number(row.cost_per_female),
+                maleCount: Number(row.male_count),
+                femaleCount: Number(row.female_count),
+                courtCost: Number(row.court_cost),
+                shuttleCost: Number(row.shuttle_cost),
+                waterCost: Number(row.water_cost),
+                notes: row.notes || "",
+              }));
+              setHistoryState(loadedHistory);
+            }
+          });
+      }
+    )
+    .subscribe();
 }

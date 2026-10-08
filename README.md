@@ -12,12 +12,14 @@ Chuyển đổi từ file đơn lẻ HTML sang dự án **Next.js 16 (App Router
   - Tùy chỉnh linh hoạt tỉ lệ đóng cho Nữ (75%, 80%, 50%, hoặc 100% chia đều).
   - Tùy chọn làm tròn tiền: Chuẩn xác, Tròn 1.000 đ hoặc Tròn 5.000 đ.
 - 🐈🏸 **Mascot Pixel Art độc quyền**: Render SVG sắc nét hình chú mèo và vợt cầu lông bằng pixel art thuần.
+- ☁️ **Lưu trữ đám mây Supabase (PostgreSQL)**: Dữ liệu tính toán, cấu hình STK và toàn bộ lịch sử buổi chơi được lưu trực tiếp vào cơ sở dữ liệu Supabase, đồng bộ xuyên suốt mọi thiết bị & trình duyệt.
+- 🔄 **Real-time Sync & Offline Fallback**: Tự động nhận thay đổi theo thời gian thực và vẫn lưu trữ cục bộ khi mất mạng.
 - 📋 **Sao chép tin nhắn Zalo/Messenger 1-click**: Tạo sẵn đoạn tin nhắn đẹp mắt, chi tiết để gửi ngay vào nhóm chat kèm hiệu ứng pháo giấy confetti.
 - 📲 **Hỗ trợ Web Share API**: Chia sẻ trực tiếp qua ứng dụng trên điện thoại (Zalo, Messenger, Telegram).
 - 💳 **Tạo mã VietQR Chuyển Khoản**: Nhập STK & Ngân hàng để tạo mã QR ngân hàng tự động điền sẵn số tiền cho từng bạn quét chuyển khoản tức thì.
-- 📜 **Lịch sử buổi chơi**: Lưu trữ các buổi chơi trước đó vào bộ nhớ trình duyệt, có thể xem lại hoặc nạp lại thông số chỉ bằng một nút bấm.
+- 📜 **Lịch sử buổi chơi**: Lưu trữ các buổi chơi trên database, có thể xem lại hoặc nạp lại thông số chỉ bằng một nút bấm.
 - 🌓 **Giao diện Sáng / Tối (Dark Mode)**: Tự động nhận diện theme hệ thống hoặc chọn thủ công (Light / Dark / System), chống chớp giật màn hình (No-FOUC).
-- 💾 **Tự động lưu trữ (Auto-save)**: Dữ liệu được lưu an toàn trong `localStorage` với tương thích ngược 100% phiên bản HTML cũ.
+- 💻📱 **Responsive 2 Cột thông minh**: Tối ưu diện tích trên màn hình Laptop/Desktop và tự động co gọn gàng trên Điện thoại.
 
 ---
 
