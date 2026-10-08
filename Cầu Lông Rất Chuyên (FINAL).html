@@ -1,0 +1,271 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Cầu Lông Rất Chuyên</title>
+<style>
+:root{
+  --bg:#f5f7fb; --card:#ffffff; --text:#1a1d29; --muted:#6b7280;
+  --accent:#2563eb; --accent2:#16a34a; --border:#e5e7eb; --shadow:0 4px 16px rgba(0,0,0,0.06);
+  box-sizing:border-box;
+  padding-top:env(safe-area-inset-top,0px);
+  padding-bottom:env(safe-area-inset-bottom,0px);
+}
+@media (prefers-color-scheme: dark){
+  :root:not([data-theme="light"]){
+    --bg:#13161f; --card:#1c2030; --text:#eef0f5; --muted:#9aa1b2;
+    --accent:#60a5fa; --accent2:#4ade80; --border:#2b3045; --shadow:0 4px 16px rgba(0,0,0,0.3);
+  }
+}
+:root[data-theme="dark"]{
+  --bg:#13161f; --card:#1c2030; --text:#eef0f5; --muted:#9aa1b2;
+  --accent:#60a5fa; --accent2:#4ade80; --border:#2b3045; --shadow:0 4px 16px rgba(0,0,0,0.3);
+}
+*{box-sizing:border-box;}
+html,body{height:100%;}
+body{
+  margin:0; background:var(--bg); color:var(--text);
+  font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,Helvetica,Arial,sans-serif;
+  padding:24px 16px 40px;
+}
+.wrap{max-width:460px;margin:0 auto;}
+h1{
+  font-size:1.4rem; margin:0;
+  background:linear-gradient(90deg,var(--accent),var(--accent2));
+  -webkit-background-clip:text; background-clip:text; color:transparent;
+}
+.title-row{
+  display:flex; align-items:center; justify-content:center; gap:10px;
+  margin-bottom:4px; flex-wrap:wrap;
+}
+.pixel-icon{width:34px;height:34px;flex-shrink:0;}
+.pixel-icon.racket{width:28px;height:40px;}
+.sub{text-align:center;color:var(--muted);font-size:0.85rem;margin-bottom:20px;}
+.card{
+  background:var(--card); border:1px solid var(--border); border-radius:16px;
+  padding:20px; box-shadow:var(--shadow); margin-bottom:16px;
+}
+.card h2{font-size:0.95rem;margin:0 0 14px;color:var(--muted);text-transform:uppercase;letter-spacing:.04em;}
+.row{display:flex; gap:12px; margin-bottom:12px;}
+.field{flex:1;}
+.field.full{flex:1 1 100%;}
+label{display:block;font-size:0.82rem;color:var(--muted);margin-bottom:6px;}
+input{
+  width:100%; padding:10px 12px; border-radius:10px; border:1px solid var(--border);
+  background:var(--bg); color:var(--text); font-size:1rem; outline:none;
+  transition:border-color .15s;
+}
+input:focus{border-color:var(--accent);}
+textarea{
+  width:100%; padding:10px 12px; border-radius:10px; border:1px solid var(--border);
+  background:var(--bg); color:var(--text); font-size:1rem; outline:none;
+  font-family:inherit; resize:vertical; min-height:72px;
+  transition:border-color .15s;
+}
+textarea:focus{border-color:var(--accent);}
+.result{
+  background:var(--card); border:1px solid var(--border); border-radius:16px;
+  padding:20px; box-shadow:var(--shadow);
+}
+.result h2{font-size:0.95rem;margin:0 0 14px;color:var(--muted);text-transform:uppercase;letter-spacing:.04em;}
+.line{display:flex;justify-content:space-between;align-items:center;padding:10px 0;border-bottom:1px solid var(--border);}
+.line:last-child{border-bottom:none;}
+.line .label{color:var(--muted);font-size:0.9rem;}
+.line .val{font-weight:700;font-size:1.05rem;}
+.val.male{color:var(--accent);}
+.val.female{color:#db2777;}
+.total{margin-top:10px;padding-top:14px;border-top:2px dashed var(--border);display:flex;justify-content:space-between;align-items:center;}
+.total .label{font-weight:600;}
+.total .val{font-size:1.2rem;font-weight:800;color:var(--accent2);}
+.note{font-size:0.75rem;color:var(--muted);text-align:center;margin-top:16px;}
+.section-divider{height:1px;background:var(--border);margin:20px 0;}
+</style>
+</head>
+<body>
+<div class="wrap">
+  <div class="title-row">
+    <svg id="pixelCat" class="pixel-icon" viewBox="0 0 8 8" shape-rendering="crispEdges"></svg>
+    <h1>Cầu Lông Rất Chuyên</h1>
+    <svg id="pixelRacket" class="pixel-icon racket" viewBox="0 0 7 10" shape-rendering="crispEdges"></svg>
+  </div>
+  <div class="sub">Tính tiền chia sau mỗi buổi chơi</div>
+
+  <div class="card">
+    <h2>Người chơi</h2>
+    <div class="row">
+      <div class="field">
+        <label>Số Nam</label>
+        <input type="number" id="nam" min="0" value="4">
+      </div>
+      <div class="field">
+        <label>Số Nữ</label>
+        <input type="number" id="nu" min="0" value="2">
+      </div>
+    </div>
+  </div>
+
+  <div class="card">
+    <h2>Chi phí</h2>
+    <div class="row">
+      <div class="field full">
+        <label>Tiền sân (x1000 đồng)</label>
+        <input type="number" id="tienSan" min="0" value="520">
+      </div>
+    </div>
+    <div class="row">
+      <div class="field">
+        <label>Số quả cầu</label>
+        <input type="number" id="soQua" min="0" value="4">
+      </div>
+      <div class="field">
+        <label>Giá 1 quả (x1000 đồng)</label>
+        <input type="number" id="giaQua" min="0" value="28">
+      </div>
+    </div>
+    <div class="row">
+      <div class="field full">
+        <label>Tiền nước (x1000 đồng)</label>
+        <input type="number" id="tienNuoc" min="0" value="50">
+      </div>
+    </div>
+  </div>
+
+  <div class="result">
+    <h2>Kết quả</h2>
+    <div class="line">
+      <span class="label">Mỗi Nam trả</span>
+      <span class="val male" id="outNam">0 đ</span>
+    </div>
+    <div class="line">
+      <span class="label">Mỗi Nữ trả</span>
+      <span class="val female" id="outNu">0 đ</span>
+    </div>
+    <div class="total">
+      <span class="label">Tổng chi phí</span>
+      <span class="val" id="outTong">0 đ</span>
+    </div>
+
+    <div class="section-divider"></div>
+
+    <h2>Ghi chú</h2>
+    <div class="row">
+      <div class="field full">
+        <label>Note: Nam</label>
+        <textarea id="noteNam" rows="3" placeholder="Tên các bạn Nam..."></textarea>
+      </div>
+    </div>
+    <div class="row">
+      <div class="field full">
+        <label>Note: Nữ</label>
+        <textarea id="noteNu" rows="3" placeholder="Tên các bạn Nữ..."></textarea>
+      </div>
+    </div>
+  </div>
+</div>
+
+<script>
+function drawPixelArt(svgId, rows, colorMap){
+  const svg = document.getElementById(svgId);
+  if(!svg) return;
+  const ns = 'http://www.w3.org/2000/svg';
+  rows.forEach((row, y)=>{
+    row.split('').forEach((ch, x)=>{
+      if(ch === '.') return;
+      const color = colorMap[ch];
+      if(!color) return;
+      const rect = document.createElementNS(ns, 'rect');
+      rect.setAttribute('x', x);
+      rect.setAttribute('y', y);
+      rect.setAttribute('width', 1);
+      rect.setAttribute('height', 1);
+      rect.setAttribute('fill', color);
+      svg.appendChild(rect);
+    });
+  });
+}
+
+function renderMascot(){
+  drawPixelArt('pixelCat', [
+    '.##..##.',
+    '##@@@@##',
+    '#@O@@O@#',
+    '#@@##@@#',
+    '#@@NN@@#',
+    '##@@@@##',
+    '.######.',
+    '..#..#..'
+  ], { '#':'#334155', '@':'#7dd3fc', 'O':'#ffffff', 'N':'#fb7185' });
+
+  drawPixelArt('pixelRacket', [
+    '.RRRRR.',
+    'R.....R',
+    'R.R.R.R',
+    'R.....R',
+    'R.R.R.R',
+    'R.....R',
+    '.RRRRR.',
+    '..H.H..',
+    '..H.H..',
+    '..HHH..'
+  ], { 'R':'#64748b', 'H':'#92400e' });
+}
+renderMascot();
+
+const STORAGE_KEY = 'cau-long-rat-chuyen-data';
+const FIELD_IDS = ['nam','nu','tienSan','soQua','giaQua','tienNuoc','noteNam','noteNu'];
+
+function saveData(){
+  try{
+    const data = {};
+    FIELD_IDS.forEach(id=>{ data[id] = document.getElementById(id).value; });
+    localStorage.setItem(STORAGE_KEY, JSON.stringify(data));
+  }catch(e){ /* lưu thất bại, bỏ qua */ }
+}
+
+function loadData(){
+  try{
+    const raw = localStorage.getItem(STORAGE_KEY);
+    if(!raw) return;
+    const data = JSON.parse(raw);
+    FIELD_IDS.forEach(id=>{
+      if(data[id] !== undefined && data[id] !== null && data[id] !== ''){
+        document.getElementById(id).value = data[id];
+      }
+    });
+  }catch(e){ /* không đọc được dữ liệu cũ, dùng mặc định */ }
+}
+
+function fmt(n){
+  if(!isFinite(n) || isNaN(n)) n = 0;
+  return Math.round(n).toLocaleString('vi-VN') + ' đ';
+}
+function calc(){
+  const nam = parseFloat(document.getElementById('nam').value) || 0;
+  const nu = parseFloat(document.getElementById('nu').value) || 0;
+  const tienSan = (parseFloat(document.getElementById('tienSan').value) || 0) * 1000;
+  const soQua = parseFloat(document.getElementById('soQua').value) || 0;
+  const giaQua = (parseFloat(document.getElementById('giaQua').value) || 0) * 1000;
+  const tienNuoc = (parseFloat(document.getElementById('tienNuoc').value) || 0) * 1000;
+
+  const tongChiPhi = tienSan + (soQua * giaQua) + tienNuoc;
+  const mauSo = nam + 0.75 * nu;
+
+  let tienNam = 0, tienNu = 0;
+  if(mauSo > 0){
+    tienNam = tongChiPhi / mauSo;
+    tienNu = 0.75 * tienNam;
+  }
+
+  document.getElementById('outNam').textContent = fmt(tienNam);
+  document.getElementById('outNu').textContent = fmt(tienNu);
+  document.getElementById('outTong').textContent = fmt(tongChiPhi);
+}
+FIELD_IDS.forEach(id=>{
+  document.getElementById(id).addEventListener('input', ()=>{ calc(); saveData(); });
+});
+loadData();
+calc();
+</script>
+</body>
+</html>
