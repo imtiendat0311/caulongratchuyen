@@ -1,9 +1,8 @@
 "use client";
 
-import React, { useEffect, useRef, useState, useMemo } from "react";
+import React, { useEffect, useRef, useMemo } from "react";
 import type {
   Map as LeafletMap,
-  TileLayer as LeafletTileLayer,
   Marker as LeafletMarker,
 } from "leaflet";
 import {
@@ -22,19 +21,10 @@ interface ElegantCourtMapProps {
   courtNumber: string;
 }
 
-// Light & Dark CartoDB Tiles (Ultra-clean, minimalist, zero clutter)
-const TILES = {
-  light: {
-    url: "https://{s}.basemaps.cartocdn.com/rastertiles/voyager/{z}/{x}/{y}{r}.png",
-    attribution:
-      '&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> &copy; <a href="https://carto.com/attributions">CARTO</a>',
-  },
-  dark: {
-    url: "https://{s}.basemaps.cartocdn.com/dark_all/{z}/{x}/{y}{r}.png",
-    attribution:
-      '&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> &copy; <a href="https://carto.com/attributions">CARTO</a>',
-  },
-};
+// High-detail OpenStreetMap Tiles (full street names, landmarks, and lakes in Vietnam)
+const OSM_TILE_URL = "https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png";
+const OSM_ATTRIBUTION =
+  '&copy; <a href="https://www.openstreetmap.org/copyright" target="_blank" rel="noreferrer">OpenStreetMap</a>';
 
 export default function ElegantCourtMap({
   courtName,
@@ -43,10 +33,7 @@ export default function ElegantCourtMap({
 }: ElegantCourtMapProps) {
   const mapContainerRef = useRef<HTMLDivElement>(null);
   const mapInstanceRef = useRef<LeafletMap | null>(null);
-  const tileLayerRef = useRef<LeafletTileLayer | null>(null);
   const markerRef = useRef<LeafletMarker | null>(null);
-  const [isMapReady, setIsMapReady] = useState(false);
-  const [isDarkMode, setIsDarkMode] = useState(false);
 
   // Determine coordinates based on preset court or fallback to Hanoi center
   const { lat, lng } = useMemo(() => {
@@ -68,26 +55,6 @@ export default function ElegantCourtMap({
   const googleMapsUrl = `https://www.google.com/maps/dir/?api=1&destination=${query}`;
   const appleMapsUrl = `https://maps.apple.com/?daddr=${query}`;
 
-  // Check dark mode dynamically with MutationObserver
-  useEffect(() => {
-    const checkTheme = () => {
-      const isDark =
-        document.documentElement.classList.contains("dark") ||
-        document.documentElement.getAttribute("data-theme") === "dark";
-      setIsDarkMode(isDark);
-    };
-
-    checkTheme();
-
-    const observer = new MutationObserver(checkTheme);
-    observer.observe(document.documentElement, {
-      attributes: true,
-      attributeFilter: ["class", "data-theme"],
-    });
-
-    return () => observer.disconnect();
-  }, []);
-
   // Initialize Leaflet map
   useEffect(() => {
     let isCancelled = false;
@@ -107,11 +74,11 @@ export default function ElegantCourtMap({
           attributionControl: false, // Sleek custom badge
         });
 
-        // Add base tile layer
-        const tileConfig = isDarkMode ? TILES.dark : TILES.light;
-        const tileLayer = L.tileLayer(tileConfig.url, {
+        // Add base OpenStreetMap tile layer
+        L.tileLayer(OSM_TILE_URL, {
           maxZoom: 19,
-          subdomains: "abcd",
+          subdomains: ["a", "b", "c"],
+          attribution: OSM_ATTRIBUTION,
         }).addTo(map);
 
         // Custom pulsing badminton marker icon
@@ -133,15 +100,16 @@ export default function ElegantCourtMap({
         const marker = L.marker([lat, lng], { icon: customIcon }).addTo(map);
 
         mapInstanceRef.current = map;
-        tileLayerRef.current = tileLayer;
         markerRef.current = marker;
 
-        setTimeout(() => {
-          if (!isCancelled && mapInstanceRef.current) {
-            mapInstanceRef.current.invalidateSize();
-            setIsMapReady(true);
-          }
-        }, 150);
+        // Invalidate size in stages to ensure correct rendering in all browsers/modals
+        [50, 200, 500].forEach((delay) => {
+          setTimeout(() => {
+            if (!isCancelled && mapInstanceRef.current) {
+              mapInstanceRef.current.invalidateSize();
+            }
+          }, delay);
+        });
       } catch (err) {
         console.error("Failed to initialize Leaflet map:", err);
       }
@@ -156,7 +124,7 @@ export default function ElegantCourtMap({
         mapInstanceRef.current = null;
       }
     };
-  // eslint-disable-next-line react-hooks/exhaustive-deps
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
   // Update position when court coordinates change
@@ -171,12 +139,7 @@ export default function ElegantCourtMap({
     }
   }, [lat, lng]);
 
-  // Update tiles when dark mode switches
-  useEffect(() => {
-    if (!mapInstanceRef.current || !tileLayerRef.current) return;
-    const tileConfig = isDarkMode ? TILES.dark : TILES.light;
-    tileLayerRef.current.setUrl(tileConfig.url);
-  }, [isDarkMode]);
+
 
   // Map Controls
   const handleZoomIn = () => {
@@ -242,12 +205,10 @@ export default function ElegantCourtMap({
 
       {/* Map Canvas */}
       <div className="relative h-48 sm:h-56 w-full bg-neutral-100 dark:bg-[#12141c]">
-        {/* The Leaflet Container with smooth fade-in */}
+        {/* The Leaflet Container */}
         <div
           ref={mapContainerRef}
-          className={`w-full h-full z-0 transition-opacity duration-300 ${
-            isMapReady ? "opacity-100" : "opacity-0"
-          }`}
+          className="w-full h-full z-0"
         />
 
         {/* Floating Custom Controls */}
@@ -282,7 +243,7 @@ export default function ElegantCourtMap({
 
         {/* Subtle Elegant Style Attribution Badge */}
         <div className="absolute bottom-1 right-2 z-10 text-[9px] text-neutral-400 dark:text-neutral-500 bg-white/70 dark:bg-black/60 px-1.5 py-0.5 rounded backdrop-blur-xs select-none">
-          CartoDB • OpenStreetMap
+          OpenStreetMap
         </div>
       </div>
     </div>

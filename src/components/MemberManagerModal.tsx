@@ -12,6 +12,7 @@ import {
   Crown,
   Check,
   Edit2,
+  Save,
 } from "lucide-react";
 import { Member, POPULAR_BANKS } from "@/types";
 
@@ -35,7 +36,10 @@ interface MemberManagerModalProps {
   ) => Promise<void>;
   currentMonth?: string;
   monthlyHostId?: string;
-  onSetMonthlyHost?: (month: string, memberId: string) => Promise<void>;
+  onSetMonthlyHost?: (
+    month: string,
+    memberId: string
+  ) => Promise<{ success: boolean; message?: string } | void>;
 }
 
 export function MemberManagerModal({
@@ -56,6 +60,33 @@ export function MemberManagerModal({
   const [accountNo, setAccountNo] = useState("");
   const [accountName, setAccountName] = useState("");
   const [isSubmitting, setIsSubmitting] = useState(false);
+
+  // Staged Monthly Host state - saves explicitly only on user click
+  const [userSelectedMonth, setUserSelectedMonth] = useState<string | null>(null);
+  const [userSelectedHostId, setUserSelectedHostId] = useState<string | null>(null);
+  const [isSavingHost, setIsSavingHost] = useState(false);
+  const [hostSaveSuccess, setHostSaveSuccess] = useState(false);
+
+  const selectedMonth = userSelectedMonth ?? (currentMonth || "");
+  const stagedHostId = userSelectedHostId ?? (monthlyHostId || "");
+
+  const isHostDirty =
+    (userSelectedHostId !== null && userSelectedHostId !== (monthlyHostId || "")) ||
+    (userSelectedMonth !== null && userSelectedMonth !== (currentMonth || ""));
+
+  const handleSaveMonthlyHost = async () => {
+    if (!onSetMonthlyHost || !selectedMonth) return;
+    setIsSavingHost(true);
+    try {
+      await onSetMonthlyHost(selectedMonth, stagedHostId);
+      setHostSaveSuccess(true);
+      setUserSelectedHostId(null);
+      setUserSelectedMonth(null);
+      setTimeout(() => setHostSaveSuccess(false), 2500);
+    } finally {
+      setIsSavingHost(false);
+    }
+  };
 
   // Editing bank for a specific member
   const [editingMemberId, setEditingMemberId] = useState<string | null>(null);
@@ -162,26 +193,84 @@ export function MemberManagerModal({
           </div>
         </div>
 
-        {/* Monthly Host Selector Bar */}
-        {currentMonth && onSetMonthlyHost && members.length > 0 && (
-          <div className="mb-3.5 p-2.5 rounded-[12px] bg-amber-500/10 border border-amber-500/30 flex items-center justify-between gap-2 flex-wrap">
-            <div className="flex items-center gap-1.5 text-xs font-semibold text-amber-500">
-              <Crown className="w-4 h-4 fill-amber-500 text-amber-500 shrink-0" />
-              <span>Chủ xị mặc định Tháng {displayMonth}:</span>
+        {/* Monthly Host Management Section */}
+        {onSetMonthlyHost && members.length > 0 && (
+          <div className="mb-3.5 p-3 rounded-[12px] bg-amber-500/10 border border-amber-500/30 space-y-2">
+            <div className="flex items-center justify-between flex-wrap gap-1">
+              <div className="flex items-center gap-1.5 text-xs font-bold text-amber-500">
+                <Crown className="w-4 h-4 fill-amber-500 text-amber-500 shrink-0" />
+                <span>Chủ xị mặc định theo tháng</span>
+              </div>
+              <span className="text-[10px] text-amber-600/80 dark:text-amber-400/80 font-medium">
+                (Chỉ lưu khi bấm &quot;Lưu Chủ Xị&quot;)
+              </span>
             </div>
-            <select
-              value={monthlyHostId || ""}
-              onChange={(e) => onSetMonthlyHost(currentMonth, e.target.value)}
-              className="py-1 px-2.5 text-xs font-semibold rounded-[8px] border border-amber-500/40 bg-[var(--card)] text-[var(--text)] outline-none focus:border-amber-500 cursor-pointer"
-            >
-              <option value="">-- Chưa chọn chủ xị --</option>
-              {members.map((m) => (
-                <option key={m.id} value={m.id}>
-                  {m.name} ({m.gender === "male" ? "Nam" : "Nữ"})
-                  {m.account_no ? ` - ${m.bank_id}` : ""}
-                </option>
-              ))}
-            </select>
+
+            <p className="text-[11px] text-[var(--muted)] leading-relaxed m-0">
+              Chọn chủ xị đại diện thu tiền cho tháng này. Không tự động sync khi vừa chọn nhằm tránh xung đột khi nhiều người cùng mở app.
+            </p>
+
+            <div className="grid grid-cols-1 sm:grid-cols-12 gap-2 items-center pt-1">
+              <div className="sm:col-span-4">
+                <label className="block text-[10px] text-[var(--muted)] mb-0.5 font-medium">
+                  Tháng áp dụng
+                </label>
+                <input
+                  type="month"
+                  value={selectedMonth}
+                  onChange={(e) => setUserSelectedMonth(e.target.value)}
+                  className="w-full py-1.5 px-2.5 text-xs font-semibold rounded-[8px] border border-amber-500/30 bg-[var(--card)] text-[var(--text)] outline-none focus:border-amber-500"
+                />
+              </div>
+
+              <div className="sm:col-span-5">
+                <label className="block text-[10px] text-[var(--muted)] mb-0.5 font-medium">
+                  Thành viên chủ xị
+                </label>
+                <select
+                  value={stagedHostId}
+                  onChange={(e) => setUserSelectedHostId(e.target.value)}
+                  className="w-full py-1.5 px-2.5 text-xs font-semibold rounded-[8px] border border-amber-500/40 bg-[var(--card)] text-[var(--text)] outline-none focus:border-amber-500 cursor-pointer"
+                >
+                  <option value="">-- Chưa chỉ định (Để trống) --</option>
+                  {members.map((m) => (
+                    <option key={m.id} value={m.id}>
+                      {m.name} ({m.gender === "male" ? "Nam" : "Nữ"})
+                      {m.account_no ? ` - ${m.bank_id}` : ""}
+                    </option>
+                  ))}
+                </select>
+              </div>
+
+              <div className="sm:col-span-3 flex items-end">
+                <button
+                  type="button"
+                  onClick={handleSaveMonthlyHost}
+                  disabled={isSavingHost || !selectedMonth}
+                  className={`w-full py-1.5 px-2.5 rounded-[8px] text-xs font-semibold flex items-center justify-center gap-1.5 transition-all cursor-pointer shadow-xs ${
+                    hostSaveSuccess
+                      ? "bg-emerald-600 text-white"
+                      : isHostDirty
+                      ? "bg-amber-500 hover:bg-amber-600 text-white shadow-amber-500/25"
+                      : "bg-[var(--accent)] hover:bg-[var(--accent-hover)] text-white"
+                  }`}
+                >
+                  {hostSaveSuccess ? (
+                    <>
+                      <Check className="w-3.5 h-3.5" />
+                      <span>Đã Lưu!</span>
+                    </>
+                  ) : isSavingHost ? (
+                    <span>Đang lưu...</span>
+                  ) : (
+                    <>
+                      <Save className="w-3.5 h-3.5" />
+                      <span>Lưu Chủ Xị</span>
+                    </>
+                  )}
+                </button>
+              </div>
+            </div>
           </div>
         )}
 

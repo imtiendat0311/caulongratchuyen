@@ -104,11 +104,8 @@ export function getBadmintonSnapshot(): BadmintonData {
   return badmintonState ?? DEFAULT_DATA;
 }
 
-let saveTimeout: NodeJS.Timeout | null = null;
-
 export function setBadmintonState(
-  next: BadmintonData | ((prev: BadmintonData) => BadmintonData),
-  skipDb = false
+  next: BadmintonData | ((prev: BadmintonData) => BadmintonData)
 ) {
   const current = getBadmintonSnapshot();
   const updated = typeof next === "function" ? next(current) : next;
@@ -119,14 +116,6 @@ export function setBadmintonState(
     // ignore
   }
   badmintonListeners.forEach((l) => l());
-
-  if (!skipDb) {
-    setSyncStatus("syncing");
-    if (saveTimeout) clearTimeout(saveTimeout);
-    saveTimeout = setTimeout(() => {
-      saveSessionToSupabase(updated, getBankSnapshot());
-    }, 600);
-  }
 }
 
 export function subscribeBadminton(listener: () => void) {
@@ -174,7 +163,10 @@ export function subscribeMonthlyHosts(listener: () => void) {
   };
 }
 
-export async function setMonthlyHost(month: string, memberId: string) {
+export async function setMonthlyHost(
+  month: string,
+  memberId: string
+): Promise<{ success: boolean; message?: string }> {
   const current = getMonthlyHostsSnapshot();
   const updated = { ...current, [month]: memberId };
   setMonthlyHostsState(updated);
@@ -189,12 +181,16 @@ export async function setMonthlyHost(month: string, memberId: string) {
     if (error) {
       console.warn("Supabase monthly_hosts error:", error.message);
       setSyncStatus("error");
+      return { success: false, message: error.message };
     } else {
       setSyncStatus("synced");
+      return { success: true };
     }
-  } catch (err) {
+  } catch (err: unknown) {
     console.warn("Supabase monthly_hosts network error:", err);
     setSyncStatus("error");
+    const msg = err instanceof Error ? err.message : "Network error";
+    return { success: false, message: msg };
   }
 }
 
@@ -227,7 +223,7 @@ export function getBankSnapshot(): BankConfig {
   return bankState ?? DEFAULT_BANK;
 }
 
-export function setBankState(next: BankConfig, skipDb = false) {
+export function setBankState(next: BankConfig) {
   bankState = next;
   try {
     localStorage.setItem(BANK_STORAGE_KEY, JSON.stringify(next));
@@ -235,11 +231,6 @@ export function setBankState(next: BankConfig, skipDb = false) {
     // ignore
   }
   bankListeners.forEach((l) => l());
-
-  if (!skipDb) {
-    setSyncStatus("syncing");
-    saveSessionToSupabase(getBadmintonSnapshot(), next);
-  }
 }
 
 export function subscribeBank(listener: () => void) {
@@ -346,12 +337,12 @@ export function subscribeSyncStatus(listener: () => void) {
   };
 }
 
-// --- Supabase Persistence Operations ---
+// Explicit Session Cloud Operations (Only saved or loaded when requested)
 
-async function saveSessionToSupabase(
-  calcData: BadmintonData,
-  bank: BankConfig
-) {
+export async function saveSessionToCloud(): Promise<{ success: boolean; message?: string }> {
+  const calcData = getBadmintonSnapshot();
+  const bank = getBankSnapshot();
+  setSyncStatus("syncing");
   try {
     const { error } = await supabase.from("session_settings").upsert({
       id: "default",
@@ -381,12 +372,75 @@ async function saveSessionToSupabase(
     if (error) {
       console.warn("Supabase session save error:", error.message);
       setSyncStatus("error");
-    } else {
-      setSyncStatus("synced");
+      return { success: false, message: error.message };
     }
-  } catch (err) {
+    setSyncStatus("synced");
+    return { success: true };
+  } catch (err: unknown) {
     console.warn("Supabase session network error:", err);
     setSyncStatus("error");
+    const msg = err instanceof Error ? err.message : "Network error";
+    return { success: false, message: msg };
+  }
+}
+
+export async function loadSessionFromCloud(): Promise<{ success: boolean; message?: string }> {
+  setSyncStatus("syncing");
+  try {
+    const { data: s, error } = await supabase
+      .from("session_settings")
+      .select("*")
+      .eq("id", "default")
+      .maybeSingle();
+
+    if (error) {
+      setSyncStatus("error");
+      return { success: false, message: error.message };
+    }
+
+    if (!s) {
+      setSyncStatus("synced");
+      return { success: false, message: "Chưa có buổi chơi nào được lưu trên Cloud" };
+    }
+
+    const loadedData: BadmintonData = {
+      matchDate: s.match_date || getTodayDateString(),
+      hostMemberId: s.host_member_id || "",
+      attendeeIds: Array.isArray(s.attendee_ids) ? s.attendee_ids : [],
+      guests: Array.isArray(s.guests) ? s.guests : [],
+      courtName: s.court_name || DEFAULT_DATA.courtName,
+      courtAddress: s.court_address || DEFAULT_DATA.courtAddress,
+      courtNumber: s.court_number || DEFAULT_DATA.courtNumber,
+      nam: Number(s.nam) ?? DEFAULT_DATA.nam,
+      nu: Number(s.nu) ?? DEFAULT_DATA.nu,
+      tienSan: Number(s.tien_san) ?? DEFAULT_DATA.tienSan,
+      soQua: Number(s.so_qua) ?? DEFAULT_DATA.soQua,
+      giaQua: Number(s.gia_qua) ?? DEFAULT_DATA.giaQua,
+      tienNuoc: Number(s.tien_nuoc) ?? DEFAULT_DATA.tienNuoc,
+      noteNam: s.note_nam ?? "",
+      noteNu: s.note_nu ?? "",
+      femaleRatio: Number(s.female_ratio) ?? DEFAULT_DATA.femaleRatio,
+      roundMode: (s.round_mode as BadmintonData["roundMode"]) || "exact",
+    };
+    setBadmintonState(loadedData);
+
+    if (s.bank_id || s.bank_account_no) {
+      const loadedBank: BankConfig = {
+        bankId: s.bank_id || "MB",
+        accountNo: s.bank_account_no || "",
+        accountName: s.bank_account_name || "",
+        enabled: Boolean(s.bank_account_no),
+      };
+      setBankState(loadedBank);
+    }
+
+    setSyncStatus("synced");
+    return { success: true };
+  } catch (err: unknown) {
+    console.warn("Failed to load session from Supabase:", err);
+    setSyncStatus("error");
+    const msg = err instanceof Error ? err.message : "Network error";
+    return { success: false, message: msg };
   }
 }
 
@@ -764,7 +818,8 @@ export function initSupabaseSync() {
       .select("*"),
   ])
     .then(([sessionRes, historyRes, membersRes, monthlyHostsRes]) => {
-      if (sessionRes.data) {
+      // Only load session if user has no existing local session draft
+      if (sessionRes.data && !localStorage.getItem(STORAGE_KEY)) {
         const s = sessionRes.data;
         const loadedData: BadmintonData = {
           matchDate: s.match_date || getTodayDateString(),
@@ -785,7 +840,7 @@ export function initSupabaseSync() {
           femaleRatio: Number(s.female_ratio) ?? DEFAULT_DATA.femaleRatio,
           roundMode: (s.round_mode as BadmintonData["roundMode"]) || "exact",
         };
-        setBadmintonState(loadedData, true);
+        setBadmintonState(loadedData);
 
         if (s.bank_id || s.bank_account_no) {
           const loadedBank: BankConfig = {
@@ -794,7 +849,7 @@ export function initSupabaseSync() {
             accountName: s.bank_account_name || "",
             enabled: Boolean(s.bank_account_no),
           };
-          setBankState(loadedBank, true);
+          setBankState(loadedBank);
         }
       }
 
@@ -834,57 +889,9 @@ export function initSupabaseSync() {
       setSyncStatus("error");
     });
 
-  // Listen to realtime changes across browsers/tabs
+  // Listen to realtime changes across browsers/tabs (for shared club directories)
   supabase
     .channel("public-db-changes")
-    .on(
-      "postgres_changes",
-      { event: "*", schema: "public", table: "session_settings" },
-      (payload) => {
-        if (payload.new && typeof payload.new === "object") {
-          const s = payload.new as Record<string, unknown>;
-          if (s.id === "default") {
-            const nextData: BadmintonData = {
-              matchDate: (s.match_date as string) || getTodayDateString(),
-              hostMemberId: (s.host_member_id as string) || "",
-              attendeeIds: Array.isArray(s.attendee_ids)
-                ? (s.attendee_ids as string[])
-                : [],
-              guests: Array.isArray(s.guests)
-                ? (s.guests as GuestAttendee[])
-                : [],
-              courtName: (s.court_name as string) || DEFAULT_DATA.courtName,
-              courtAddress:
-                (s.court_address as string) || DEFAULT_DATA.courtAddress,
-              courtNumber:
-                (s.court_number as string) || DEFAULT_DATA.courtNumber,
-              nam: Number(s.nam),
-              nu: Number(s.nu),
-              tienSan: Number(s.tien_san),
-              soQua: Number(s.so_qua),
-              giaQua: Number(s.gia_qua),
-              tienNuoc: Number(s.tien_nuoc),
-              noteNam: (s.note_nam as string) || "",
-              noteNu: (s.note_nu as string) || "",
-              femaleRatio: Number(s.female_ratio),
-              roundMode:
-                (s.round_mode as BadmintonData["roundMode"]) || "exact",
-            };
-            setBadmintonState(nextData, true);
-
-            if (s.bank_id || s.bank_account_no) {
-              const nextBank: BankConfig = {
-                bankId: (s.bank_id as string) || "MB",
-                accountNo: (s.bank_account_no as string) || "",
-                accountName: (s.bank_account_name as string) || "",
-                enabled: Boolean(s.bank_account_no),
-              };
-              setBankState(nextBank, true);
-            }
-          }
-        }
-      }
-    )
     .on(
       "postgres_changes",
       { event: "*", schema: "public", table: "members" },
