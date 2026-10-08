@@ -1204,47 +1204,6 @@ export function BadmintonCalculator() {
               )}
             </div>
           </section>
-
-          {/* Card: Ghi chú */}
-          <section className="app-card p-5 space-y-3">
-            <h2 className="text-[0.95rem] font-bold uppercase tracking-[.04em] text-[var(--muted)] m-0">
-              Ghi chú danh sách
-            </h2>
-
-            <div>
-              <label
-                htmlFor="noteNam"
-                className="block text-[0.82rem] text-[var(--muted)] mb-1.5"
-              >
-                Note: Nam
-              </label>
-              <textarea
-                id="noteNam"
-                rows={2}
-                value={data.noteNam}
-                placeholder="Tên các bạn Nam tham gia..."
-                onChange={(e) => updateField("noteNam", e.target.value)}
-                className="w-full p-2.5 text-sm rounded-[10px] border border-[var(--border)] bg-[var(--bg)] text-[var(--text)] outline-none focus:border-[var(--accent)] transition-colors resize-y min-h-[60px]"
-              />
-            </div>
-
-            <div>
-              <label
-                htmlFor="noteNu"
-                className="block text-[0.82rem] text-[var(--muted)] mb-1.5"
-              >
-                Note: Nữ
-              </label>
-              <textarea
-                id="noteNu"
-                rows={2}
-                value={data.noteNu}
-                placeholder="Tên các bạn Nữ tham gia..."
-                onChange={(e) => updateField("noteNu", e.target.value)}
-                className="w-full p-2.5 text-sm rounded-[10px] border border-[var(--border)] bg-[var(--bg)] text-[var(--text)] outline-none focus:border-[var(--accent)] transition-colors resize-y min-h-[60px]"
-              />
-            </div>
-          </section>
         </div>
 
         {/* Right Column: Costco Receipt Results (Sticky on Desktop) */}

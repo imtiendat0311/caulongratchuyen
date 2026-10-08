@@ -389,7 +389,7 @@ export function CostcoReceipt({
           className="w-full flex items-center justify-center gap-1.5 py-1.5 px-2.5 rounded-[8px] text-[var(--muted)] hover:text-[var(--text)] hover:bg-[var(--card)] text-[11px] font-medium transition-colors cursor-pointer"
         >
           <Printer className="w-3.5 h-3.5" />
-          <span>In / Lưu biên lai Costco</span>
+          <span>In / Lưu biên lai</span>
         </button>
       </div>
     </div>

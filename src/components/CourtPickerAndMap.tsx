@@ -85,7 +85,7 @@ export function CourtPickerAndMap({
               </span>
             </h2>
             <p className="text-[11px] text-[var(--muted)]">
-              Chọn sân thi đấu để in địa chỉ chuẩn lên hoá đơn Costco
+              Chọn sân thi đấu để in địa chỉ chuẩn lên biên lai
             </p>
           </div>
         </div>
