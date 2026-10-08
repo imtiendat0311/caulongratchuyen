@@ -25,9 +25,9 @@ import {
   Camera,
   Trophy,
   Calculator,
-  CloudUpload,
   CloudDownload,
   Settings,
+  Database,
 } from "lucide-react";
 import { PixelCat, PixelRacket } from "./PixelArt";
 import { ThemeToggle } from "./ThemeToggle";
@@ -61,6 +61,8 @@ import {
   updateMemberBank,
   getSyncStatusSnapshot,
   subscribeSyncStatus,
+  getLastSavedTimeSnapshot,
+  subscribeLastSavedTime,
   initSupabaseSync,
   saveSessionToCloud,
   loadSessionFromCloud,
@@ -111,6 +113,12 @@ export function BadmintonCalculator() {
     subscribeSyncStatus,
     getSyncStatusSnapshot,
     () => "idle"
+  );
+
+  const lastSavedTime = useSyncExternalStore(
+    subscribeLastSavedTime,
+    getLastSavedTimeSnapshot,
+    () => null
   );
 
   const [copied, setCopied] = useState(false);
@@ -225,24 +233,6 @@ export function BadmintonCalculator() {
   ) => {
     setToastMessage({ text, type });
     setTimeout(() => setToastMessage(null), 3500);
-  };
-
-  const handleSaveToCloud = async () => {
-    const res = await saveSessionToCloud();
-    if (res.success) {
-      showToast("✓ Đã lưu buổi chơi hôm nay lên Cloud DB!");
-    } else {
-      showToast(`Không thể lưu Cloud: ${res.message || "Lỗi mạng"}`, "error");
-    }
-  };
-
-  const handleLoadFromCloud = async () => {
-    const res = await loadSessionFromCloud();
-    if (res.success) {
-      showToast("✓ Đã tải buổi chơi mới nhất từ Cloud DB!");
-    } else {
-      showToast(res.message || "Chưa có buổi chơi nào trên Cloud", "info");
-    }
   };
 
   // Calculations exactly matching original HTML
@@ -427,7 +417,8 @@ export function BadmintonCalculator() {
     }
   };
 
-  const handleSaveToHistory = async () => {
+  const handleSaveToDB = async () => {
+    const sessionRes = await saveSessionToCloud();
     const newItem: HistoryItem = {
       id: Date.now().toString(),
       date: displayDate,
@@ -443,9 +434,21 @@ export function BadmintonCalculator() {
     };
 
     await addHistoryItem(newItem);
-    await saveSessionToCloud();
     fireConfetti();
-    showToast(`✓ Đã lưu buổi chơi ngày ${displayDate} vào Supabase DB!`);
+    if (sessionRes.success) {
+      showToast(`✓ Đã lưu buổi chơi ngày ${displayDate} vào DB Supabase!`);
+    } else {
+      showToast(`Lỗi lưu DB: ${sessionRes.message || "Lỗi mạng"}`, "error");
+    }
+  };
+
+  const handleLoadFromCloud = async () => {
+    const res = await loadSessionFromCloud();
+    if (res.success) {
+      showToast("✓ Đã tải buổi chơi mới nhất từ DB Supabase!");
+    } else {
+      showToast(res.message || "Chưa có buổi chơi nào trên DB Supabase", "info");
+    }
   };
 
   const handleDeleteHistory = async (id: string) => {
@@ -548,25 +551,27 @@ export function BadmintonCalculator() {
             {syncStatus === "syncing" && (
               <>
                 <RefreshCw className="w-3 h-3 text-[var(--accent)] animate-spin" />
-                <span className="text-[var(--accent)]">Đang lưu Cloud...</span>
+                <span className="text-[var(--accent)]">Đang lưu DB Supabase...</span>
               </>
             )}
             {syncStatus === "synced" && (
               <>
                 <CloudCheck className="w-3.5 h-3.5 text-[var(--accent2)]" />
-                <span className="text-[var(--accent2)]">Đã đồng bộ Supabase</span>
+                <span className="text-[var(--accent2)]">
+                  {lastSavedTime ? `Đã lưu DB (${lastSavedTime})` : "Đã lưu DB Supabase"}
+                </span>
               </>
             )}
             {syncStatus === "error" && (
               <>
                 <Cloud className="w-3 h-3 text-amber-500" />
-                <span className="text-amber-500">Lưu cục bộ</span>
+                <span className="text-amber-500">Chưa lưu vào DB</span>
               </>
             )}
             {syncStatus === "idle" && (
               <>
-                <Cloud className="w-3 h-3 text-[var(--muted)]" />
-                <span>Cloud DB</span>
+                <Database className="w-3 h-3 text-[var(--muted)]" />
+                <span>Chế độ Local (chỉ lưu khi bấm &quot;Lưu DB Supabase&quot;)</span>
               </>
             )}
           </span>
@@ -669,26 +674,26 @@ export function BadmintonCalculator() {
             </button>
           </div>
 
-          {/* Cloud Action Buttons: Explicit Save & Load to prevent collisions */}
+          {/* Cloud Action Buttons: Explicit Save & Load only when clicked */}
           <div className="flex items-center gap-2 flex-wrap">
             <button
               type="button"
-              onClick={handleSaveToCloud}
-              className="flex items-center gap-1.5 py-1 px-2.5 rounded-[8px] bg-[var(--accent)] hover:opacity-90 active:scale-98 text-white text-xs font-semibold transition-all cursor-pointer shadow-xs"
-              title="Lưu phiên tính tiền hiện tại lên Cloud DB"
+              onClick={handleSaveToDB}
+              className="flex items-center gap-1.5 py-1 px-3 rounded-[8px] bg-[var(--accent)] hover:opacity-90 active:scale-98 text-white text-xs font-semibold transition-all cursor-pointer shadow-xs"
+              title="Lưu dữ liệu buổi chơi hiện tại vào cơ sở dữ liệu Supabase"
             >
-              <CloudUpload className="w-3.5 h-3.5" />
-              <span>Lưu Cloud</span>
+              <Database className="w-3.5 h-3.5" />
+              <span>Lưu DB Supabase</span>
             </button>
 
             <button
               type="button"
               onClick={handleLoadFromCloud}
               className="flex items-center gap-1.5 py-1 px-2.5 rounded-[8px] bg-[var(--card)] border border-[var(--border)] hover:border-[var(--accent)] text-xs font-medium text-[var(--text)] hover:text-[var(--accent)] transition-colors cursor-pointer shadow-xs"
-              title="Tải lại buổi chơi mới nhất từ Cloud DB"
+              title="Tải lại buổi chơi đã lưu từ DB Supabase"
             >
               <CloudDownload className="w-3.5 h-3.5" />
-              <span>Tải Cloud</span>
+              <span>Tải từ DB</span>
             </button>
           </div>
         </div>
@@ -1294,7 +1299,7 @@ export function BadmintonCalculator() {
             copied={copied}
             onShare={handleShare}
             onOpenVietQR={() => setIsVietQROpen(true)}
-            onSaveToHistory={handleSaveToHistory}
+            onSaveToHistory={handleSaveToDB}
           />
 
           {/* Recent History Preview (Connected to Supabase Database) */}
@@ -1387,7 +1392,7 @@ export function BadmintonCalculator() {
 
       {/* Footer Info */}
       <footer className="mt-10 text-center text-xs text-[var(--muted)] space-y-1">
-        <p>Cầu Lông Rất Chuyên • Lưu trữ đám mây Supabase &amp; Tự động đồng bộ</p>
+        <p>Cầu Lông Rất Chuyên • Lưu vào Supabase khi bấm &quot;Lưu DB Supabase&quot;</p>
         <p className="text-[11px] opacity-80">
           Công thức: Tiền Nam = Tổng / (Nam + 0.75 * Nữ) • Tiền Nữ = 75% Nam
         </p>

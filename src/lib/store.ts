@@ -337,7 +337,26 @@ export function subscribeSyncStatus(listener: () => void) {
   };
 }
 
-// Explicit Session Cloud Operations (Only saved or loaded when requested)
+let lastSavedTimeState: string | null = null;
+const lastSavedTimeListeners = new Set<() => void>();
+
+export function getLastSavedTimeSnapshot(): string | null {
+  return lastSavedTimeState;
+}
+
+export function setLastSavedTime(time: string | null) {
+  lastSavedTimeState = time;
+  lastSavedTimeListeners.forEach((l) => l());
+}
+
+export function subscribeLastSavedTime(listener: () => void) {
+  lastSavedTimeListeners.add(listener);
+  return () => {
+    lastSavedTimeListeners.delete(listener);
+  };
+}
+
+// Explicit Session Cloud Operations (Only saved or loaded when requested by user)
 
 export async function saveSessionToCloud(): Promise<{ success: boolean; message?: string }> {
   const calcData = getBadmintonSnapshot();
@@ -375,6 +394,11 @@ export async function saveSessionToCloud(): Promise<{ success: boolean; message?
       return { success: false, message: error.message };
     }
     setSyncStatus("synced");
+    const nowTime = new Date().toLocaleTimeString("vi-VN", {
+      hour: "2-digit",
+      minute: "2-digit",
+    });
+    setLastSavedTime(nowTime);
     return { success: true };
   } catch (err: unknown) {
     console.warn("Supabase session network error:", err);
@@ -789,22 +813,15 @@ export async function clearAllHistory() {
   }
 }
 
-// Initial Sync & Real-time Subscription
+// Initial Read-Only Hydration (No auto-sync, no background realtime channels)
 let syncInitialized = false;
 
 export function initSupabaseSync() {
   if (syncInitialized || typeof window === "undefined") return;
   syncInitialized = true;
 
-  setSyncStatus("syncing");
-
-  // Fetch initial data from Supabase
+  // Read-only initial load for history, members, and monthly hosts so local lists are populated
   Promise.all([
-    supabase
-      .from("session_settings")
-      .select("*")
-      .eq("id", "default")
-      .maybeSingle(),
     supabase
       .from("match_history")
       .select("*")
@@ -817,42 +834,7 @@ export function initSupabaseSync() {
       .from("monthly_hosts")
       .select("*"),
   ])
-    .then(([sessionRes, historyRes, membersRes, monthlyHostsRes]) => {
-      // Only load session if user has no existing local session draft
-      if (sessionRes.data && !localStorage.getItem(STORAGE_KEY)) {
-        const s = sessionRes.data;
-        const loadedData: BadmintonData = {
-          matchDate: s.match_date || getTodayDateString(),
-          hostMemberId: s.host_member_id || "",
-          attendeeIds: Array.isArray(s.attendee_ids) ? s.attendee_ids : [],
-          guests: Array.isArray(s.guests) ? s.guests : [],
-          courtName: s.court_name || DEFAULT_DATA.courtName,
-          courtAddress: s.court_address || DEFAULT_DATA.courtAddress,
-          courtNumber: s.court_number || DEFAULT_DATA.courtNumber,
-          nam: Number(s.nam) ?? DEFAULT_DATA.nam,
-          nu: Number(s.nu) ?? DEFAULT_DATA.nu,
-          tienSan: Number(s.tien_san) ?? DEFAULT_DATA.tienSan,
-          soQua: Number(s.so_qua) ?? DEFAULT_DATA.soQua,
-          giaQua: Number(s.gia_qua) ?? DEFAULT_DATA.giaQua,
-          tienNuoc: Number(s.tien_nuoc) ?? DEFAULT_DATA.tienNuoc,
-          noteNam: s.note_nam ?? "",
-          noteNu: s.note_nu ?? "",
-          femaleRatio: Number(s.female_ratio) ?? DEFAULT_DATA.femaleRatio,
-          roundMode: (s.round_mode as BadmintonData["roundMode"]) || "exact",
-        };
-        setBadmintonState(loadedData);
-
-        if (s.bank_id || s.bank_account_no) {
-          const loadedBank: BankConfig = {
-            bankId: s.bank_id || "MB",
-            accountNo: s.bank_account_no || "",
-            accountName: s.bank_account_name || "",
-            enabled: Boolean(s.bank_account_no),
-          };
-          setBankState(loadedBank);
-        }
-      }
-
+    .then(([historyRes, membersRes, monthlyHostsRes]) => {
       if (historyRes.data && Array.isArray(historyRes.data)) {
         const loadedHistory: HistoryItem[] = historyRes.data.map((row) => ({
           id: row.id,
@@ -881,77 +863,8 @@ export function initSupabaseSync() {
         });
         setMonthlyHostsState(hostsMap);
       }
-
-      setSyncStatus("synced");
     })
     .catch((err) => {
-      console.warn("Failed to load initial data from Supabase:", err);
-      setSyncStatus("error");
+      console.warn("Failed to load initial club directory from Supabase:", err);
     });
-
-  // Listen to realtime changes across browsers/tabs (for shared club directories)
-  supabase
-    .channel("public-db-changes")
-    .on(
-      "postgres_changes",
-      { event: "*", schema: "public", table: "members" },
-      () => {
-        supabase
-          .from("members")
-          .select("*")
-          .order("name", { ascending: true })
-          .then((res) => {
-            if (res.data) {
-              setMembersState(res.data);
-            }
-          });
-      }
-    )
-    .on(
-      "postgres_changes",
-      { event: "*", schema: "public", table: "monthly_hosts" },
-      () => {
-        supabase
-          .from("monthly_hosts")
-          .select("*")
-          .then((res) => {
-            if (res.data) {
-              const hostsMap: Record<string, string> = {};
-              (res.data as MonthlyHost[]).forEach((mh) => {
-                hostsMap[mh.month] = mh.host_member_id;
-              });
-              setMonthlyHostsState(hostsMap);
-            }
-          });
-      }
-    )
-    .on(
-      "postgres_changes",
-      { event: "*", schema: "public", table: "match_history" },
-      () => {
-        supabase
-          .from("match_history")
-          .select("*")
-          .order("created_at", { ascending: false })
-          .then((res) => {
-            if (res.data) {
-              const loadedHistory: HistoryItem[] = res.data.map((row) => ({
-                id: row.id,
-                date: row.date,
-                totalCost: Number(row.total_cost),
-                costPerMale: Number(row.cost_per_male),
-                costPerFemale: Number(row.cost_per_female),
-                maleCount: Number(row.male_count),
-                femaleCount: Number(row.female_count),
-                courtCost: Number(row.court_cost),
-                shuttleCost: Number(row.shuttle_cost),
-                waterCost: Number(row.water_cost),
-                notes: row.notes || "",
-              }));
-              setHistoryState(loadedHistory);
-            }
-          });
-      }
-    )
-    .subscribe();
 }
