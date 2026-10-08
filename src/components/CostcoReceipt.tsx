@@ -1,6 +1,6 @@
 "use client";
 
-import React from "react";
+import React, { useState } from "react";
 import {
   Share2,
   Copy,
@@ -8,6 +8,9 @@ import {
   QrCode,
   BookmarkPlus,
   Printer,
+  Sun,
+  Moon,
+  Sparkles,
 } from "lucide-react";
 import { Member, BankConfig } from "@/types";
 import { parseCourtsList } from "./CourtPickerAndMap";
@@ -59,6 +62,7 @@ export function CostcoReceipt({
   onOpenVietQR,
   onSaveToHistory,
 }: CostcoReceiptProps) {
+  const [receiptTheme, setReceiptTheme] = useState<"auto" | "light" | "dark">("auto");
 
   const totalPlayers = namCount + nuCount;
   const courtsList = parseCourtsList(courtNumber);
@@ -84,14 +88,71 @@ export function CostcoReceipt({
     window.print();
   };
 
+  const themeClass =
+    receiptTheme === "light"
+      ? "force-light"
+      : receiptTheme === "dark"
+      ? "force-dark"
+      : "";
+
   return (
     <div className="w-full flex flex-col items-center">
+      {/* Receipt Theme Mode Selector (Discreet control bar) */}
+      <div className="w-full max-w-[380px] mb-2 flex items-center justify-between text-xs px-1 no-print">
+        <span className="text-[11px] font-semibold text-[var(--muted)] flex items-center gap-1">
+          <span>Biên lai chi phí</span>
+        </span>
+        <div className="inline-flex p-0.5 rounded-[8px] bg-[var(--card)] border border-[var(--border)] text-[10.5px]">
+          <button
+            type="button"
+            onClick={() => setReceiptTheme("auto")}
+            className={`px-2 py-0.5 rounded-[6px] font-medium transition-all cursor-pointer flex items-center gap-1 ${
+              receiptTheme === "auto"
+                ? "bg-[var(--accent)] text-white shadow-xs"
+                : "text-[var(--muted)] hover:text-[var(--text)]"
+            }`}
+            title="Tự động theo giao diện hệ thống"
+          >
+            <Sparkles className="w-3 h-3" />
+            <span>Tự động</span>
+          </button>
+          <button
+            type="button"
+            onClick={() => setReceiptTheme("light")}
+            className={`px-2 py-0.5 rounded-[6px] font-medium transition-all cursor-pointer flex items-center gap-1 ${
+              receiptTheme === "light"
+                ? "bg-[var(--accent)] text-white shadow-xs"
+                : "text-[var(--muted)] hover:text-[var(--text)]"
+            }`}
+            title="Giấy trắng cổ điển"
+          >
+            <Sun className="w-3 h-3" />
+            <span>Giấy sáng</span>
+          </button>
+          <button
+            type="button"
+            onClick={() => setReceiptTheme("dark")}
+            className={`px-2 py-0.5 rounded-[6px] font-medium transition-all cursor-pointer flex items-center gap-1 ${
+              receiptTheme === "dark"
+                ? "bg-[var(--accent)] text-white shadow-xs"
+                : "text-[var(--muted)] hover:text-[var(--text)]"
+            }`}
+            title="Giấy tối hiện đại"
+          >
+            <Moon className="w-3 h-3" />
+            <span>Giấy tối</span>
+          </button>
+        </div>
+      </div>
+
       {/* Receipt Paper Card */}
-      <div className="relative w-full max-w-[380px] bg-[#fbfbfa] text-[#1a1a1a] shadow-2xl rounded-sm border border-neutral-300 font-mono text-[11px] leading-[1.35] tracking-tight selection:bg-neutral-200 overflow-hidden">
+      <div
+        className={`receipt-paper ${themeClass} relative w-full max-w-[380px] shadow-2xl rounded-sm border font-mono text-[11px] leading-[1.35] tracking-tight selection:bg-neutral-500/20 overflow-hidden`}
+      >
         {/* Top Serrated Edge (Jagged cut paper effect) */}
-        <div className="w-full h-2.5 bg-[#fbfbfa] relative flex overflow-hidden">
+        <div className="w-full h-2.5 bg-[var(--receipt-bg)] relative flex overflow-hidden">
           <svg
-            className="w-full h-2 text-[var(--card)] fill-current scale-y-[-1]"
+            className="w-full h-2 text-[var(--bg)] fill-current scale-y-[-1]"
             preserveAspectRatio="none"
             viewBox="0 0 100 10"
           >
@@ -100,58 +161,58 @@ export function CostcoReceipt({
         </div>
 
         <div className="p-4 sm:p-5 pt-2">
-          {/* Costco Logo Header */}
+          {/* Logo Header */}
           <div className="text-center mb-3">
             <div className="inline-flex flex-col items-center">
-              {/* Costco Style Brand Title */}
-              <div className="text-xl sm:text-2xl font-black italic tracking-tighter text-[#111] uppercase transform -skew-x-6">
+              {/* Brand Title */}
+              <div className="text-xl sm:text-2xl font-black italic tracking-tighter text-[var(--receipt-text)] uppercase transform -skew-x-6">
                 CẦU LÔNG
               </div>
               <div className="flex items-center gap-1.5 w-full justify-center -mt-0.5">
-                <div className="h-[2px] bg-[#111] flex-1 min-w-[20px]" />
-                <span className="text-[10px] font-black tracking-widest uppercase">
+                <div className="h-[2px] bg-[var(--receipt-brand-line)] flex-1 min-w-[20px]" />
+                <span className="text-[10px] font-black tracking-widest uppercase text-[var(--receipt-text)]">
                   RẤT CHUYÊN
                 </span>
-                <div className="h-[2px] bg-[#111] flex-1 min-w-[20px]" />
+                <div className="h-[2px] bg-[var(--receipt-brand-line)] flex-1 min-w-[20px]" />
               </div>
-              <div className="text-[9px] font-bold tracking-widest uppercase text-neutral-600 mt-0.5">
+              <div className="text-[9px] font-bold tracking-widest uppercase text-[var(--receipt-muted)] mt-0.5">
                 ≡ WHOLESALE CLUB ≡
               </div>
             </div>
 
             {/* Store & Court Address */}
             <div className="mt-2 text-center text-[10.5px] leading-tight space-y-0.5">
-              <div className="font-bold">
+              <div className="font-bold text-[var(--receipt-text)]">
                 Store #{storeNum.padStart(4, "0")} • {courtsCount > 1 ? `${courtsCount} SÂN (${courtNumber})` : (courtNumber || "Sân 1, Sân 2")}
               </div>
-              <div className="font-semibold text-neutral-800 uppercase">
+              <div className="font-semibold text-[var(--receipt-text)] uppercase">
                 {courtName || "Nhà Thi Đấu Quán Thánh"}
               </div>
-              <div className="text-neutral-600 text-[10px]">
+              <div className="text-[var(--receipt-muted)] text-[10px]">
                 {courtAddress || "115 Quán Thánh, Ba Đình, Hà Nội"}
               </div>
             </div>
           </div>
 
           {/* Dashed Separator */}
-          <div className="border-b border-dashed border-neutral-400 my-2.5" />
+          <div className="border-b border-dashed border-[var(--receipt-dashed)] my-2.5" />
 
           {/* Member & Session Info */}
-          <div className="text-[10.5px] space-y-0.5 mb-2">
+          <div className="text-[10.5px] space-y-0.5 mb-2 text-[var(--receipt-text)]">
             <div className="flex justify-between">
-              <span>V5 Member:</span>
+              <span className="text-[var(--receipt-muted)]">V5 Member:</span>
               <span className="font-bold">
                 {totalPlayers} BẠN ({namCount}M / {nuCount}F)
               </span>
             </div>
-            <div className="flex justify-between text-neutral-600">
-              <span>Host (Chủ xị):</span>
-              <span className="font-bold text-neutral-900">
+            <div className="flex justify-between">
+              <span className="text-[var(--receipt-muted)]">Host (Chủ xị):</span>
+              <span className="font-bold">
                 👑 {hostDisplayName}
               </span>
             </div>
-            <div className="flex justify-between text-neutral-600">
-              <span>Ngày chơi:</span>
+            <div className="flex justify-between">
+              <span className="text-[var(--receipt-muted)]">Ngày chơi:</span>
               <span className="font-semibold">{date || "Hôm nay"}</span>
             </div>
           </div>
@@ -159,114 +220,114 @@ export function CostcoReceipt({
           {/* Items Section */}
           <div className="space-y-1 my-2">
             <div className="flex justify-between items-baseline">
-              <span className="truncate pr-2">
+              <span className="truncate pr-2 text-[var(--receipt-muted)]">
                 E TIEN SAN ({courtsCount > 1 ? `${courtsCount} SAN • ${courtNumber}` : (courtNumber || "2H")})
               </span>
-              <span className="font-semibold shrink-0">
+              <span className="font-semibold shrink-0 text-[var(--receipt-text)]">
                 {courtCost.toLocaleString("vi-VN")} đ
               </span>
             </div>
             <div className="flex justify-between items-baseline">
-              <span className="truncate pr-2">
+              <span className="truncate pr-2 text-[var(--receipt-muted)]">
                 E CAU LONG ({soQua} QUA)
               </span>
-              <span className="font-semibold shrink-0">
+              <span className="font-semibold shrink-0 text-[var(--receipt-text)]">
                 {shuttleCost.toLocaleString("vi-VN")} đ
               </span>
             </div>
             <div className="flex justify-between items-baseline">
-              <span className="truncate pr-2">E TIEN NUOC UONG</span>
-              <span className="font-semibold shrink-0">
+              <span className="truncate pr-2 text-[var(--receipt-muted)]">E TIEN NUOC UONG</span>
+              <span className="font-semibold shrink-0 text-[var(--receipt-text)]">
                 {waterCost.toLocaleString("vi-VN")} đ
               </span>
             </div>
           </div>
 
           {/* Dashed Separator */}
-          <div className="border-b border-dashed border-neutral-400 my-2.5" />
+          <div className="border-b border-dashed border-[var(--receipt-dashed)] my-2.5" />
 
           {/* Subtotal & Total */}
           <div className="space-y-1 mb-2">
-            <div className="flex justify-between text-neutral-700">
+            <div className="flex justify-between text-[var(--receipt-muted)]">
               <span>SUBTOTAL</span>
-              <span>{totalCost.toLocaleString("vi-VN")} đ</span>
+              <span className="text-[var(--receipt-text)]">{totalCost.toLocaleString("vi-VN")} đ</span>
             </div>
-            <div className="flex justify-between text-neutral-600">
+            <div className="flex justify-between text-[var(--receipt-subtle)]">
               <span>TAX (0%)</span>
               <span>0 đ</span>
             </div>
-            <div className="border-b border-neutral-300 my-1" />
-            <div className="flex justify-between text-sm sm:text-base font-black text-black">
+            <div className="border-b border-[var(--receipt-dashed)] my-1" />
+            <div className="flex justify-between text-sm sm:text-base font-black text-[var(--receipt-text)]">
               <span>TOTAL</span>
               <span>{totalCost.toLocaleString("vi-VN")} đ</span>
             </div>
           </div>
 
           {/* Dashed Separator */}
-          <div className="border-b border-dashed border-neutral-400 my-2.5" />
+          <div className="border-b border-dashed border-[var(--receipt-dashed)] my-2.5" />
 
           {/* Split Amount Breakdown Section */}
-          <div className="bg-neutral-100 p-2.5 rounded border border-neutral-200 my-2 space-y-1">
-            <div className="font-bold text-[10px] uppercase text-neutral-600 tracking-wider">
+          <div className="bg-[var(--receipt-card)] p-2.5 rounded border border-[var(--receipt-card-border)] my-2 space-y-1">
+            <div className="font-bold text-[10px] uppercase text-[var(--receipt-muted)] tracking-wider">
               KẾT QUẢ CHIA TIỀN BUỔI CHƠI
             </div>
             <div className="flex justify-between items-center text-xs">
-              <span className="font-semibold text-blue-700">
+              <span className="font-semibold text-[var(--receipt-male-label)]">
                 👉 MỖI NAM ({namCount} bạn):
               </span>
-              <span className="font-bold text-blue-800 text-sm">
+              <span className="font-bold text-[var(--receipt-male-val)] text-sm">
                 {finalNam.toLocaleString("vi-VN")} đ
               </span>
             </div>
             <div className="flex justify-between items-center text-xs">
-              <span className="font-semibold text-pink-700">
+              <span className="font-semibold text-[var(--receipt-female-label)]">
                 👉 MỖI NỮ ({nuCount} bạn{ratio !== 1 ? `, ${Math.round(ratio * 100)}%` : ""}):
               </span>
-              <span className="font-bold text-pink-800 text-sm">
+              <span className="font-bold text-[var(--receipt-female-val)] text-sm">
                 {finalNu.toLocaleString("vi-VN")} đ
               </span>
             </div>
           </div>
 
           {/* Card / Bank Transfer Info */}
-          <div className="text-[10px] leading-tight space-y-1 text-neutral-700 my-2">
+          <div className="text-[10px] leading-tight space-y-1 text-[var(--receipt-muted)] my-2">
             <div className="flex justify-between">
               <span>Card number</span>
-              <span className="font-semibold">{maskedAcc}</span>
+              <span className="font-semibold text-[var(--receipt-text)]">{maskedAcc}</span>
             </div>
             <div className="flex justify-between">
               <span>Card type</span>
-              <span>
+              <span className="text-[var(--receipt-text)]">
                 {bankName} ({accName})
               </span>
             </div>
             <div className="flex justify-between">
               <span>Card entry</span>
-              <span>CHUYEN KHOAN VIETQR</span>
+              <span className="text-[var(--receipt-text)]">CHUYEN KHOAN VIETQR</span>
             </div>
             <div className="flex justify-between">
               <span>Date/time</span>
-              <span>{date} 20:30:15 PM</span>
+              <span className="text-[var(--receipt-text)]">{date} 20:30:15 PM</span>
             </div>
             <div className="flex justify-between">
               <span>Reference #</span>
-              <span className="font-mono">{refNum}</span>
+              <span className="font-mono text-[var(--receipt-text)]">{refNum}</span>
             </div>
-            <div className="flex justify-between font-bold text-emerald-800">
+            <div className="flex justify-between font-bold text-[var(--receipt-status)]">
               <span>Status</span>
               <span>APPROVED / ĐÃ CHIA XONG</span>
             </div>
             <div className="flex justify-between">
               <span>Finalized</span>
-              <span>{date} 22:15:00 PM</span>
+              <span className="text-[var(--receipt-text)]">{date} 22:15:00 PM</span>
             </div>
           </div>
 
           {/* Dashed Separator */}
-          <div className="border-b border-dashed border-neutral-400 my-3" />
+          <div className="border-b border-dashed border-[var(--receipt-dashed)] my-3" />
 
           {/* Barcode Section */}
-          <div className="flex flex-col items-center justify-center my-3">
+          <div className="flex flex-col items-center justify-center my-3 text-[var(--receipt-text)]">
             {/* SVG Barcode */}
             <svg
               className="w-48 sm:w-56 h-11"
@@ -315,29 +376,29 @@ export function CostcoReceipt({
               <rect x="190" y="0" width="2" height="45" />
               <rect x="194" y="0" width="4" height="45" />
             </svg>
-            <div className="font-mono text-[10px] tracking-[0.25em] text-neutral-800 mt-1">
+            <div className="font-mono text-[10px] tracking-[0.25em] text-[var(--receipt-muted)] mt-1">
               7 39281 04729 3
             </div>
           </div>
 
           {/* Footer Receipt Info */}
-          <div className="text-center text-[10px] space-y-0.5 text-neutral-600 mt-2">
+          <div className="text-center text-[10px] space-y-0.5 text-[var(--receipt-muted)] mt-2">
             <div>OP #156 Name: {hostDisplayName}</div>
-            <div className="font-bold text-neutral-800">Thank you!</div>
+            <div className="font-bold text-[var(--receipt-text)]">Thank you!</div>
             <div>Please Come Again • Hẹn gặp lại buổi sau!</div>
-            <div className="mt-2 text-neutral-500">
+            <div className="mt-2 text-[var(--receipt-subtle)]">
               Items Sold: {totalPlayers} người chơi
             </div>
-            <div className="text-neutral-500">
+            <div className="text-[var(--receipt-subtle)]">
               {date} • caulongratchuyen.vercel.app
             </div>
           </div>
         </div>
 
         {/* Bottom Serrated Edge (Jagged cut paper effect) */}
-        <div className="w-full h-2.5 bg-[#fbfbfa] relative flex overflow-hidden">
+        <div className="w-full h-2.5 bg-[var(--receipt-bg)] relative flex overflow-hidden">
           <svg
-            className="w-full h-2 text-[var(--card)] fill-current"
+            className="w-full h-2 text-[var(--bg)] fill-current"
             preserveAspectRatio="none"
             viewBox="0 0 100 10"
           >
@@ -347,7 +408,7 @@ export function CostcoReceipt({
       </div>
 
       {/* Action Buttons Toolbar Below Receipt */}
-      <div className="w-full max-w-[380px] mt-3 space-y-2">
+      <div className="w-full max-w-[380px] mt-3 space-y-2 no-print">
         <div className="grid grid-cols-2 gap-2">
           <button
             type="button"

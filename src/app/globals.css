@@ -87,3 +87,89 @@ body {
 .app-input:focus-within {
   border-color: var(--accent);
 }
+
+/* Receipt Paper Theming (Light, Dark, and Print) */
+.receipt-paper {
+  --receipt-bg: #fbfbfa;
+  --receipt-text: #1a1a1a;
+  --receipt-muted: #525252;
+  --receipt-subtle: #737373;
+  --receipt-border: #d4d4d4;
+  --receipt-dashed: #a3a3a3;
+  --receipt-card: #f5f5f5;
+  --receipt-card-border: #e5e5e5;
+  --receipt-male-label: #1d4ed8;
+  --receipt-male-val: #1e40af;
+  --receipt-female-label: #be185d;
+  --receipt-female-val: #9d174d;
+  --receipt-status: #065f46;
+  --receipt-brand-line: #111111;
+  background-color: var(--receipt-bg);
+  color: var(--receipt-text);
+  border-color: var(--receipt-border);
+  transition: background-color 0.2s ease, color 0.2s ease, border-color 0.2s ease;
+}
+
+:root[data-theme="dark"] .receipt-paper:not(.force-light),
+.dark .receipt-paper:not(.force-light),
+.receipt-paper.force-dark {
+  --receipt-bg: #161922;
+  --receipt-text: #f0f2f5;
+  --receipt-muted: #9aa1b2;
+  --receipt-subtle: #6b7280;
+  --receipt-border: #2b3045;
+  --receipt-dashed: #3b4258;
+  --receipt-card: #1f2433;
+  --receipt-card-border: #2b3045;
+  --receipt-male-label: #60a5fa;
+  --receipt-male-val: #93c5fd;
+  --receipt-female-label: #f472b6;
+  --receipt-female-val: #fbcfe8;
+  --receipt-status: #34d399;
+  --receipt-brand-line: #ffffff;
+}
+
+.receipt-paper.force-light {
+  --receipt-bg: #fbfbfa !important;
+  --receipt-text: #1a1a1a !important;
+  --receipt-muted: #525252 !important;
+  --receipt-subtle: #737373 !important;
+  --receipt-border: #d4d4d4 !important;
+  --receipt-dashed: #a3a3a3 !important;
+  --receipt-card: #f5f5f5 !important;
+  --receipt-card-border: #e5e5e5 !important;
+  --receipt-male-label: #1d4ed8 !important;
+  --receipt-male-val: #1e40af !important;
+  --receipt-female-label: #be185d !important;
+  --receipt-female-val: #9d174d !important;
+  --receipt-status: #065f46 !important;
+  --receipt-brand-line: #111111 !important;
+}
+
+@media print {
+  body {
+    background-color: #ffffff !important;
+    color: #000000 !important;
+  }
+  .receipt-paper {
+    --receipt-bg: #ffffff !important;
+    --receipt-text: #000000 !important;
+    --receipt-muted: #262626 !important;
+    --receipt-subtle: #525252 !important;
+    --receipt-border: #a3a3a3 !important;
+    --receipt-dashed: #737373 !important;
+    --receipt-card: #f5f5f5 !important;
+    --receipt-card-border: #d4d4d4 !important;
+    --receipt-male-label: #000000 !important;
+    --receipt-male-val: #000000 !important;
+    --receipt-female-label: #000000 !important;
+    --receipt-female-val: #000000 !important;
+    --receipt-status: #000000 !important;
+    --receipt-brand-line: #000000 !important;
+    box-shadow: none !important;
+    max-width: 100% !important;
+  }
+  .no-print {
+    display: none !important;
+  }
+}
