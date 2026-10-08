@@ -25,6 +25,8 @@ import {
   User,
   Crown,
   CreditCard,
+  Camera,
+  Trophy,
 } from "lucide-react";
 import { PixelCat, PixelRacket } from "./PixelArt";
 import { ThemeToggle } from "./ThemeToggle";
@@ -32,6 +34,7 @@ import { NumberInput } from "./NumberInput";
 import { VietQRModal } from "./VietQRModal";
 import { HistoryDrawer } from "./HistoryDrawer";
 import { MemberManagerModal } from "./MemberManagerModal";
+import { TeamPhotoModal } from "./TeamPhotoModal";
 import { BadmintonData, BankConfig, HistoryItem } from "@/types";
 import {
   DEFAULT_DATA,
@@ -109,6 +112,7 @@ export function BadmintonCalculator() {
   const [isVietQROpen, setIsVietQROpen] = useState(false);
   const [isHistoryOpen, setIsHistoryOpen] = useState(false);
   const [isMemberModalOpen, setIsMemberModalOpen] = useState(false);
+  const [isTeamPhotoOpen, setIsTeamPhotoOpen] = useState(false);
   const [showAdvanced, setShowAdvanced] = useState(false);
 
   // New guest state for single-day attendance
@@ -437,6 +441,34 @@ export function BadmintonCalculator() {
     <div className="w-full max-w-[460px] md:max-w-4xl lg:max-w-5xl mx-auto px-4 py-6 md:py-8 lg:py-10">
       {/* Header with Mascots, Title, and Action Toolbar */}
       <header className="mb-6 md:mb-8 text-center">
+        {/* Team Avatar Badge */}
+        <div className="flex flex-col items-center justify-center mb-2.5">
+          <button
+            type="button"
+            onClick={() => setIsTeamPhotoOpen(true)}
+            className="group relative cursor-pointer focus:outline-none"
+            title="Bấm để xem ảnh kỷ niệm FC Rất Chuyên"
+          >
+            <div className="absolute -inset-1 bg-gradient-to-r from-[var(--accent)] to-[var(--accent2)] rounded-full blur-xs opacity-70 group-hover:opacity-100 transition duration-300" />
+            <div className="relative w-16 h-16 sm:w-20 sm:h-20 rounded-full overflow-hidden border-2 border-[var(--border)] shadow-md bg-[var(--card)]">
+              {/* eslint-disable-next-line @next/next/no-img-element */}
+              <img
+                src="/team-photo.jpg"
+                alt="FC Rất Chuyên Team Avatar"
+                className="w-full h-full object-cover group-hover:scale-108 transition-transform duration-300"
+              />
+            </div>
+            <span className="absolute bottom-0 right-0 p-1 bg-[var(--card)] rounded-full border border-[var(--border)] shadow-xs text-[11px] group-hover:scale-110 transition-transform">
+              🏸
+            </span>
+          </button>
+          <div className="text-[10px] sm:text-[11px] font-bold uppercase tracking-wider text-[var(--accent)] mt-1.5 flex items-center gap-1.5">
+            <span>FC Rất Chuyên</span>
+            <span className="text-[var(--muted)]">•</span>
+            <span className="text-[var(--muted)]">2026 Tournament</span>
+          </div>
+        </div>
+
         {/* Title row */}
         <div className="flex items-center justify-center gap-2.5 mb-1.5 flex-wrap">
           <div className="hover:scale-110 transition-transform">
@@ -522,6 +554,16 @@ export function BadmintonCalculator() {
           >
             <QrCode className="w-3.5 h-3.5 text-[var(--accent)]" />
             <span>Mã QR</span>
+          </button>
+
+          {/* Team Photo button */}
+          <button
+            onClick={() => setIsTeamPhotoOpen(true)}
+            className="flex items-center gap-1.5 h-8 px-2.5 rounded-xl text-xs font-medium text-[var(--text)] hover:bg-[var(--bg)] transition-colors cursor-pointer"
+            title="Xem ảnh kỷ niệm giải đấu FC Rất Chuyên"
+          >
+            <Camera className="w-3.5 h-3.5 text-amber-500" />
+            <span>Ảnh CLB</span>
           </button>
 
           {/* Reset button */}
@@ -1345,6 +1387,45 @@ export function BadmintonCalculator() {
               </div>
             </section>
           )}
+
+          {/* FC Rat Chuyen Team Showcase Card */}
+          <section className="app-card p-4 overflow-hidden">
+            <div className="flex items-center justify-between mb-2.5">
+              <span className="text-xs font-bold uppercase tracking-wider text-[var(--muted)] flex items-center gap-1.5">
+                <Trophy className="w-3.5 h-3.5 text-amber-500 fill-amber-500" />
+                <span>FC Rất Chuyên (2026)</span>
+              </span>
+              <button
+                type="button"
+                onClick={() => setIsTeamPhotoOpen(true)}
+                className="text-[11px] text-[var(--accent)] hover:underline flex items-center gap-1 cursor-pointer font-medium"
+              >
+                <span>Xem ảnh lớn</span>
+                <ArrowUpRight className="w-3 h-3" />
+              </button>
+            </div>
+
+            <div
+              onClick={() => setIsTeamPhotoOpen(true)}
+              className="group relative rounded-[12px] overflow-hidden border border-[var(--border)] cursor-pointer bg-black/40"
+              title="Bấm để mở ảnh lớn giải đấu"
+            >
+              {/* eslint-disable-next-line @next/next/no-img-element */}
+              <img
+                src="/team-photo.jpg"
+                alt="FC Rất Chuyên Team Photo"
+                className="w-full h-44 sm:h-48 object-cover group-hover:scale-105 transition-transform duration-300"
+              />
+              <div className="absolute inset-0 bg-gradient-to-t from-black/85 via-black/30 to-transparent flex flex-col justify-end p-3 text-white">
+                <div className="text-xs font-bold flex items-center gap-1.5">
+                  <span>2026 Badminton Tournament</span>
+                </div>
+                <div className="text-[10px] text-slate-300">
+                  115 Quán Thánh, Hà Nội • Bấm để phóng to
+                </div>
+              </div>
+            </div>
+          </section>
         </div>
       </div>
 
@@ -1390,6 +1471,12 @@ export function BadmintonCalculator() {
         onDelete={handleDeleteHistory}
         onClear={handleClearHistory}
         onRestore={handleRestoreHistory}
+      />
+
+      {/* Team Photo Lightbox Modal */}
+      <TeamPhotoModal
+        isOpen={isTeamPhotoOpen}
+        onClose={() => setIsTeamPhotoOpen(false)}
       />
     </div>
   );

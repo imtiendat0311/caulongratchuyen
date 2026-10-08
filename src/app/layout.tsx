@@ -2,19 +2,27 @@ import type { Metadata, Viewport } from "next";
 import "./globals.css";
 
 export const metadata: Metadata = {
-  title: "Cầu Lông Rất Chuyên - Tính tiền chia sau mỗi buổi chơi",
+  metadataBase: new URL("https://caulongratchuyen.vercel.app"),
+  title: "Cầu Lông Rất Chuyên - FC Rất Chuyên",
   description:
-    "Ứng dụng tính tiền chia sau mỗi buổi chơi cầu lông công bằng & nhanh gọn cho Nam và Nữ.",
+    "Ứng dụng tính tiền chia sau mỗi buổi chơi cầu lông công bằng & nhanh gọn cho FC Rất Chuyên.",
   keywords: [
     "cầu lông",
     "tính tiền cầu lông",
     "chia tiền cầu lông",
     "cầu lông rất chuyên",
+    "fc rất chuyên",
     "badminton cost calculator",
   ],
-  authors: [{ name: "Cầu Lông Rất Chuyên" }],
+  authors: [{ name: "FC Rất Chuyên" }],
   icons: {
-    icon: "/favicon.ico",
+    icon: "/team-photo.jpg",
+    apple: "/team-photo.jpg",
+  },
+  openGraph: {
+    title: "Cầu Lông Rất Chuyên - FC Rất Chuyên",
+    description: "Tính tiền chia sau mỗi buổi chơi cầu lông công bằng & nhanh gọn.",
+    images: [{ url: "/team-photo.jpg", width: 960, height: 960, alt: "FC Rất Chuyên" }],
   },
 };
 
