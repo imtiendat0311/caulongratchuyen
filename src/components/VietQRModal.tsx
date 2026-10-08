@@ -55,7 +55,6 @@ export function VietQRModal({
         )}`
       : null;
 
-
   const handleCopyAcc = () => {
     if (!accountNo) return;
     navigator.clipboard.writeText(`${accountNo} - ${bankId} (${accountName})`);
@@ -64,26 +63,26 @@ export function VietQRModal({
   };
 
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/50 backdrop-blur-xs animate-in fade-in duration-200">
-      <div className="relative w-full max-w-sm rounded-2xl bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 shadow-2xl p-5 overflow-hidden">
+    <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/60 backdrop-blur-xs animate-in fade-in duration-200">
+      <div className="relative w-full max-w-sm rounded-[16px] bg-[var(--card)] border border-[var(--border)] shadow-[var(--shadow)] p-5 text-[var(--text)] overflow-hidden">
         {/* Close button */}
         <button
           onClick={onClose}
-          className="absolute top-4 right-4 p-1.5 rounded-full text-slate-400 hover:text-slate-700 dark:hover:text-slate-200 hover:bg-slate-100 dark:hover:bg-slate-800 transition-colors cursor-pointer"
+          className="absolute top-4 right-4 p-1.5 rounded-lg text-[var(--muted)] hover:text-[var(--text)] hover:bg-[var(--bg)] transition-colors cursor-pointer"
           aria-label="Đóng"
         >
           <X className="w-4 h-4" />
         </button>
 
-        <div className="flex items-center gap-2 mb-4">
-          <div className="p-2 rounded-xl bg-blue-50 dark:bg-blue-950/60 text-blue-600 dark:text-blue-400">
+        <div className="flex items-center gap-2.5 mb-4">
+          <div className="p-2 rounded-xl bg-[var(--bg)] border border-[var(--border)] text-[var(--accent)]">
             <QrCode className="w-5 h-5" />
           </div>
           <div>
-            <h3 className="font-semibold text-base text-slate-900 dark:text-white">
+            <h3 className="font-bold text-base text-[var(--text)]">
               Mã VietQR Nhận Tiền
             </h3>
-            <p className="text-xs text-slate-500 dark:text-slate-400">
+            <p className="text-xs text-[var(--muted)]">
               Quét mã ngân hàng để các bạn chuyển khoản nhanh
             </p>
           </div>
@@ -93,7 +92,7 @@ export function VietQRModal({
         <div className="space-y-3 mb-4">
           <div className="grid grid-cols-2 gap-2">
             <div>
-              <label className="block text-[11px] font-medium text-slate-500 dark:text-slate-400 mb-1">
+              <label className="block text-[11px] font-medium text-[var(--muted)] mb-1">
                 Ngân hàng
               </label>
               <select
@@ -102,7 +101,7 @@ export function VietQRModal({
                   setBankId(e.target.value);
                   onSaveBankConfig({ ...bankConfig, bankId: e.target.value });
                 }}
-                className="w-full py-1.5 px-2 text-xs rounded-lg border border-slate-200 dark:border-slate-800 bg-slate-50 dark:bg-slate-950 text-slate-800 dark:text-slate-200 outline-none focus:border-blue-500"
+                className="w-full py-2 px-2.5 text-xs rounded-[10px] border border-[var(--border)] bg-[var(--bg)] text-[var(--text)] outline-none focus:border-[var(--accent)]"
               >
                 {POPULAR_BANKS.map((b) => (
                   <option key={b.id} value={b.id}>
@@ -113,7 +112,7 @@ export function VietQRModal({
             </div>
 
             <div>
-              <label className="block text-[11px] font-medium text-slate-500 dark:text-slate-400 mb-1">
+              <label className="block text-[11px] font-medium text-[var(--muted)] mb-1">
                 Số tài khoản
               </label>
               <input
@@ -127,13 +126,13 @@ export function VietQRModal({
                     accountNo: e.target.value.trim(),
                   });
                 }}
-                className="w-full py-1.5 px-2 text-xs rounded-lg border border-slate-200 dark:border-slate-800 bg-slate-50 dark:bg-slate-950 text-slate-800 dark:text-slate-200 outline-none focus:border-blue-500"
+                className="w-full py-2 px-2.5 text-xs rounded-[10px] border border-[var(--border)] bg-[var(--bg)] text-[var(--text)] outline-none focus:border-[var(--accent)]"
               />
             </div>
           </div>
 
           <div>
-            <label className="block text-[11px] font-medium text-slate-500 dark:text-slate-400 mb-1">
+            <label className="block text-[11px] font-medium text-[var(--muted)] mb-1">
               Tên chủ tài khoản (không dấu)
             </label>
             <input
@@ -147,20 +146,20 @@ export function VietQRModal({
                   accountName: e.target.value.trim().toUpperCase(),
                 });
               }}
-              className="w-full py-1.5 px-2 text-xs rounded-lg border border-slate-200 dark:border-slate-800 bg-slate-50 dark:bg-slate-950 text-slate-800 dark:text-slate-200 outline-none focus:border-blue-500 uppercase"
+              className="w-full py-2 px-2.5 text-xs rounded-[10px] border border-[var(--border)] bg-[var(--bg)] text-[var(--text)] outline-none focus:border-[var(--accent)] uppercase"
             />
           </div>
         </div>
 
         {/* Gender selector for QR amount */}
-        <div className="flex rounded-xl bg-slate-100 dark:bg-slate-800 p-1 mb-3">
+        <div className="flex rounded-[10px] bg-[var(--bg)] border border-[var(--border)] p-1 mb-3">
           <button
             type="button"
             onClick={() => setSelectedGender("nam")}
-            className={`flex-1 py-1.5 text-xs font-semibold rounded-lg transition-all cursor-pointer ${
+            className={`flex-1 py-1.5 text-xs font-semibold rounded-[8px] transition-all cursor-pointer ${
               selectedGender === "nam"
-                ? "bg-blue-600 text-white shadow-xs"
-                : "text-slate-600 dark:text-slate-400 hover:text-slate-900"
+                ? "bg-[var(--accent)] text-white shadow-xs"
+                : "text-[var(--muted)] hover:text-[var(--text)]"
             }`}
           >
             Nam: {Math.round(amountNam).toLocaleString("vi-VN")} đ
@@ -168,10 +167,10 @@ export function VietQRModal({
           <button
             type="button"
             onClick={() => setSelectedGender("nu")}
-            className={`flex-1 py-1.5 text-xs font-semibold rounded-lg transition-all cursor-pointer ${
+            className={`flex-1 py-1.5 text-xs font-semibold rounded-[8px] transition-all cursor-pointer ${
               selectedGender === "nu"
-                ? "bg-pink-600 text-white shadow-xs"
-                : "text-slate-600 dark:text-slate-400 hover:text-slate-900"
+                ? "bg-[var(--female)] text-white shadow-xs"
+                : "text-[var(--muted)] hover:text-[var(--text)]"
             }`}
           >
             Nữ: {Math.round(amountNu).toLocaleString("vi-VN")} đ
@@ -180,7 +179,7 @@ export function VietQRModal({
 
         {/* QR Display */}
         {qrUrl ? (
-          <div className="flex flex-col items-center justify-center p-3 bg-white dark:bg-white rounded-xl border border-slate-200 shadow-inner">
+          <div className="flex flex-col items-center justify-center p-3 bg-white rounded-[12px] border border-[var(--border)] shadow-xs">
             {/* eslint-disable-next-line @next/next/no-img-element */}
             <img
               src={qrUrl}
@@ -191,7 +190,7 @@ export function VietQRModal({
             <div className="flex items-center gap-2 mt-2">
               <button
                 onClick={handleCopyAcc}
-                className="flex items-center gap-1 text-[11px] font-medium text-slate-600 hover:text-blue-600 bg-slate-100 px-2 py-1 rounded-md transition-colors"
+                className="flex items-center gap-1 text-[11px] font-medium text-slate-700 hover:text-blue-600 bg-slate-100 px-2.5 py-1 rounded-md transition-colors cursor-pointer"
               >
                 {copied ? (
                   <Check className="w-3 h-3 text-green-600" />
@@ -204,7 +203,7 @@ export function VietQRModal({
                 href={qrUrl}
                 target="_blank"
                 rel="noreferrer"
-                className="flex items-center gap-1 text-[11px] font-medium text-slate-600 hover:text-blue-600 bg-slate-100 px-2 py-1 rounded-md transition-colors"
+                className="flex items-center gap-1 text-[11px] font-medium text-slate-700 hover:text-blue-600 bg-slate-100 px-2.5 py-1 rounded-md transition-colors"
               >
                 <ExternalLink className="w-3 h-3" />
                 Mở ảnh lớn
@@ -212,7 +211,7 @@ export function VietQRModal({
             </div>
           </div>
         ) : (
-          <div className="text-center py-6 text-xs text-slate-400 dark:text-slate-500 bg-slate-50 dark:bg-slate-950/40 rounded-xl border border-dashed border-slate-200 dark:border-slate-800">
+          <div className="text-center py-6 text-xs text-[var(--muted)] bg-[var(--bg)] rounded-[10px] border border-dashed border-[var(--border)]">
             Vui lòng nhập Số tài khoản để hiển thị mã QR
           </div>
         )}

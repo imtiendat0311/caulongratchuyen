@@ -12,7 +12,6 @@ interface NumberInputProps {
   step?: number;
   unit?: string;
   hint?: string;
-  icon?: React.ReactNode;
 }
 
 export function NumberInput({
@@ -24,7 +23,6 @@ export function NumberInput({
   step = 1,
   unit,
   hint,
-  icon,
 }: NumberInputProps) {
   const handleDecrement = () => {
     const next = Math.max(min, Number((value - step).toFixed(2)));
@@ -46,27 +44,26 @@ export function NumberInput({
   };
 
   return (
-    <div className="flex-1 min-w-[130px]">
+    <div className="flex-1 min-w-[120px]">
       <div className="flex items-center justify-between mb-1.5">
         <label
           htmlFor={id}
-          className="text-xs font-medium text-slate-500 dark:text-slate-400 flex items-center gap-1.5"
+          className="text-[0.82rem] font-medium text-[var(--muted)]"
         >
-          {icon}
           {label}
         </label>
         {hint && (
-          <span className="text-[10px] text-slate-400 dark:text-slate-500 font-normal">
+          <span className="text-[11px] text-[var(--muted)] opacity-80">
             {hint}
           </span>
         )}
       </div>
 
-      <div className="relative flex items-center rounded-xl bg-slate-50/80 dark:bg-slate-900/60 border border-slate-200 dark:border-slate-800 transition-all focus-within:border-blue-500 dark:focus-within:border-blue-400 focus-within:ring-2 focus-within:ring-blue-500/20 shadow-xs">
+      <div className="relative flex items-center rounded-[10px] bg-[var(--bg)] border border-[var(--border)] transition-colors focus-within:border-[var(--accent)]">
         <button
           type="button"
           onClick={handleDecrement}
-          className="p-2 text-slate-400 hover:text-slate-700 dark:hover:text-slate-200 active:scale-95 transition-all cursor-pointer rounded-l-xl"
+          className="h-10 px-2.5 text-[var(--muted)] hover:text-[var(--text)] active:scale-95 transition-all cursor-pointer rounded-l-[10px] flex items-center justify-center"
           aria-label={`Giảm ${label}`}
         >
           <Minus className="w-3.5 h-3.5" />
@@ -80,11 +77,11 @@ export function NumberInput({
           value={value === 0 ? "" : value}
           placeholder="0"
           onChange={handleChange}
-          className="w-full text-center py-2 px-1 bg-transparent text-slate-800 dark:text-slate-100 font-semibold text-base outline-none [appearance:textfield] [&::-webkit-outer-spin-button]:appearance-none [&::-webkit-inner-spin-button]:appearance-none"
+          className="w-full text-center py-2 px-1 bg-transparent text-[var(--text)] font-semibold text-base outline-none [appearance:textfield] [&::-webkit-outer-spin-button]:appearance-none [&::-webkit-inner-spin-button]:appearance-none"
         />
 
         {unit && (
-          <span className="text-xs font-medium text-slate-400 dark:text-slate-500 pr-1 select-none pointer-events-none">
+          <span className="text-xs font-medium text-[var(--muted)] pr-2 select-none pointer-events-none">
             {unit}
           </span>
         )}
@@ -92,7 +89,7 @@ export function NumberInput({
         <button
           type="button"
           onClick={handleIncrement}
-          className="p-2 text-slate-400 hover:text-slate-700 dark:hover:text-slate-200 active:scale-95 transition-all cursor-pointer rounded-r-xl"
+          className="h-10 px-2.5 text-[var(--muted)] hover:text-[var(--text)] active:scale-95 transition-all cursor-pointer rounded-r-[10px] flex items-center justify-center"
           aria-label={`Tăng ${label}`}
         >
           <Plus className="w-3.5 h-3.5" />

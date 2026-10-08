@@ -58,15 +58,15 @@ export function ThemeToggle() {
   return (
     <button
       onClick={cycleTheme}
-      className="flex items-center justify-center w-9 h-9 rounded-xl border border-slate-200 dark:border-slate-800 bg-white/80 dark:bg-slate-800/80 text-slate-700 dark:text-slate-200 shadow-xs hover:scale-105 active:scale-95 transition-all cursor-pointer backdrop-blur-xs"
+      className="flex items-center justify-center w-9 h-9 rounded-xl border border-[var(--border)] bg-[var(--card)] text-[var(--text)] shadow-xs hover:border-[var(--accent)] active:scale-95 transition-all cursor-pointer"
       title={`Chế độ giao diện: ${
         theme === "system" ? "Hệ thống" : theme === "light" ? "Sáng" : "Tối"
       }`}
       aria-label="Đổi giao diện sáng/tối"
     >
       {theme === "light" && <Sun className="w-4 h-4 text-amber-500" />}
-      {theme === "dark" && <Moon className="w-4 h-4 text-indigo-400" />}
-      {theme === "system" && <Laptop className="w-4 h-4 text-blue-500" />}
+      {theme === "dark" && <Moon className="w-4 h-4 text-blue-400" />}
+      {theme === "system" && <Laptop className="w-4 h-4 text-[var(--accent)]" />}
     </button>
   );
 }
