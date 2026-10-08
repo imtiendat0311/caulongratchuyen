@@ -1,7 +1,7 @@
 "use client";
 
 import React, { useState } from "react";
-import { QrCode, X, Copy, Check, ExternalLink, Crown } from "lucide-react";
+import { QrCode, X, Copy, Check, ExternalLink, Crown, ChevronDown } from "lucide-react";
 import { BankConfig, Member, POPULAR_BANKS } from "@/types";
 
 interface VietQRModalProps {
@@ -167,17 +167,20 @@ function VietQRContent({
                 <label className="block text-[11px] font-medium text-[var(--muted)] mb-1">
                   Ngân hàng
                 </label>
-                <select
-                  value={bankId}
-                  onChange={(e) => handleBankChange(e.target.value)}
-                  className="w-full py-1.5 px-2 text-xs rounded-[10px] border border-[var(--border)] bg-[var(--bg)] text-[var(--text)] outline-none focus:border-[var(--accent)] cursor-pointer"
-                >
-                  {POPULAR_BANKS.map((b) => (
-                    <option key={b.id} value={b.id}>
-                      {b.id} - {b.name}
-                    </option>
-                  ))}
-                </select>
+                <div className="relative">
+                  <select
+                    value={bankId}
+                    onChange={(e) => handleBankChange(e.target.value)}
+                    className="w-full appearance-none h-8 pl-2.5 pr-7 text-xs rounded-[8px] border border-[var(--border)] bg-[var(--bg)] text-[var(--text)] outline-none focus:border-[var(--accent)] cursor-pointer"
+                  >
+                    {POPULAR_BANKS.map((b) => (
+                      <option key={b.id} value={b.id}>
+                        {b.id} - {b.name}
+                      </option>
+                    ))}
+                  </select>
+                  <ChevronDown className="w-3.5 h-3.5 absolute right-2 top-1/2 -translate-y-1/2 pointer-events-none text-[var(--muted)]" />
+                </div>
               </div>
 
               <div>

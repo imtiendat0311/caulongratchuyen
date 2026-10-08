@@ -13,6 +13,7 @@ import {
   Check,
   Edit2,
   Save,
+  ChevronDown,
 } from "lucide-react";
 import { Member, POPULAR_BANKS } from "@/types";
 
@@ -210,44 +211,47 @@ export function MemberManagerModal({
               Chọn Host đại diện thu tiền cho tháng này. Không tự động sync khi vừa chọn nhằm tránh xung đột khi nhiều người cùng mở app.
             </p>
 
-            <div className="grid grid-cols-1 sm:grid-cols-12 gap-2 items-center pt-1">
+            <div className="grid grid-cols-1 sm:grid-cols-12 gap-2.5 items-end pt-1">
               <div className="sm:col-span-4">
-                <label className="block text-[10px] text-[var(--muted)] mb-0.5 font-medium">
+                <label className="block text-[10.5px] text-[var(--muted)] mb-1 font-medium">
                   Tháng áp dụng
                 </label>
                 <input
                   type="month"
                   value={selectedMonth}
                   onChange={(e) => setUserSelectedMonth(e.target.value)}
-                  className="w-full py-1.5 px-2.5 text-xs font-semibold rounded-[8px] border border-amber-500/30 bg-[var(--card)] text-[var(--text)] outline-none focus:border-amber-500"
+                  className="w-full h-9 px-3 text-xs font-semibold rounded-[8px] border border-amber-500/30 bg-[var(--card)] text-[var(--text)] outline-none focus:border-amber-500 shadow-2xs"
                 />
               </div>
 
               <div className="sm:col-span-5">
-                <label className="block text-[10px] text-[var(--muted)] mb-0.5 font-medium">
+                <label className="block text-[10.5px] text-[var(--muted)] mb-1 font-medium">
                   Thành viên Host
                 </label>
-                <select
-                  value={stagedHostId}
-                  onChange={(e) => setUserSelectedHostId(e.target.value)}
-                  className="w-full py-1.5 px-2.5 text-xs font-semibold rounded-[8px] border border-amber-500/40 bg-[var(--card)] text-[var(--text)] outline-none focus:border-amber-500 cursor-pointer"
-                >
-                  <option value="">-- Chưa chỉ định (Để trống) --</option>
-                  {members.map((m) => (
-                    <option key={m.id} value={m.id}>
-                      {m.name} ({m.gender === "male" ? "Nam" : "Nữ"})
-                      {m.account_no ? ` - ${m.bank_id}` : ""}
-                    </option>
-                  ))}
-                </select>
+                <div className="relative">
+                  <select
+                    value={stagedHostId}
+                    onChange={(e) => setUserSelectedHostId(e.target.value)}
+                    className="w-full h-9 appearance-none pl-3 pr-8 text-xs font-semibold rounded-[8px] border border-amber-500/40 bg-[var(--card)] text-[var(--text)] outline-none focus:border-amber-500 cursor-pointer shadow-2xs truncate"
+                  >
+                    <option value="">-- Chưa chỉ định (Để trống) --</option>
+                    {members.map((m) => (
+                      <option key={m.id} value={m.id}>
+                        {m.name} ({m.gender === "male" ? "Nam" : "Nữ"})
+                        {m.account_no ? ` - ${m.bank_id}` : ""}
+                      </option>
+                    ))}
+                  </select>
+                  <ChevronDown className="w-3.5 h-3.5 absolute right-2.5 top-1/2 -translate-y-1/2 pointer-events-none text-amber-500/80" />
+                </div>
               </div>
 
-              <div className="sm:col-span-3 flex items-end">
+              <div className="sm:col-span-3">
                 <button
                   type="button"
                   onClick={handleSaveMonthlyHost}
                   disabled={isSavingHost || !selectedMonth}
-                  className={`w-full py-1.5 px-2.5 rounded-[8px] text-xs font-semibold flex items-center justify-center gap-1.5 transition-all cursor-pointer shadow-xs ${
+                  className={`w-full h-9 px-3 rounded-[8px] text-xs font-semibold flex items-center justify-center gap-1.5 transition-all cursor-pointer shadow-2xs ${
                     hostSaveSuccess
                       ? "bg-emerald-600 text-white"
                       : isHostDirty
@@ -335,17 +339,20 @@ export function MemberManagerModal({
                   <label className="block text-[10px] text-[var(--muted)] mb-0.5">
                     Ngân hàng
                   </label>
-                  <select
-                    value={bankId}
-                    onChange={(e) => setBankId(e.target.value)}
-                    className="w-full py-1 px-2 text-xs rounded-[8px] border border-[var(--border)] bg-[var(--card)] text-[var(--text)] outline-none"
-                  >
-                    {POPULAR_BANKS.map((b) => (
-                      <option key={b.id} value={b.id}>
-                        {b.id} - {b.name}
-                      </option>
-                    ))}
-                  </select>
+                  <div className="relative">
+                    <select
+                      value={bankId}
+                      onChange={(e) => setBankId(e.target.value)}
+                      className="w-full appearance-none py-1 pl-2.5 pr-7 text-xs rounded-[8px] border border-[var(--border)] bg-[var(--card)] text-[var(--text)] outline-none cursor-pointer"
+                    >
+                      {POPULAR_BANKS.map((b) => (
+                        <option key={b.id} value={b.id}>
+                          {b.id} - {b.name}
+                        </option>
+                      ))}
+                    </select>
+                    <ChevronDown className="w-3.5 h-3.5 absolute right-2 top-1/2 -translate-y-1/2 pointer-events-none text-[var(--muted)]" />
+                  </div>
                 </div>
                 <div>
                   <label className="block text-[10px] text-[var(--muted)] mb-0.5">
@@ -521,19 +528,22 @@ export function MemberManagerModal({
                                   <label className="block text-[10px] text-[var(--muted)] mb-0.5">
                                     Ngân hàng
                                   </label>
-                                  <select
-                                    value={editBankId}
-                                    onChange={(e) =>
-                                      setEditBankId(e.target.value)
-                                    }
-                                    className="w-full py-1 px-2 text-xs rounded-[8px] border border-[var(--border)] bg-[var(--card)] text-[var(--text)] outline-none"
-                                  >
-                                    {POPULAR_BANKS.map((b) => (
-                                      <option key={b.id} value={b.id}>
-                                        {b.id} - {b.name}
-                                      </option>
-                                    ))}
-                                  </select>
+                                  <div className="relative">
+                                    <select
+                                      value={editBankId}
+                                      onChange={(e) =>
+                                        setEditBankId(e.target.value)
+                                      }
+                                      className="w-full appearance-none py-1 pl-2.5 pr-7 text-xs rounded-[8px] border border-[var(--border)] bg-[var(--card)] text-[var(--text)] outline-none cursor-pointer"
+                                    >
+                                      {POPULAR_BANKS.map((b) => (
+                                        <option key={b.id} value={b.id}>
+                                          {b.id} - {b.name}
+                                        </option>
+                                      ))}
+                                    </select>
+                                    <ChevronDown className="w-3.5 h-3.5 absolute right-2 top-1/2 -translate-y-1/2 pointer-events-none text-[var(--muted)]" />
+                                  </div>
                                 </div>
                                 <div>
                                   <label className="block text-[10px] text-[var(--muted)] mb-0.5">
@@ -685,19 +695,22 @@ export function MemberManagerModal({
                                   <label className="block text-[10px] text-[var(--muted)] mb-0.5">
                                     Ngân hàng
                                   </label>
-                                  <select
-                                    value={editBankId}
-                                    onChange={(e) =>
-                                      setEditBankId(e.target.value)
-                                    }
-                                    className="w-full py-1 px-2 text-xs rounded-[8px] border border-[var(--border)] bg-[var(--card)] text-[var(--text)] outline-none"
-                                  >
-                                    {POPULAR_BANKS.map((b) => (
-                                      <option key={b.id} value={b.id}>
-                                        {b.id} - {b.name}
-                                      </option>
-                                    ))}
-                                  </select>
+                                  <div className="relative">
+                                    <select
+                                      value={editBankId}
+                                      onChange={(e) =>
+                                        setEditBankId(e.target.value)
+                                      }
+                                      className="w-full appearance-none py-1 pl-2.5 pr-7 text-xs rounded-[8px] border border-[var(--border)] bg-[var(--card)] text-[var(--text)] outline-none cursor-pointer"
+                                    >
+                                      {POPULAR_BANKS.map((b) => (
+                                        <option key={b.id} value={b.id}>
+                                          {b.id} - {b.name}
+                                        </option>
+                                      ))}
+                                    </select>
+                                    <ChevronDown className="w-3.5 h-3.5 absolute right-2 top-1/2 -translate-y-1/2 pointer-events-none text-[var(--muted)]" />
+                                  </div>
                                 </div>
                                 <div>
                                   <label className="block text-[10px] text-[var(--muted)] mb-0.5">

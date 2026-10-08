@@ -207,31 +207,34 @@ export function CourtPickerAndMap({
             Chọn địa điểm sân cầu lông:
           </label>
           <div className="flex gap-2">
-            <select
-              value={
-                isCustomMode
-                  ? "custom"
-                  : PRESET_COURTS.find((c) => c.name === courtName)?.id || "custom"
-              }
-              onChange={(e) => {
-                if (e.target.value === "custom") {
-                  setIsCustomMode(true);
-                  setCustomName(courtName);
-                  setCustomAddress(courtAddress);
-                } else {
-                  const found = PRESET_COURTS.find((c) => c.id === e.target.value);
-                  if (found) handleSelectPreset(found);
+            <div className="relative flex-1">
+              <select
+                value={
+                  isCustomMode
+                    ? "custom"
+                    : PRESET_COURTS.find((c) => c.name === courtName)?.id || "custom"
                 }
-              }}
-              className="flex-1 py-1.5 px-3 text-xs font-semibold rounded-[10px] border border-[var(--border)] bg-[var(--bg)] text-[var(--text)] outline-none focus:border-[var(--accent)] cursor-pointer"
-            >
-              {PRESET_COURTS.map((c) => (
-                <option key={c.id} value={c.id}>
-                  {c.name} ({c.address.split(",")[0]})
-                </option>
-              ))}
-              <option value="custom">✏️ Nhập sân khác...</option>
-            </select>
+                onChange={(e) => {
+                  if (e.target.value === "custom") {
+                    setIsCustomMode(true);
+                    setCustomName(courtName);
+                    setCustomAddress(courtAddress);
+                  } else {
+                    const found = PRESET_COURTS.find((c) => c.id === e.target.value);
+                    if (found) handleSelectPreset(found);
+                  }
+                }}
+                className="w-full appearance-none py-2 pl-3.5 pr-9 text-xs font-semibold rounded-[10px] border border-[var(--border)] bg-[var(--bg)] text-[var(--text)] outline-none focus:border-[var(--accent)] cursor-pointer shadow-2xs"
+              >
+                {PRESET_COURTS.map((c) => (
+                  <option key={c.id} value={c.id}>
+                    {c.name} ({c.address.split(",")[0]})
+                  </option>
+                ))}
+                <option value="custom">✏️ Nhập sân khác...</option>
+              </select>
+              <ChevronDown className="w-4 h-4 absolute right-3 top-1/2 -translate-y-1/2 pointer-events-none text-[var(--muted)]" />
+            </div>
           </div>
         </div>
 

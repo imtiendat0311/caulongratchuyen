@@ -744,29 +744,32 @@ export function BadmintonCalculator() {
 
           {/* Quick host changer for today */}
           <div className="flex items-center gap-1.5 shrink-0">
-            <select
-              value={data.hostMemberId || ""}
-              onChange={(e) => handleDailyHostChange(e.target.value)}
-              className="py-1 px-2.5 text-xs rounded-[8px] border border-[var(--border)] bg-[var(--card)] text-[var(--text)] outline-none focus:border-[var(--accent)] cursor-pointer max-w-[170px]"
-              title="Đổi Host riêng cho buổi hôm nay nếu có sự cố"
-            >
-              <option value="">
-                {monthlyHostMember
-                  ? `Mặc định (${monthlyHostMember.name})`
-                  : "-- Chọn Host hôm nay --"}
-              </option>
-              {members.map((m) => (
-                <option key={m.id} value={m.id}>
-                  {m.name} {m.id === monthlyHostId ? "(Host tháng)" : ""}
+            <div className="relative inline-flex items-center">
+              <select
+                value={data.hostMemberId || ""}
+                onChange={(e) => handleDailyHostChange(e.target.value)}
+                className="appearance-none h-8 pl-3 pr-8 text-xs font-semibold rounded-[8px] border border-[var(--border)] bg-[var(--card)] text-[var(--text)] outline-none focus:border-[var(--accent)] cursor-pointer max-w-[190px] truncate shadow-2xs"
+                title="Đổi Host riêng cho buổi hôm nay nếu có sự cố"
+              >
+                <option value="">
+                  {monthlyHostMember
+                    ? `Mặc định (${monthlyHostMember.name})`
+                    : "-- Chọn Host hôm nay --"}
                 </option>
-              ))}
-            </select>
+                {members.map((m) => (
+                  <option key={m.id} value={m.id}>
+                    {m.name} {m.id === monthlyHostId ? "(Host tháng)" : ""}
+                  </option>
+                ))}
+              </select>
+              <ChevronDown className="w-3.5 h-3.5 absolute right-2.5 top-1/2 -translate-y-1/2 pointer-events-none text-[var(--muted)]" />
+            </div>
 
             {isHostOverridden && (
               <button
                 type="button"
                 onClick={() => handleDailyHostChange("")}
-                className="p-1.5 rounded-[8px] border border-[var(--border)] text-xs text-[var(--muted)] hover:text-purple-400 hover:bg-[var(--card)] cursor-pointer transition-colors"
+                className="h-8 w-8 flex items-center justify-center rounded-[8px] border border-[var(--border)] text-xs text-[var(--muted)] hover:text-purple-400 hover:bg-[var(--card)] cursor-pointer transition-colors"
                 title="Khôi phục về Host mặc định tháng"
               >
                 <RotateCcw className="w-3.5 h-3.5" />
@@ -776,7 +779,7 @@ export function BadmintonCalculator() {
             <button
               type="button"
               onClick={() => setIsMemberModalOpen(true)}
-              className="flex items-center gap-1 py-1 px-2 rounded-[8px] border border-[var(--border)] text-xs text-[var(--muted)] hover:text-[var(--text)] hover:bg-[var(--card)] cursor-pointer transition-colors"
+              className="h-8 flex items-center gap-1.5 px-2.5 rounded-[8px] border border-[var(--border)] text-xs text-[var(--muted)] hover:text-[var(--text)] hover:bg-[var(--card)] cursor-pointer transition-colors"
               title="Cài đặt Host mặc định theo tháng & Thành viên"
             >
               <Settings className="w-3.5 h-3.5 text-amber-500" />
