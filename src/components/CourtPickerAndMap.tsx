@@ -1,20 +1,28 @@
 "use client";
 
 import React, { useState, useMemo } from "react";
+import dynamic from "next/dynamic";
 import {
-  MapPin,
-  Navigation,
   ChevronDown,
   ChevronUp,
-  Copy,
-  Check,
   Building2,
-  ExternalLink,
   Plus,
   Calculator,
   Layers,
+  MapPin,
 } from "lucide-react";
 import { PRESET_COURTS, BadmintonCourt } from "@/types";
+
+// Dynamically import ElegantCourtMap to avoid any SSR issues with Leaflet
+const ElegantCourtMap = dynamic(() => import("./ElegantCourtMap"), {
+  ssr: false,
+  loading: () => (
+    <div className="h-48 sm:h-56 w-full rounded-[16px] bg-[var(--card)] border border-[var(--border)] flex flex-col items-center justify-center text-xs text-[var(--muted)] animate-pulse gap-2">
+      <MapPin className="w-5 h-5 text-emerald-500 animate-bounce" />
+      <span>Đang tải bản đồ sân thi đấu...</span>
+    </div>
+  ),
+});
 
 export function parseCourtsList(courtStr: string): string[] {
   if (!courtStr) return [];
@@ -33,7 +41,6 @@ export function parseCourtsList(courtStr: string): string[] {
 export function formatCourtsList(courts: string[]): string {
   if (courts.length === 0) return "Sân 1, Sân 2";
   const unique = Array.from(new Set(courts));
-  // Sort numerically if in format "Sân X"
   unique.sort((a, b) => {
     const numA = parseInt(a.replace(/\D/g, ""), 10);
     const numB = parseInt(b.replace(/\D/g, ""), 10);
@@ -60,7 +67,6 @@ export function CourtPickerAndMap({
 }: CourtPickerAndMapProps) {
   const [showMap, setShowMap] = useState(true);
   const [isCustomMode, setIsCustomMode] = useState(false);
-  const [copiedAddr, setCopiedAddr] = useState(false);
   const [newCourtInput, setNewCourtInput] = useState("");
   const [showAddCourtForm, setShowAddCourtForm] = useState(false);
 
@@ -115,8 +121,7 @@ export function CourtPickerAndMap({
     let next: string[];
     if (selectedCourts.includes(courtItem)) {
       if (selectedCourts.length <= 1) {
-        // Keep at least 1 court selected
-        return;
+        return; // Keep at least 1 court selected
       }
       next = selectedCourts.filter((c) => c !== courtItem);
     } else {
@@ -138,7 +143,6 @@ export function CourtPickerAndMap({
     if (!courtPool.includes(formatted)) {
       setCourtPool((prev) => [...prev, formatted]);
     }
-    // Also select it
     if (!selectedCourts.includes(formatted)) {
       const next = [...selectedCourts, formatted];
       onCourtChange(courtName, courtAddress, formatCourtsList(next));
@@ -157,20 +161,6 @@ export function CourtPickerAndMap({
     );
   };
 
-  const handleCopyAddress = () => {
-    if (!courtAddress) return;
-    navigator.clipboard.writeText(`${courtName} - ${courtAddress} (${courtNumber})`);
-    setCopiedAddr(true);
-    setTimeout(() => setCopiedAddr(false), 2000);
-  };
-
-  // Query string for embedded maps
-  const mapSearchQuery = encodeURIComponent(
-    `${courtName} ${courtAddress}`.trim() || "115 Quán Thánh Ba Đình Hà Nội"
-  );
-  const directionsUrl = `https://www.google.com/maps/dir/?api=1&destination=${mapSearchQuery}`;
-
-  // Estimate suggested court rent: courtsCount * 2 hours * 130k
   const suggestedCourtRent = courtsCount * 2 * 130;
 
   return (
@@ -381,7 +371,6 @@ export function CourtPickerAndMap({
                       : "bg-[var(--card)] border border-[var(--border)] text-[var(--muted)] hover:text-[var(--text)] hover:border-emerald-500"
                   }`}
                 >
-                  {isSelected && <Check className="w-3 h-3 stroke-[3]" />}
                   <span>{num}</span>
                 </button>
               );
@@ -460,74 +449,16 @@ export function CourtPickerAndMap({
             </div>
           )}
         </div>
-
-        {/* Current Active Court Banner */}
-        <div className="p-2.5 rounded-[12px] bg-[var(--bg)] border border-[var(--border)] flex items-center justify-between gap-2 flex-wrap">
-          <div className="flex items-center gap-2 min-w-0">
-            <MapPin className="w-4 h-4 text-rose-500 shrink-0" />
-            <div className="truncate">
-              <div className="text-xs font-bold text-[var(--text)] truncate flex items-center gap-1.5">
-                <span>{courtName}</span>
-                <span className="text-[10px] font-semibold text-emerald-600 dark:text-emerald-400 bg-emerald-500/10 px-1.5 py-0.2 rounded-full border border-emerald-500/20">
-                  {courtsCount > 1 ? `${courtsCount} sân` : "1 sân"} ({courtNumber || "Sân 1, Sân 2"})
-                </span>
-              </div>
-              <div className="text-[11px] text-[var(--muted)] truncate">
-                {courtAddress}
-              </div>
-            </div>
-          </div>
-
-          <div className="flex items-center gap-1.5 shrink-0">
-            <button
-              type="button"
-              onClick={handleCopyAddress}
-              className="py-1 px-2 text-[11px] rounded-[8px] border border-[var(--border)] bg-[var(--card)] hover:border-[var(--accent)] text-[var(--text)] transition-colors cursor-pointer flex items-center gap-1"
-              title="Sao chép địa chỉ sân"
-            >
-              {copiedAddr ? (
-                <Check className="w-3 h-3 text-green-500" />
-              ) : (
-                <Copy className="w-3 h-3 text-[var(--muted)]" />
-              )}
-              <span>{copiedAddr ? "Đã chép" : "Chép địa chỉ"}</span>
-            </button>
-
-            <a
-              href={directionsUrl}
-              target="_blank"
-              rel="noreferrer"
-              className="py-1 px-2.5 text-[11px] rounded-[8px] bg-rose-500 hover:bg-rose-600 text-white font-semibold transition-colors flex items-center gap-1 shadow-xs"
-            >
-              <Navigation className="w-3 h-3" />
-              <span>Chỉ đường</span>
-            </a>
-          </div>
-        </div>
       </div>
 
-      {/* Embedded Google Maps View */}
+      {/* Elegant Leaflet Map Component (Minimalist, Dark/Light aware, zero clunky overlays) */}
       {showMap && (
         <div className="pt-2 animate-in fade-in duration-200">
-          <div className="relative rounded-[14px] overflow-hidden border border-[var(--border)] shadow-sm bg-neutral-900 h-48 sm:h-56 w-full">
-            <iframe
-              title={`Bản đồ ${courtName}`}
-              className="w-full h-full border-0"
-              loading="lazy"
-              src={`https://maps.google.com/maps?q=${mapSearchQuery}&t=&z=16&ie=UTF8&iwloc=&output=embed`}
-              referrerPolicy="no-referrer-when-downgrade"
-            />
-            {/* Quick floating directions badge */}
-            <a
-              href={directionsUrl}
-              target="_blank"
-              rel="noreferrer"
-              className="absolute bottom-2.5 right-2.5 py-1 px-2.5 rounded-full bg-black/80 hover:bg-black text-white text-[11px] font-semibold flex items-center gap-1 backdrop-blur-xs border border-white/20 transition-all shadow-md"
-            >
-              <ExternalLink className="w-3 h-3 text-rose-400" />
-              <span>Mở Google Maps</span>
-            </a>
-          </div>
+          <ElegantCourtMap
+            courtName={courtName}
+            courtAddress={courtAddress}
+            courtNumber={courtNumber}
+          />
         </div>
       )}
     </section>
