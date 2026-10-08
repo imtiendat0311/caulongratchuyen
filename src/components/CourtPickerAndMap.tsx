@@ -164,7 +164,7 @@ export function CourtPickerAndMap({
   const suggestedCourtRent = courtsCount * 2 * 130;
 
   return (
-    <section className="app-card p-4 sm:p-5 space-y-3">
+    <section className="app-card p-3.5 sm:p-5 space-y-3">
       {/* Header */}
       <div className="flex items-center justify-between flex-wrap gap-2">
         <div className="flex items-center gap-2">
@@ -174,11 +174,9 @@ export function CourtPickerAndMap({
           <div>
             <h2 className="text-xs sm:text-[0.9rem] font-bold uppercase tracking-wider text-[var(--text)] m-0 flex items-center gap-1.5 flex-wrap">
               <span>Sân Thi Đấu &amp; Địa Chỉ</span>
-              <span className="text-[10px] font-bold px-2 py-0.5 rounded-full bg-emerald-600 text-white flex items-center gap-1 shadow-xs">
+              <span className="text-[10px] font-bold px-2 py-0.5 rounded-full bg-emerald-600 text-white flex items-center gap-1 shadow-xs shrink-0">
                 <Layers className="w-3 h-3" />
-                <span>
-                  {courtsCount} Sân: {courtNumber || "Sân 1, Sân 2"}
-                </span>
+                <span>{courtsCount} Sân</span>
               </span>
             </h2>
             <p className="text-[11px] text-[var(--muted)]">
@@ -282,15 +280,17 @@ export function CourtPickerAndMap({
 
         {/* Multi-court Selection Section */}
         <div className="p-3 rounded-[12px] bg-[var(--bg)] border border-[var(--border)] space-y-2.5">
-          <div className="flex items-center justify-between flex-wrap gap-2">
-            <label className="text-[11px] font-bold text-[var(--text)] flex items-center gap-1.5">
-              <span>Sân số mấy (Thuê nhiều sân cùng lúc):</span>
-              <span className="text-[10px] font-semibold px-2 py-0.2 rounded-full bg-emerald-500/20 text-emerald-600 dark:text-emerald-400 border border-emerald-500/30">
-                Đang chọn: {courtsCount} sân
+          <div className="flex items-center justify-between flex-wrap gap-1.5">
+            <div className="flex items-center gap-1.5 flex-wrap min-w-0">
+              <span className="text-[11px] font-bold text-[var(--text)]">
+                Chọn sân:
               </span>
-            </label>
-            <span className="text-[10px] text-[var(--muted)]">
-              Nhấn để chọn/bỏ chọn từng sân
+              <span className="text-[10px] font-semibold px-2 py-0.5 rounded-full bg-emerald-500/20 text-emerald-600 dark:text-emerald-400 border border-emerald-500/30">
+                {courtsCount} sân ({courtNumber || "Sân 1, Sân 2"})
+              </span>
+            </div>
+            <span className="text-[10px] text-[var(--muted)] shrink-0">
+              Chạm để chọn/bỏ chọn
             </span>
           </div>
 
@@ -414,7 +414,7 @@ export function CourtPickerAndMap({
           </div>
 
           {/* Direct Text Edit for Custom String */}
-          <div className="pt-1 flex items-center gap-2">
+          <div className="pt-1 flex items-center gap-2 w-full min-w-0">
             <span className="text-[10px] text-[var(--muted)] shrink-0">
               Chuỗi hiển thị:
             </span>
@@ -423,17 +423,17 @@ export function CourtPickerAndMap({
               placeholder="VD: Sân 1, Sân 2 hoặc Sân 3 & 4"
               value={courtNumber}
               onChange={(e) => onCourtChange(courtName, courtAddress, e.target.value)}
-              className="flex-1 py-1 px-2.5 text-xs rounded-[8px] border border-[var(--border)] bg-[var(--card)] text-[var(--text)] outline-none focus:border-[var(--accent)] font-medium"
+              className="flex-1 min-w-0 py-1 px-2.5 text-xs rounded-[8px] border border-[var(--border)] bg-[var(--card)] text-[var(--text)] outline-none focus:border-[var(--accent)] font-medium"
             />
           </div>
 
           {/* Quick Rent Cost Calculator Bar */}
           {onApplyCourtCost && (
-            <div className="pt-1.5 border-t border-[var(--border)] flex items-center justify-between flex-wrap gap-2">
+            <div className="pt-1.5 border-t border-[var(--border)] flex flex-col sm:flex-row sm:items-center justify-between gap-2">
               <div className="flex items-center gap-1.5 text-[11px] text-[var(--muted)]">
-                <Calculator className="w-3.5 h-3.5 text-emerald-500" />
+                <Calculator className="w-3.5 h-3.5 text-emerald-500 shrink-0" />
                 <span>
-                  Gợi ý tiền sân: <strong>{courtsCount} sân</strong> × 2h × 130k/h ={" "}
+                  Gợi ý tiền sân: <strong>{courtsCount} sân</strong> × 2h × 130k ={" "}
                   <strong className="text-[var(--text)]">
                     {suggestedCourtRent}k
                   </strong>
@@ -442,7 +442,7 @@ export function CourtPickerAndMap({
               <button
                 type="button"
                 onClick={() => onApplyCourtCost(suggestedCourtRent)}
-                className="py-1 px-2.5 rounded-[6px] bg-emerald-500/10 hover:bg-emerald-500/20 text-emerald-600 dark:text-emerald-400 font-semibold text-[11px] border border-emerald-500/30 transition-colors cursor-pointer flex items-center gap-1"
+                className="w-full sm:w-auto py-1 px-2.5 rounded-[6px] bg-emerald-500/10 hover:bg-emerald-500/20 text-emerald-600 dark:text-emerald-400 font-semibold text-[11px] border border-emerald-500/30 transition-colors cursor-pointer flex items-center justify-center gap-1 shrink-0"
               >
                 <span>Áp dụng {suggestedCourtRent}k</span>
               </button>

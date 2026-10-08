@@ -456,7 +456,7 @@ export function BadmintonCalculator() {
   );
 
   return (
-    <div className="w-full max-w-[460px] md:max-w-4xl lg:max-w-5xl mx-auto px-4 py-6 md:py-8 lg:py-10">
+    <div className="w-full max-w-full md:max-w-4xl lg:max-w-5xl mx-auto px-3 sm:px-4 py-4 sm:py-6 md:py-8 lg:py-10 overflow-x-hidden min-w-0">
       {/* Header with Mascots, Title, and Action Toolbar */}
       <header className="mb-6 md:mb-8 text-center">
         {/* Team Avatar Badge */}
@@ -799,9 +799,9 @@ export function BadmintonCalculator() {
       </div>
 
       {/* Responsive Grid: 1 column on Mobile, 2 columns on Laptop/Desktop */}
-      <div className="grid grid-cols-1 md:grid-cols-12 gap-4 md:gap-6 items-start">
+      <div className="grid grid-cols-1 md:grid-cols-12 gap-4 md:gap-6 items-start w-full min-w-0">
         {/* Left Column: Inputs (Người chơi, Chi phí, Ghi chú) */}
-        <div className="md:col-span-7 space-y-4">
+        <div className="w-full min-w-0 md:col-span-7 space-y-4">
           {/* Card: Sân Thi Đấu & Bản Đồ Địa Chỉ */}
           <CourtPickerAndMap
             courtName={data.courtName}
@@ -819,7 +819,7 @@ export function BadmintonCalculator() {
           />
 
           {/* Card: Người chơi & Điểm danh thành viên & Khách ngày hôm nay */}
-          <section className="app-card p-5">
+          <section className="app-card p-3.5 sm:p-5">
             <div className="flex items-center justify-between mb-3.5 flex-wrap gap-2">
               <h2 className="text-[0.95rem] font-bold uppercase tracking-[.04em] text-[var(--muted)] m-0">
                 Người chơi
@@ -955,16 +955,16 @@ export function BadmintonCalculator() {
               </div>
 
               {/* Add guest form */}
-              <form onSubmit={handleAddGuest} className="space-y-2 sm:space-y-0 sm:flex sm:items-center sm:gap-2">
+              <form onSubmit={handleAddGuest} className="w-full min-w-0 flex flex-col sm:flex-row items-stretch sm:items-center gap-2">
                 <input
                   type="text"
                   value={guestName}
                   placeholder="Tên khách (VD: Minh, Hương...)"
                   onChange={(e) => setGuestName(e.target.value)}
-                  className="w-full sm:flex-1 py-2 sm:py-1.5 px-3 text-xs rounded-[8px] border border-[var(--border)] bg-[var(--card)] text-[var(--text)] outline-none focus:border-[var(--accent)]"
+                  className="w-full min-w-0 flex-1 py-2 sm:py-1.5 px-3 text-xs rounded-[8px] border border-[var(--border)] bg-[var(--card)] text-[var(--text)] outline-none focus:border-[var(--accent)]"
                 />
 
-                <div className="flex items-center justify-between sm:justify-start gap-2 shrink-0">
+                <div className="flex items-center justify-between sm:justify-start gap-2 shrink-0 w-full sm:w-auto">
                   {/* Gender toggle */}
                   <div className="inline-flex rounded-[8px] border border-[var(--border)] p-0.5 bg-[var(--card)] shrink-0">
                     <button
@@ -994,7 +994,7 @@ export function BadmintonCalculator() {
                   <button
                     type="submit"
                     disabled={!guestName.trim()}
-                    className="py-1.5 px-3 text-xs font-semibold rounded-[8px] bg-[var(--accent2)] hover:opacity-90 active:scale-95 text-white transition-all cursor-pointer disabled:opacity-40 flex items-center justify-center gap-1 shadow-xs shrink-0 flex-1 sm:flex-initial"
+                    className="py-1.5 px-3 text-xs font-semibold rounded-[8px] bg-[var(--accent2)] hover:opacity-90 active:scale-98 text-white transition-all cursor-pointer disabled:opacity-40 flex items-center justify-center gap-1 shadow-xs shrink-0 flex-1 sm:flex-initial"
                   >
                     <Plus className="w-3.5 h-3.5" />
                     <span>Thêm</span>
@@ -1004,17 +1004,17 @@ export function BadmintonCalculator() {
 
               {/* Guests pills list */}
               {(data.guests || []).length > 0 && (
-                <div className="flex flex-wrap gap-1.5 pt-1">
+                <div className="flex flex-wrap gap-1.5 pt-1 overflow-hidden">
                   {maleGuests.map((g) => (
                     <span
                       key={g.id}
-                      className="inline-flex items-center gap-1.5 py-1 px-2.5 rounded-full text-xs font-medium border border-blue-400/50 bg-blue-50/20 dark:bg-blue-950/40 text-[var(--accent)]"
+                      className="inline-flex items-center gap-1.5 py-1 px-2.5 rounded-full text-xs font-medium border border-blue-400/50 bg-blue-50/20 dark:bg-blue-950/40 text-[var(--accent)] max-w-full"
                     >
-                      <span>👨 {g.name} (Khách)</span>
+                      <span className="truncate max-w-[200px]">👨 {g.name} (Khách)</span>
                       <button
                         type="button"
                         onClick={() => removeGuestAttendee(g.id)}
-                        className="p-0.5 rounded-full hover:bg-[var(--border)] text-[var(--muted)] hover:text-red-500 cursor-pointer transition-colors"
+                        className="p-0.5 rounded-full hover:bg-[var(--border)] text-[var(--muted)] hover:text-red-500 cursor-pointer transition-colors shrink-0"
                         title="Xóa khách này"
                       >
                         <X className="w-3 h-3" />
@@ -1025,13 +1025,13 @@ export function BadmintonCalculator() {
                   {femaleGuests.map((g) => (
                     <span
                       key={g.id}
-                      className="inline-flex items-center gap-1.5 py-1 px-2.5 rounded-full text-xs font-medium border border-pink-400/50 bg-pink-50/20 dark:bg-pink-950/40 text-[var(--female)]"
+                      className="inline-flex items-center gap-1.5 py-1 px-2.5 rounded-full text-xs font-medium border border-pink-400/50 bg-pink-50/20 dark:bg-pink-950/40 text-[var(--female)] max-w-full"
                     >
-                      <span>👩 {g.name} (Khách)</span>
+                      <span className="truncate max-w-[200px]">👩 {g.name} (Khách)</span>
                       <button
                         type="button"
                         onClick={() => removeGuestAttendee(g.id)}
-                        className="p-0.5 rounded-full hover:bg-[var(--border)] text-[var(--muted)] hover:text-red-500 cursor-pointer transition-colors"
+                        className="p-0.5 rounded-full hover:bg-[var(--border)] text-[var(--muted)] hover:text-red-500 cursor-pointer transition-colors shrink-0"
                         title="Xóa khách này"
                       >
                         <X className="w-3 h-3" />
@@ -1076,7 +1076,7 @@ export function BadmintonCalculator() {
           </section>
 
           {/* Card: Chi phí */}
-          <section className="app-card p-5">
+          <section className="app-card p-3.5 sm:p-5">
             <div className="flex items-center justify-between mb-3.5">
               <h2 className="text-[0.95rem] font-bold uppercase tracking-[.04em] text-[var(--muted)] m-0">
                 Chi phí
@@ -1090,8 +1090,8 @@ export function BadmintonCalculator() {
               <div>
                 <NumberInput
                   id="tienSan"
-                  label="Tiền sân (x1000 đồng)"
-                  hint={`Đang thuê ${courtsCount} sân (${data.courtNumber || "Sân 1, Sân 2"})`}
+                  label="Tiền sân"
+                  hint={`Thuê ${courtsCount} sân (${data.courtNumber || "Sân 1, Sân 2"})`}
                   value={data.tienSan}
                   min={0}
                   step={10}
@@ -1099,11 +1099,11 @@ export function BadmintonCalculator() {
                   onChange={(val) => updateField("tienSan", val)}
                 />
 
-                <div className="mt-1.5 flex items-center justify-between p-2 rounded-[10px] bg-[var(--bg)] border border-[var(--border)] text-xs flex-wrap gap-2">
+                <div className="mt-1.5 flex flex-col sm:flex-row sm:items-center justify-between p-2 rounded-[10px] bg-[var(--bg)] border border-[var(--border)] text-xs gap-2">
                   <div className="flex items-center gap-1.5 text-[var(--muted)]">
-                    <Calculator className="w-3.5 h-3.5 text-emerald-500" />
+                    <Calculator className="w-3.5 h-3.5 text-emerald-500 shrink-0" />
                     <span>
-                      Gợi ý: <strong>{courtsCount} sân</strong> × 2h × 130k/h ={" "}
+                      Gợi ý: <strong>{courtsCount} sân</strong> × 2h × 130k ={" "}
                       <strong className="text-[var(--text)]">
                         {courtsCount * 260}k
                       </strong>
@@ -1113,7 +1113,7 @@ export function BadmintonCalculator() {
                     <button
                       type="button"
                       onClick={() => updateField("tienSan", courtsCount * 260)}
-                      className="py-1 px-2.5 rounded-[6px] bg-emerald-500/10 hover:bg-emerald-500/20 text-emerald-600 dark:text-emerald-400 font-semibold text-[11px] border border-emerald-500/30 transition-colors cursor-pointer"
+                      className="w-full sm:w-auto py-1 px-2.5 rounded-[6px] bg-emerald-500/10 hover:bg-emerald-500/20 text-emerald-600 dark:text-emerald-400 font-semibold text-[11px] border border-emerald-500/30 transition-colors cursor-pointer text-center"
                     >
                       Áp dụng {courtsCount * 260}k
                     </button>
@@ -1137,7 +1137,7 @@ export function BadmintonCalculator() {
                 />
                 <NumberInput
                   id="giaQua"
-                  label="Giá 1 quả (x1000 đồng)"
+                  label="Giá 1 quả"
                   hint="VD: 28k"
                   value={data.giaQua}
                   min={0}
@@ -1149,7 +1149,7 @@ export function BadmintonCalculator() {
 
               <NumberInput
                 id="tienNuoc"
-                label="Tiền nước (x1000 đồng)"
+                label="Tiền nước"
                 hint="VD: 50k"
                 value={data.tienNuoc}
                 min={0}
@@ -1250,7 +1250,7 @@ export function BadmintonCalculator() {
         </div>
 
         {/* Right Column: Costco Receipt Results (Sticky on Desktop) */}
-        <div className="md:col-span-5 md:sticky md:top-6 space-y-4">
+        <div className="w-full min-w-0 md:col-span-5 md:sticky md:top-6 space-y-4">
           <CostcoReceipt
             date={displayDate}
             courtName={data.courtName}

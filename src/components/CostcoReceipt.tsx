@@ -98,11 +98,11 @@ export function CostcoReceipt({
   return (
     <div className="w-full flex flex-col items-center">
       {/* Receipt Theme Mode Selector (Discreet control bar) */}
-      <div className="w-full max-w-[380px] mb-2 flex items-center justify-between text-xs px-1 no-print">
-        <span className="text-[11px] font-semibold text-[var(--muted)] flex items-center gap-1">
+      <div className="w-full max-w-full sm:max-w-[380px] mb-2 flex items-center justify-between text-xs px-1 gap-1 flex-wrap no-print">
+        <span className="text-[11px] font-semibold text-[var(--muted)] flex items-center gap-1 shrink-0">
           <span>Biên lai chi phí</span>
         </span>
-        <div className="inline-flex p-0.5 rounded-[8px] bg-[var(--card)] border border-[var(--border)] text-[10.5px]">
+        <div className="inline-flex p-0.5 rounded-[8px] bg-[var(--card)] border border-[var(--border)] text-[10px] shrink-0">
           <button
             type="button"
             onClick={() => setReceiptTheme("auto")}
@@ -147,7 +147,7 @@ export function CostcoReceipt({
 
       {/* Receipt Paper Card */}
       <div
-        className={`receipt-paper ${themeClass} relative w-full max-w-[380px] shadow-2xl rounded-sm border font-mono text-[11px] leading-[1.35] tracking-tight selection:bg-neutral-500/20 overflow-hidden`}
+        className={`receipt-paper ${themeClass} relative w-full max-w-full sm:max-w-[380px] shadow-2xl rounded-sm border font-mono text-[11px] leading-[1.35] tracking-tight selection:bg-neutral-500/20 overflow-hidden mx-auto`}
       >
         {/* Top Serrated Edge (Jagged cut paper effect) */}
         <div className="w-full h-2.5 bg-[var(--receipt-bg)] relative flex overflow-hidden">
@@ -160,7 +160,7 @@ export function CostcoReceipt({
           </svg>
         </div>
 
-        <div className="p-4 sm:p-5 pt-2">
+        <div className="p-3.5 sm:p-5 pt-2">
           {/* Logo Header */}
           <div className="text-center mb-3">
             <div className="inline-flex flex-col items-center">
@@ -199,21 +199,21 @@ export function CostcoReceipt({
 
           {/* Member & Session Info */}
           <div className="text-[10.5px] space-y-0.5 mb-2 text-[var(--receipt-text)]">
-            <div className="flex justify-between">
-              <span className="text-[var(--receipt-muted)]">V5 Member:</span>
-              <span className="font-bold">
+            <div className="flex justify-between items-baseline gap-1">
+              <span className="text-[var(--receipt-muted)] shrink-0">V5 Member:</span>
+              <span className="font-bold truncate text-right">
                 {totalPlayers} BẠN ({namCount}M / {nuCount}F)
               </span>
             </div>
-            <div className="flex justify-between">
-              <span className="text-[var(--receipt-muted)]">Host (Chủ xị):</span>
-              <span className="font-bold">
+            <div className="flex justify-between items-baseline gap-1">
+              <span className="text-[var(--receipt-muted)] shrink-0">Host (Chủ xị):</span>
+              <span className="font-bold truncate text-right">
                 👑 {hostDisplayName}
               </span>
             </div>
-            <div className="flex justify-between">
-              <span className="text-[var(--receipt-muted)]">Ngày chơi:</span>
-              <span className="font-semibold">{date || "Hôm nay"}</span>
+            <div className="flex justify-between items-baseline gap-1">
+              <span className="text-[var(--receipt-muted)] shrink-0">Ngày chơi:</span>
+              <span className="font-semibold text-right">{date || "Hôm nay"}</span>
             </div>
           </div>
 
@@ -271,19 +271,19 @@ export function CostcoReceipt({
             <div className="font-bold text-[10px] uppercase text-[var(--receipt-muted)] tracking-wider">
               KẾT QUẢ CHIA TIỀN BUỔI CHƠI
             </div>
-            <div className="flex justify-between items-center text-xs">
-              <span className="font-semibold text-[var(--receipt-male-label)]">
+            <div className="flex justify-between items-center text-xs gap-1">
+              <span className="font-semibold text-[var(--receipt-male-label)] truncate">
                 👉 MỖI NAM ({namCount} bạn):
               </span>
-              <span className="font-bold text-[var(--receipt-male-val)] text-sm">
+              <span className="font-bold text-[var(--receipt-male-val)] text-sm shrink-0">
                 {finalNam.toLocaleString("vi-VN")} đ
               </span>
             </div>
-            <div className="flex justify-between items-center text-xs">
-              <span className="font-semibold text-[var(--receipt-female-label)]">
+            <div className="flex justify-between items-center text-xs gap-1">
+              <span className="font-semibold text-[var(--receipt-female-label)] truncate">
                 👉 MỖI NỮ ({nuCount} bạn{ratio !== 1 ? `, ${Math.round(ratio * 100)}%` : ""}):
               </span>
-              <span className="font-bold text-[var(--receipt-female-val)] text-sm">
+              <span className="font-bold text-[var(--receipt-female-val)] text-sm shrink-0">
                 {finalNu.toLocaleString("vi-VN")} đ
               </span>
             </div>
@@ -291,35 +291,35 @@ export function CostcoReceipt({
 
           {/* Card / Bank Transfer Info */}
           <div className="text-[10px] leading-tight space-y-1 text-[var(--receipt-muted)] my-2">
-            <div className="flex justify-between">
-              <span>Card number</span>
-              <span className="font-semibold text-[var(--receipt-text)]">{maskedAcc}</span>
+            <div className="flex justify-between items-baseline gap-1">
+              <span className="shrink-0">Card number</span>
+              <span className="font-semibold text-[var(--receipt-text)] truncate text-right">{maskedAcc}</span>
             </div>
-            <div className="flex justify-between">
-              <span>Card type</span>
-              <span className="text-[var(--receipt-text)]">
+            <div className="flex justify-between items-baseline gap-1">
+              <span className="shrink-0">Card type</span>
+              <span className="text-[var(--receipt-text)] truncate text-right">
                 {bankName} ({accName})
               </span>
             </div>
-            <div className="flex justify-between">
-              <span>Card entry</span>
-              <span className="text-[var(--receipt-text)]">CHUYEN KHOAN VIETQR</span>
+            <div className="flex justify-between items-baseline gap-1">
+              <span className="shrink-0">Card entry</span>
+              <span className="text-[var(--receipt-text)] truncate text-right">CHUYEN KHOAN VIETQR</span>
             </div>
-            <div className="flex justify-between">
-              <span>Date/time</span>
-              <span className="text-[var(--receipt-text)]">{date} 20:30:15 PM</span>
+            <div className="flex justify-between items-baseline gap-1">
+              <span className="shrink-0">Date/time</span>
+              <span className="text-[var(--receipt-text)] truncate text-right">{date} 20:30:15 PM</span>
             </div>
-            <div className="flex justify-between">
-              <span>Reference #</span>
-              <span className="font-mono text-[var(--receipt-text)]">{refNum}</span>
+            <div className="flex justify-between items-baseline gap-1">
+              <span className="shrink-0">Reference #</span>
+              <span className="font-mono text-[var(--receipt-text)] truncate text-right">{refNum}</span>
             </div>
-            <div className="flex justify-between font-bold text-[var(--receipt-status)]">
-              <span>Status</span>
-              <span>APPROVED / ĐÃ CHIA XONG</span>
+            <div className="flex justify-between items-baseline gap-1 font-bold text-[var(--receipt-status)]">
+              <span className="shrink-0">Status</span>
+              <span className="truncate text-right">APPROVED / ĐÃ CHIA XONG</span>
             </div>
-            <div className="flex justify-between">
-              <span>Finalized</span>
-              <span className="text-[var(--receipt-text)]">{date} 22:15:00 PM</span>
+            <div className="flex justify-between items-baseline gap-1">
+              <span className="shrink-0">Finalized</span>
+              <span className="text-[var(--receipt-text)] truncate text-right">{date} 22:15:00 PM</span>
             </div>
           </div>
 
@@ -330,7 +330,7 @@ export function CostcoReceipt({
           <div className="flex flex-col items-center justify-center my-3 text-[var(--receipt-text)]">
             {/* SVG Barcode */}
             <svg
-              className="w-48 sm:w-56 h-11"
+              className="w-44 sm:w-56 h-10 sm:h-11 max-w-full"
               viewBox="0 0 200 45"
               fill="currentColor"
             >
@@ -408,7 +408,7 @@ export function CostcoReceipt({
       </div>
 
       {/* Action Buttons Toolbar Below Receipt */}
-      <div className="w-full max-w-[380px] mt-3 space-y-2 no-print">
+      <div className="w-full max-w-full sm:max-w-[380px] mt-3 space-y-2 no-print mx-auto">
         <div className="grid grid-cols-2 gap-2">
           <button
             type="button"

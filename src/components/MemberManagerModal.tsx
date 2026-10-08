@@ -196,7 +196,7 @@ export function MemberManagerModal({
               value={name}
               placeholder="Nhập tên thành viên..."
               onChange={(e) => setName(e.target.value)}
-              className="flex-1 py-1.5 px-3 text-xs rounded-[10px] border border-[var(--border)] bg-[var(--card)] text-[var(--text)] outline-none focus:border-[var(--accent)]"
+              className="flex-1 min-w-0 py-1.5 px-3 text-xs rounded-[10px] border border-[var(--border)] bg-[var(--card)] text-[var(--text)] outline-none focus:border-[var(--accent)]"
             />
             {/* Gender Toggle */}
             <div className="flex rounded-[10px] border border-[var(--border)] p-0.5 bg-[var(--card)]">
