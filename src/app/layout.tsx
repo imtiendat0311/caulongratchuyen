@@ -57,7 +57,16 @@ export const metadata: Metadata = {
       "Ứng dụng tính tiền chia sân cầu lông công bằng, tự động tạo mã VietQR nhận tiền, xuất hóa đơn biên lai và quản lý điểm danh thành viên.",
     images: [
       {
-        url: "/team-photo.jpg",
+        url: "https://caulongratchuyen.vercel.app/og-banner.jpg",
+        secureUrl: "https://caulongratchuyen.vercel.app/og-banner.jpg",
+        width: 1200,
+        height: 630,
+        alt: "Cầu Lông Rất Chuyên - Chia Tiền Sân Cầu Lông Nhanh & Chuẩn",
+        type: "image/jpeg",
+      },
+      {
+        url: "https://caulongratchuyen.vercel.app/team-photo.jpg",
+        secureUrl: "https://caulongratchuyen.vercel.app/team-photo.jpg",
         width: 960,
         height: 960,
         alt: "Ảnh đội hình Cầu Lông FC Rất Chuyên",
@@ -70,7 +79,7 @@ export const metadata: Metadata = {
     title: "Cầu Lông Rất Chuyên - Chia Tiền Sân Cầu Lông Nhanh & Chuẩn",
     description:
       "Tính tiền sân, tiền cầu, tiền nước nhanh chóng, chia đều Nam/Nữ và tạo mã VietQR thanh toán tiện lợi.",
-    images: ["/team-photo.jpg"],
+    images: ["https://caulongratchuyen.vercel.app/og-banner.jpg"],
     creator: "@caulongratchuyen",
   },
   robots: {
