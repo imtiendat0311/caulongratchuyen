@@ -17,6 +17,7 @@ import {
 } from "lucide-react";
 import { motion, AnimatePresence } from "framer-motion";
 import { Member, POPULAR_BANKS } from "@/types";
+import { SkeletonImage } from "./SkeletonImage";
 
 interface MemberManagerModalProps {
   isOpen: boolean;
@@ -230,10 +231,10 @@ export function MemberManagerModal({
             <div className="p-4 sm:p-5 pb-3 border-b border-[var(--border)] shrink-0 flex items-center justify-between gap-2.5">
               <div className="flex items-center gap-2.5 min-w-0 pr-2">
                 <div className="relative w-10 h-10 sm:w-11 sm:h-11 rounded-xl overflow-hidden border border-[var(--border)] shrink-0 bg-[var(--bg)] shadow-xs">
-                  {/* eslint-disable-next-line @next/next/no-img-element */}
-                  <img
+                  <SkeletonImage
                     src="/team-photo.jpg"
                     alt="FC Rất Chuyên"
+                    wrapperClassName="w-full h-full rounded-xl"
                     className="w-full h-full object-cover"
                   />
                 </div>

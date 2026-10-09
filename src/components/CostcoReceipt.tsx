@@ -19,6 +19,7 @@ import { motion, AnimatePresence } from "framer-motion";
 import { toBlob, toPng } from "html-to-image";
 import { Member, BankConfig } from "@/types";
 import { parseCourtsList } from "./CourtPickerAndMap";
+import { SkeletonImage } from "./SkeletonImage";
 
 interface CostcoReceiptProps {
   date: string; // DD/MM/YYYY
@@ -889,11 +890,12 @@ export function CostcoReceipt({
               </p>
 
               <div className="w-full flex justify-center rounded-xl overflow-hidden border border-[var(--border)] bg-[var(--bg)] p-2 shadow-xs mb-3">
-                {/* eslint-disable-next-line @next/next/no-img-element */}
-                <img
+                <SkeletonImage
                   src={previewData.url}
                   alt="Biên lai chi phí"
-                  className="max-h-[55vh] max-h-[55dvh] w-auto object-contain rounded-sm select-auto pointer-events-auto"
+                  showIcon={true}
+                  wrapperClassName="max-h-[55vh] max-h-[55dvh] w-full min-h-[220px] flex items-center justify-center"
+                  className="max-h-[55vh] max-h-[55dvh] w-auto object-contain rounded-sm select-auto pointer-events-auto mx-auto"
                 />
               </div>
 

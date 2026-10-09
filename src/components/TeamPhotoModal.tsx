@@ -3,6 +3,7 @@
 import React, { useEffect } from "react";
 import { X, Download, ExternalLink, Trophy, Users } from "lucide-react";
 import { motion, AnimatePresence } from "framer-motion";
+import { SkeletonImage } from "./SkeletonImage";
 
 interface TeamPhotoModalProps {
   isOpen: boolean;
@@ -65,11 +66,12 @@ export function TeamPhotoModal({ isOpen, onClose }: TeamPhotoModalProps) {
 
         {/* Image Container */}
         <div className="px-4 py-1 flex-1 overflow-auto flex items-center justify-center">
-          <div className="relative rounded-[14px] overflow-hidden border border-[var(--border)] shadow-md bg-black max-w-full">
-            {/* eslint-disable-next-line @next/next/no-img-element */}
-            <img
+          <div className="relative rounded-[14px] overflow-hidden border border-[var(--border)] shadow-md bg-black max-w-full w-full flex items-center justify-center">
+            <SkeletonImage
               src="/team-photo.jpg"
               alt="FC Rất Chuyên"
+              showIcon={true}
+              wrapperClassName="w-full min-h-[260px] sm:min-h-[340px] flex items-center justify-center"
               className="w-full h-auto max-h-[60vh] object-contain rounded-[14px]"
             />
           </div>

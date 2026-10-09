@@ -34,6 +34,7 @@ import { MemberManagerModal } from "./MemberManagerModal";
 import { TeamPhotoModal } from "./TeamPhotoModal";
 import { CostcoReceipt } from "./CostcoReceipt";
 import { CourtPickerAndMap, parseCourtsList } from "./CourtPickerAndMap";
+import { SkeletonImage } from "./SkeletonImage";
 import { BadmintonData, BankConfig, HistoryItem } from "@/types";
 import {
   DEFAULT_DATA,
@@ -520,10 +521,10 @@ export function BadmintonCalculator() {
           >
             <div className="absolute -inset-1 bg-gradient-to-r from-[var(--accent)] to-[var(--accent2)] rounded-full blur-xs opacity-70 group-hover:opacity-100 transition duration-300" />
             <div className="relative w-16 h-16 sm:w-20 sm:h-20 rounded-full overflow-hidden border-2 border-[var(--border)] shadow-md bg-[var(--card)]">
-              {/* eslint-disable-next-line @next/next/no-img-element */}
-              <img
+              <SkeletonImage
                 src="/team-photo.jpg"
                 alt="FC Rất Chuyên Team Avatar"
+                wrapperClassName="w-full h-full rounded-full"
                 className="w-full h-full object-cover group-hover:scale-108 transition-transform duration-300"
               />
             </div>
@@ -1357,13 +1358,14 @@ export function BadmintonCalculator() {
               className="group relative rounded-[12px] overflow-hidden border border-[var(--border)] cursor-pointer bg-black/40"
               title="Bấm để mở ảnh lớn"
             >
-              {/* eslint-disable-next-line @next/next/no-img-element */}
-              <img
+              <SkeletonImage
                 src="/team-photo.jpg"
                 alt="FC Rất Chuyên Team Photo"
+                wrapperClassName="w-full h-44 sm:h-48"
+                showIcon={true}
                 className="w-full h-44 sm:h-48 object-cover group-hover:scale-105 transition-transform duration-300"
               />
-              <div className="absolute inset-0 bg-gradient-to-t from-black/85 via-black/30 to-transparent flex flex-col justify-end p-3 text-white">
+              <div className="absolute inset-0 bg-gradient-to-t from-black/85 via-black/30 to-transparent flex flex-col justify-end p-3 text-white pointer-events-none z-2">
                 <div className="text-xs font-bold flex items-center gap-1.5">
                   <span>CLB Cầu Lông Rất Chuyên</span>
                 </div>
