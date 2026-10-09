@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useState, useRef } from "react";
+import React, { useState, useRef, useEffect } from "react";
 import {
   Share2,
   Copy,
@@ -77,7 +77,8 @@ export function CostcoReceipt({
 
   // Account display
   const bankAcc = hostMember?.account_no || bankConfig.accountNo || "";
-  const bankName = hostMember?.bank_id || bankConfig.bankId || "MB";
+  const bankId = hostMember?.bank_id || bankConfig.bankId || "MB";
+  const bankName = bankId;
   const accName =
     hostMember?.account_name ||
     bankConfig.accountName ||
@@ -87,6 +88,40 @@ export function CostcoReceipt({
     : "**** **** **** 8371";
 
   const hostDisplayName = hostMember ? hostMember.name : "Host nhóm";
+
+  const qrUrl =
+    bankId && bankAcc.trim()
+      ? `https://img.vietqr.io/image/${bankId}-${bankAcc.trim()}-qr_only.png?addInfo=${encodeURIComponent(
+          "Cau long FC Rat Chuyen"
+        )}&accountName=${encodeURIComponent(accName.trim())}`
+      : null;
+
+  const [qrDataUrl, setQrDataUrl] = useState<string | null>(null);
+
+  useEffect(() => {
+    if (!qrUrl) return;
+    let isCurrent = true;
+    fetch(qrUrl)
+      .then((res) => res.blob())
+      .then((blob) => {
+        if (!isCurrent) return;
+        const reader = new FileReader();
+        reader.onloadend = () => {
+          if (isCurrent && typeof reader.result === "string") {
+            setQrDataUrl(reader.result);
+          }
+        };
+        reader.readAsDataURL(blob);
+      })
+      .catch((err) => {
+        console.warn("Lỗi tải VietQR data URL:", err);
+      });
+    return () => {
+      isCurrent = false;
+    };
+  }, [qrUrl]);
+
+  const activeQrDataUrl = qrUrl ? qrDataUrl : null;
 
   const receiptRef = useRef<HTMLDivElement>(null);
   const [isDownloading, setIsDownloading] = useState(false);
@@ -542,6 +577,39 @@ export function CostcoReceipt({
               7 39281 04729 3
             </div>
           </div>
+
+          {/* Dashed Separator */}
+          {qrUrl && <div className="border-b border-dashed border-[var(--receipt-dashed)] my-3" />}
+
+          {/* VietQR Code Section (Before Footer of Receipt) */}
+          {qrUrl && (
+            <div className="flex flex-col items-center justify-center my-3 text-center">
+              <div className="text-[10px] font-bold uppercase tracking-wider text-[var(--receipt-text)] mb-1">
+                QUÉT MÃ VIETQR THANH TOÁN
+              </div>
+              <div className="text-[9.5px] text-[var(--receipt-muted)] mb-2">
+                Chuyển khoản trực tiếp cho {hostDisplayName}
+              </div>
+
+              {/* QR Container - Pure white container with quiet-zone padding ensuring 100% scan rate in both light and dark modes */}
+              <div className="p-2 sm:p-2.5 rounded-lg bg-white border border-[var(--receipt-dashed)] shadow-2xs inline-block">
+                {/* eslint-disable-next-line @next/next/no-img-element */}
+                <img
+                  crossOrigin="anonymous"
+                  src={activeQrDataUrl || qrUrl}
+                  alt="Mã VietQR thanh toán tiền sân"
+                  className="w-28 h-28 sm:w-32 sm:h-32 object-contain block"
+                />
+              </div>
+
+              <div className="text-[9.5px] text-[var(--receipt-muted)] mt-2 font-mono">
+                {bankId} • {bankAcc} ({accName})
+              </div>
+            </div>
+          )}
+
+          {/* Dashed Separator */}
+          <div className="border-b border-dashed border-[var(--receipt-dashed)] my-3" />
 
           {/* Footer Receipt Info */}
           <div className="text-center text-[10px] space-y-0.5 text-[var(--receipt-muted)] mt-2">
