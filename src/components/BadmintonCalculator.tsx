@@ -1627,7 +1627,7 @@ export function BadmintonCalculator() {
         }}
       />
 
-      {/* Historical Graph Modal (Simple Graph) */}
+      {/* Historical Graph Modal (Graph) */}
       <HistoryGraphModal
         isOpen={isGraphModalOpen}
         onClose={() => setIsGraphModalOpen(false)}

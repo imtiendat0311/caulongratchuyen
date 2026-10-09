@@ -116,6 +116,50 @@ const SAMPLE_SESSIONS: HistoryItem[] = [
   }
 ];
 
+interface ToggleSwitchProps {
+  label: string;
+  checked: boolean;
+  onChange: (val: boolean) => void;
+  title?: string;
+  activeColor?: string;
+}
+
+function ToggleSwitch({
+  label,
+  checked,
+  onChange,
+  title,
+  activeColor = '#10B981'
+}: ToggleSwitchProps) {
+  return (
+    <button
+      type="button"
+      onClick={() => onChange(!checked)}
+      className={`flex items-center gap-2 px-2.5 py-1 rounded-xl text-[11px] font-medium transition-all cursor-pointer border shadow-2xs select-none ${
+        checked
+          ? 'bg-[var(--card)] text-[var(--text)] border-[var(--border)]'
+          : 'bg-transparent text-[var(--muted)] border-transparent hover:bg-[var(--card)]/60'
+      }`}
+      title={title}
+    >
+      <span>{label}</span>
+      {/* Animated Switch Track & Knob */}
+      <div
+        className="w-7 h-4 rounded-full p-0.5 transition-colors duration-200 flex items-center shrink-0"
+        style={{
+          backgroundColor: checked ? activeColor : 'var(--border)'
+        }}
+      >
+        <motion.div
+          className="w-3 h-3 rounded-full bg-white shadow-xs"
+          animate={{ x: checked ? 12 : 0 }}
+          transition={{ type: 'spring', stiffness: 500, damping: 30 }}
+        />
+      </div>
+    </button>
+  );
+}
+
 export function HistoryGraphModal({
   isOpen,
   onClose,
@@ -283,7 +327,7 @@ export function HistoryGraphModal({
                     Biểu Đồ Lịch Sử Chi Phí
                   </h3>
                   <span className="text-[10px] uppercase font-bold tracking-wider px-2 py-0.5 rounded-full bg-[var(--bg)] border border-[var(--border)] text-[var(--accent)]">
-                    Simple Graph
+                    Graph
                   </span>
                 </div>
                 <p className="text-xs text-[var(--muted)] line-clamp-1">
@@ -303,8 +347,8 @@ export function HistoryGraphModal({
 
           {/* Modal Scrollable Body */}
           <div className="p-4 sm:p-6 overflow-y-auto space-y-5">
-            {/* Metric Segmented Tabs (Total / Men / Women / # of players) */}
-            <div className="grid grid-cols-2 sm:grid-cols-4 gap-2 p-1.5 rounded-2xl bg-[var(--bg)] border border-[var(--border)]">
+            {/* Metric Segmented Tabs (Total / Men / Women / # of players) with sliding switch animation */}
+            <div className="grid grid-cols-2 sm:grid-cols-4 gap-2 p-1.5 rounded-2xl bg-[var(--bg)] border border-[var(--border)] relative">
               {(
                 [
                   { id: 'total', label: '💰 Tổng tiền', color: '#10B981' },
@@ -319,17 +363,30 @@ export function HistoryGraphModal({
                     key={tab.id}
                     type="button"
                     onClick={() => setMetric(tab.id)}
-                    className={`py-2 px-3 rounded-xl text-xs sm:text-sm font-semibold transition-all cursor-pointer flex items-center justify-center gap-1.5 ${
-                      isActive
-                        ? 'bg-[var(--card)] text-[var(--text)] shadow-xs border border-[var(--border)]'
-                        : 'text-[var(--muted)] hover:text-[var(--text)] hover:bg-[var(--card)]/50'
-                    }`}
+                    className="relative py-2.5 px-3 rounded-xl text-xs sm:text-sm font-semibold transition-colors cursor-pointer flex items-center justify-center gap-1.5 z-1 select-none"
                   >
+                    {isActive && (
+                      <motion.div
+                        layoutId="activeMetricTab"
+                        className="absolute inset-0 bg-[var(--card)] rounded-xl shadow-xs border border-[var(--border)]"
+                        transition={{ type: 'spring', stiffness: 500, damping: 35 }}
+                      />
+                    )}
                     <span
-                      className="w-2 h-2 rounded-full shrink-0"
-                      style={{ backgroundColor: tab.color }}
+                      className="relative z-2 w-2 h-2 rounded-full shrink-0 transition-transform duration-200"
+                      style={{
+                        backgroundColor: tab.color,
+                        boxShadow: isActive ? `0 0 8px ${tab.color}` : 'none',
+                        transform: isActive ? 'scale(1.2)' : 'scale(1)'
+                      }}
                     />
-                    <span className="truncate">{tab.label}</span>
+                    <span
+                      className={`relative z-2 truncate transition-colors ${
+                        isActive ? 'text-[var(--text)] font-bold' : 'text-[var(--muted)]'
+                      }`}
+                    >
+                      {tab.label}
+                    </span>
                   </button>
                 );
               })}
@@ -341,9 +398,18 @@ export function HistoryGraphModal({
                 <span className="text-[11px] font-medium text-[var(--muted)] block mb-1">
                   Buổi gần nhất
                 </span>
-                <div className="text-base sm:text-lg font-extrabold text-[var(--text)] truncate">
-                  {metricConfig.format(stats.latest)}
-                </div>
+                <AnimatePresence mode="wait">
+                  <motion.div
+                    key={`${metric}-latest`}
+                    initial={{ opacity: 0, y: 4 }}
+                    animate={{ opacity: 1, y: 0 }}
+                    exit={{ opacity: 0, y: -4 }}
+                    transition={{ duration: 0.15 }}
+                    className="text-base sm:text-lg font-extrabold text-[var(--text)] truncate"
+                  >
+                    {metricConfig.format(stats.latest)}
+                  </motion.div>
+                </AnimatePresence>
                 {stats.change !== 0 && (
                   <span
                     className={`text-[10px] font-bold inline-flex items-center gap-0.5 mt-0.5 ${
@@ -360,9 +426,18 @@ export function HistoryGraphModal({
                 <span className="text-[11px] font-medium text-[var(--muted)] block mb-1">
                   Trung bình
                 </span>
-                <div className="text-base sm:text-lg font-extrabold text-[var(--text)] truncate">
-                  {metricConfig.format(stats.avg)}
-                </div>
+                <AnimatePresence mode="wait">
+                  <motion.div
+                    key={`${metric}-avg`}
+                    initial={{ opacity: 0, y: 4 }}
+                    animate={{ opacity: 1, y: 0 }}
+                    exit={{ opacity: 0, y: -4 }}
+                    transition={{ duration: 0.15 }}
+                    className="text-base sm:text-lg font-extrabold text-[var(--text)] truncate"
+                  >
+                    {metricConfig.format(stats.avg)}
+                  </motion.div>
+                </AnimatePresence>
                 <span className="text-[10px] text-[var(--muted)]">Qua {graphData.length} buổi đấu</span>
               </div>
 
@@ -370,9 +445,18 @@ export function HistoryGraphModal({
                 <span className="text-[11px] font-medium text-[var(--muted)] block mb-1">
                   Cao nhất
                 </span>
-                <div className="text-base sm:text-lg font-extrabold text-emerald-500 truncate">
-                  {metricConfig.format(stats.max)}
-                </div>
+                <AnimatePresence mode="wait">
+                  <motion.div
+                    key={`${metric}-max`}
+                    initial={{ opacity: 0, y: 4 }}
+                    animate={{ opacity: 1, y: 0 }}
+                    exit={{ opacity: 0, y: -4 }}
+                    transition={{ duration: 0.15 }}
+                    className="text-base sm:text-lg font-extrabold text-emerald-500 truncate"
+                  >
+                    {metricConfig.format(stats.max)}
+                  </motion.div>
+                </AnimatePresence>
                 <span className="text-[10px] text-[var(--muted)]">Mức trần chi phí</span>
               </div>
 
@@ -380,9 +464,18 @@ export function HistoryGraphModal({
                 <span className="text-[11px] font-medium text-[var(--muted)] block mb-1">
                   Thấp nhất
                 </span>
-                <div className="text-base sm:text-lg font-extrabold text-sky-500 truncate">
-                  {metricConfig.format(stats.min)}
-                </div>
+                <AnimatePresence mode="wait">
+                  <motion.div
+                    key={`${metric}-min`}
+                    initial={{ opacity: 0, y: 4 }}
+                    animate={{ opacity: 1, y: 0 }}
+                    exit={{ opacity: 0, y: -4 }}
+                    transition={{ duration: 0.15 }}
+                    className="text-base sm:text-lg font-extrabold text-sky-500 truncate"
+                  >
+                    {metricConfig.format(stats.min)}
+                  </motion.div>
+                </AnimatePresence>
                 <span className="text-[10px] text-[var(--muted)]">Mức sàn tiết kiệm</span>
               </div>
             </div>
@@ -419,65 +512,61 @@ export function HistoryGraphModal({
                   </span>
                 </div>
 
-                {/* Quick Toggle Pills */}
-                <div className="flex items-center gap-1.5 flex-wrap">
-                  <button
-                    type="button"
-                    onClick={() => setCurved(!curved)}
-                    className={`px-2.5 py-1 rounded-xl text-[11px] font-medium transition-colors cursor-pointer border ${
-                      curved
-                        ? 'bg-[var(--card)] text-[var(--text)] border-[var(--border)] shadow-xs'
-                        : 'text-[var(--muted)] border-transparent hover:bg-[var(--card)]'
-                    }`}
-                    title="Đường cong uốn lượn Bezier"
-                  >
-                    Đường cong
-                  </button>
-                  <button
-                    type="button"
-                    onClick={() => setGradientFade(!gradientFade)}
-                    className={`px-2.5 py-1 rounded-xl text-[11px] font-medium transition-colors cursor-pointer border ${
-                      gradientFade
-                        ? 'bg-[var(--card)] text-[var(--text)] border-[var(--border)] shadow-xs'
-                        : 'text-[var(--muted)] border-transparent hover:bg-[var(--card)]'
-                    }`}
-                    title="Đổ màu gradient dưới đường vẽ"
-                  >
-                    Vùng sáng
-                  </button>
-                  <button
-                    type="button"
-                    onClick={() => setCalcPercent(!calcPercent)}
-                    className={`px-2.5 py-1 rounded-xl text-[11px] font-medium transition-colors cursor-pointer border ${
-                      calcPercent
-                        ? 'bg-[var(--card)] text-[var(--text)] border-[var(--border)] shadow-xs'
-                        : 'text-[var(--muted)] border-transparent hover:bg-[var(--card)]'
-                    }`}
-                    title="Hiển thị % tăng giảm giữa các buổi trên tooltip"
-                  >
-                    % Tăng giảm
-                  </button>
+                {/* Quick Toggle Controls with animated switch toggle */}
+                <div className="flex items-center gap-2 flex-wrap">
+                  <ToggleSwitch
+                    label="Đường cong"
+                    checked={curved}
+                    onChange={setCurved}
+                    activeColor={metricConfig.color}
+                    title="Bật/tắt đường cong uốn lượn Bezier"
+                  />
+                  <ToggleSwitch
+                    label="Vùng sáng"
+                    checked={gradientFade}
+                    onChange={setGradientFade}
+                    activeColor={metricConfig.color}
+                    title="Bật/tắt đổ màu gradient vùng sáng"
+                  />
+                  <ToggleSwitch
+                    label="% Tăng giảm"
+                    checked={calcPercent}
+                    onChange={setCalcPercent}
+                    activeColor={metricConfig.color}
+                    title="Bật/tắt tính % tăng giảm giữa các buổi trên tooltip"
+                  />
                 </div>
               </div>
 
-              {/* SimpleGraph component */}
-              <div className="w-full">
-                <SimpleGraph
-                  data={graphData}
-                  lineColor={metricConfig.color}
-                  dotColor={metricConfig.color}
-                  height={300}
-                  animationDuration={1.6}
-                  curved={curved}
-                  gradientFade={gradientFade}
-                  calculatePercentageDifference={calcPercent}
-                  showDots={true}
-                  dotSize={6}
-                  dotHoverGlow={true}
-                  gridStyle="dashed"
-                  gridLines="both"
-                  valueFormatter={metricConfig.format}
-                />
+              {/* SimpleGraph component with animated switch transition */}
+              <div className="w-full min-h-[300px] overflow-hidden">
+                <AnimatePresence mode="wait">
+                  <motion.div
+                    key={`${metric}-${curved}-${gradientFade}-${calcPercent}`}
+                    initial={{ opacity: 0, y: 8, scale: 0.995 }}
+                    animate={{ opacity: 1, y: 0, scale: 1 }}
+                    exit={{ opacity: 0, y: -8, scale: 0.995 }}
+                    transition={{ duration: 0.2, ease: 'easeOut' }}
+                    className="w-full"
+                  >
+                    <SimpleGraph
+                      data={graphData}
+                      lineColor={metricConfig.color}
+                      dotColor={metricConfig.color}
+                      height={300}
+                      animationDuration={0.9}
+                      curved={curved}
+                      gradientFade={gradientFade}
+                      calculatePercentageDifference={calcPercent}
+                      showDots={true}
+                      dotSize={6}
+                      dotHoverGlow={true}
+                      gridStyle="dashed"
+                      gridLines="both"
+                      valueFormatter={metricConfig.format}
+                    />
+                  </motion.div>
+                </AnimatePresence>
               </div>
 
               <div className="text-[11px] text-[var(--muted)] text-center mt-3 select-none flex items-center justify-center gap-1.5">
