@@ -5,6 +5,7 @@ import { History, X, Trash2, ArrowUpRight, Search, CloudDownload, Loader2, Trend
 import { motion, AnimatePresence } from "framer-motion";
 import { HistoryItem } from "@/types";
 import { searchReceiptsFromCloud } from "@/lib/store";
+import { generateUpcBarcodeBars } from "@/lib/bill-utils";
 
 interface HistoryDrawerProps {
   isOpen: boolean;
@@ -230,86 +231,130 @@ export function HistoryDrawer({
                 itemsToDisplay.map((item) => (
                   <div
                     key={item.id}
-                    className="p-3.5 rounded-[12px] border border-[var(--border)] bg-[var(--bg)] space-y-2.5 shadow-2xs"
+                    className="relative bg-[var(--card)] border border-[var(--border)] rounded-2xl shadow-xs overflow-hidden font-mono transition-all hover:shadow-md hover:border-[var(--accent)]/40 group select-none"
                   >
-                    {/* Item Top: Date & Order ID Badge */}
-                    <div className="flex items-center justify-between text-xs gap-2">
-                      <div className="flex items-center gap-1.5 flex-wrap">
-                        <span className="font-semibold text-[var(--text)]">
-                          {item.date}
-                        </span>
-                        {item.orderNumber && (
-                          <span className="font-mono text-[10.5px] px-1.5 py-0.2 rounded-md bg-[var(--card)] border border-[var(--border)] text-[var(--accent)] font-bold">
-                            #{item.orderNumber}
-                          </span>
-                        )}
-                      </div>
-                      <div className="flex items-center gap-1.5">
-                        <button
-                          onClick={() => onRestore(item)}
-                          className="flex items-center gap-0.5 text-xs text-[var(--accent)] hover:underline cursor-pointer font-semibold px-2 py-0.5 rounded-lg hover:bg-[var(--card)] transition-colors"
-                          title="Nạp lại hóa đơn này vào màn hình tính tiền"
-                        >
-                          <span>Xem lại</span>
-                          <ArrowUpRight className="w-3 h-3" />
-                        </button>
-                        <button
-                          onClick={() => onDelete(item.id)}
-                          className="p-1 text-[var(--muted)] hover:text-red-500 transition-colors cursor-pointer rounded-lg hover:bg-[var(--card)]"
-                          title="Xóa hóa đơn này"
-                        >
-                          <Trash2 className="w-3.5 h-3.5" />
-                        </button>
-                      </div>
-                    </div>
+                    {/* Compact Receipt Header Strip */}
+                    <div className="px-3.5 pt-3 pb-2.5 bg-[var(--bg)]/70 border-b border-dashed border-[var(--border)]">
+                      <div className="flex items-start justify-between gap-2">
+                        <div>
+                          <div className="flex items-center gap-1.5">
+                            <span className="text-[11px] font-black uppercase tracking-wider text-[var(--text)]">
+                              🧾 CẦU LÔNG RẤT CHUYÊN
+                            </span>
+                          </div>
+                          <div className="text-[9.5px] uppercase tracking-widest text-[var(--muted)] mt-0.5 font-bold">
+                            HÓA ĐƠN #{item.orderNumber || item.id.slice(-8)}
+                          </div>
+                        </div>
 
-                    {/* Host and Court info */}
-                    {(item.hostName || item.courtName) && (
-                      <div className="text-[10.5px] text-[var(--muted)] flex items-center gap-1.5 flex-wrap">
+                        <div className="flex items-center gap-1 shrink-0">
+                          <button
+                            onClick={() => onRestore(item)}
+                            className="flex items-center gap-1 text-[11px] font-bold text-[var(--accent)] hover:underline cursor-pointer px-2 py-1 rounded-lg bg-[var(--card)] border border-[var(--border)] hover:border-[var(--accent)] transition-all shadow-2xs"
+                            title="Nạp lại hóa đơn này vào màn hình tính tiền"
+                          >
+                            <span>Xem lại</span>
+                            <ArrowUpRight className="w-3 h-3" />
+                          </button>
+                          <button
+                            onClick={() => onDelete(item.id)}
+                            className="p-1 text-[var(--muted)] hover:text-rose-500 transition-colors cursor-pointer rounded-lg hover:bg-[var(--card)]"
+                            title="Xóa hóa đơn này"
+                          >
+                            <Trash2 className="w-3.5 h-3.5" />
+                          </button>
+                        </div>
+                      </div>
+
+                      {/* Metadata: Date, Host, Court */}
+                      <div className="mt-2 pt-1.5 border-t border-dashed border-[var(--border)]/60 text-[10px] space-y-0.5 text-[var(--muted)]">
+                        <div className="flex items-center justify-between">
+                          <span>NGÀY:</span>
+                          <span className="font-semibold text-[var(--text)]">{item.date}</span>
+                        </div>
                         {item.hostName && (
-                          <span className="flex items-center gap-1 font-medium text-[var(--text)]">
-                            <span>👑 Host:</span>
-                            <span className="text-[var(--accent2)] font-semibold">{item.hostName}</span>
-                          </span>
+                          <div className="flex items-center justify-between">
+                            <span>HOST:</span>
+                            <span className="font-semibold text-[var(--text)]">👑 {item.hostName}</span>
+                          </div>
                         )}
-                        {item.hostName && item.courtName && <span>•</span>}
                         {item.courtName && (
-                          <span className="truncate">{item.courtName}</span>
+                          <div className="flex items-center justify-between">
+                            <span>SÂN:</span>
+                            <span className="font-medium text-[var(--text)] truncate max-w-[190px]">
+                              {item.courtName}
+                            </span>
+                          </div>
                         )}
-                      </div>
-                    )}
-
-                    {/* Breakdown 3-col card */}
-                    <div className="grid grid-cols-3 gap-2 text-center py-2 px-1 bg-[var(--card)] rounded-[8px] border border-[var(--border)]">
-                      <div>
-                        <div className="text-[10px] text-[var(--muted)]">Tổng chi</div>
-                        <div className="font-bold text-xs text-[var(--accent2)]">
-                          {Math.round(item.totalCost).toLocaleString("vi-VN")} đ
-                        </div>
-                      </div>
-                      <div>
-                        <div className="text-[10px] text-[var(--muted)]">
-                          Mỗi Nam ({item.maleCount})
-                        </div>
-                        <div className="font-bold text-xs text-[var(--accent)]">
-                          {Math.round(item.costPerMale).toLocaleString("vi-VN")} đ
-                        </div>
-                      </div>
-                      <div>
-                        <div className="text-[10px] text-[var(--muted)]">
-                          Mỗi Nữ ({item.femaleCount})
-                        </div>
-                        <div className="font-bold text-xs text-[var(--female)]">
-                          {Math.round(item.costPerFemale).toLocaleString("vi-VN")} đ
-                        </div>
                       </div>
                     </div>
 
+                    {/* Ticket Punch Notches & Breakdown */}
+                    <div className="relative py-2.5 px-3.5 space-y-1.5 text-xs bg-[var(--card)]">
+                      {/* Left Ticket Notch */}
+                      <div className="absolute -left-2.5 top-0 -translate-y-1/2 w-4 h-4 rounded-full bg-[var(--bg)] border border-[var(--border)]" />
+                      {/* Right Ticket Notch */}
+                      <div className="absolute -right-2.5 top-0 -translate-y-1/2 w-4 h-4 rounded-full bg-[var(--bg)] border border-[var(--border)]" />
+
+                      {/* Receipt Items Breakdown with dot leaders */}
+                      <div className="flex justify-between items-baseline gap-1.5">
+                        <span className="text-[11px] text-[var(--muted)] font-bold tracking-tight">
+                          TỔNG CHI PHÍ
+                        </span>
+                        <span className="border-b border-dotted border-[var(--border)] flex-1 min-w-[12px] opacity-70" />
+                        <span className="text-xs font-black text-emerald-500 shrink-0">
+                          {Math.round(item.totalCost).toLocaleString("vi-VN")} đ
+                        </span>
+                      </div>
+
+                      <div className="flex justify-between items-baseline gap-1.5">
+                        <span className="text-[11px] text-[var(--muted)]">
+                          MỖI NAM ({item.maleCount})
+                        </span>
+                        <span className="border-b border-dotted border-[var(--border)] flex-1 min-w-[12px] opacity-70" />
+                        <span className="text-xs font-bold text-sky-500 shrink-0">
+                          {Math.round(item.costPerMale).toLocaleString("vi-VN")} đ
+                        </span>
+                      </div>
+
+                      <div className="flex justify-between items-baseline gap-1.5">
+                        <span className="text-[11px] text-[var(--muted)]">
+                          MỖI NỮ ({item.femaleCount})
+                        </span>
+                        <span className="border-b border-dotted border-[var(--border)] flex-1 min-w-[12px] opacity-70" />
+                        <span className="text-xs font-bold text-pink-500 shrink-0">
+                          {Math.round(item.costPerFemale).toLocaleString("vi-VN")} đ
+                        </span>
+                      </div>
+                    </div>
+
+                    {/* Note Section (if present) */}
                     {item.notes && (
-                      <p className="text-[11px] text-[var(--muted)] line-clamp-2 italic">
+                      <div className="px-3.5 pb-2 text-[10px] text-[var(--muted)] border-t border-dashed border-[var(--border)]/70 pt-1.5 italic line-clamp-2 bg-[var(--card)]">
                         &quot;{item.notes}&quot;
-                      </p>
+                      </div>
                     )}
+
+                    {/* Barcode Strip Footer */}
+                    <div className="px-3.5 py-1.5 bg-[var(--bg)]/60 border-t border-dashed border-[var(--border)] flex items-center justify-between gap-2">
+                      {/* Real UPC Barcode SVG */}
+                      <svg viewBox="0 0 200 35" className="h-3.5 w-24 text-[var(--text)] opacity-70 shrink-0">
+                        {generateUpcBarcodeBars(item.serialNumber || item.orderNumber || item.id).map((bar, idx) => (
+                          <rect
+                            key={idx}
+                            x={bar.x}
+                            y={0}
+                            width={bar.width}
+                            height={35}
+                            fill="currentColor"
+                          />
+                        ))}
+                      </svg>
+
+                      <span className="text-[9px] text-[var(--muted)] font-mono tracking-widest uppercase">
+                        {item.orderNumber ? item.orderNumber.slice(-8) : item.id.slice(-8)}
+                      </span>
+                    </div>
                   </div>
                 ))
               )}
