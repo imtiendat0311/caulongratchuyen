@@ -325,24 +325,43 @@ export function CostcoReceipt({
 
       const fileName = `bien-lai-cau-long-${date ? date.replace(/\//g, "-") : "session"}.png`;
 
+      const node = receiptRef.current;
+      const width = node.offsetWidth;
+      const height = Math.ceil(node.scrollHeight || node.offsetHeight);
+
+      const exportOptions = {
+        cacheBust: true,
+        pixelRatio: 2.5,
+        width,
+        height,
+        style: {
+          margin: "0",
+          marginLeft: "0",
+          marginRight: "0",
+          marginTop: "0",
+          marginBottom: "0",
+          transform: "none",
+          boxShadow: "none",
+          left: "0",
+          top: "0",
+          width: `${width}px`,
+          maxWidth: "none",
+        },
+      };
+
       let blob: Blob | null = null;
       try {
-        blob = await toBlob(receiptRef.current, {
-          cacheBust: true,
-          pixelRatio: 2.5,
-        });
+        blob = await toBlob(node, exportOptions);
       } catch {
-        blob = await toBlob(receiptRef.current, {
-          cacheBust: true,
-          pixelRatio: 2.5,
+        blob = await toBlob(node, {
+          ...exportOptions,
           skipFonts: true,
         });
       }
 
       if (!blob) {
-        const dataUrl = await toPng(receiptRef.current, {
-          cacheBust: true,
-          pixelRatio: 2.5,
+        const dataUrl = await toPng(node, {
+          ...exportOptions,
           skipFonts: true,
         });
         const res = await fetch(dataUrl);
@@ -516,7 +535,7 @@ export function CostcoReceipt({
         ref={receiptRef}
         className={`receipt-paper ${themeClass} relative w-full max-w-full sm:max-w-[380px] shadow-2xl rounded-[16px] border font-mono text-[11px] leading-[1.35] tracking-tight selection:bg-neutral-500/20 overflow-hidden mx-auto`}
       >
-        <div className="p-4 sm:p-5">
+        <div className="p-4 sm:p-5 pb-6 sm:pb-7">
           {/* Logo Header */}
           <div className="text-center mb-3">
             <div className="inline-flex flex-col items-center">
