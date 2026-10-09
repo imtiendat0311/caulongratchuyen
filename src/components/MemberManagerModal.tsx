@@ -19,6 +19,7 @@ import {
 import { motion, AnimatePresence } from "framer-motion";
 import { Member, POPULAR_BANKS } from "@/types";
 import { SkeletonImage } from "./SkeletonImage";
+import { MonthYearPicker } from "./MonthYearPicker";
 
 interface MemberManagerModalProps {
   isOpen: boolean;
@@ -80,8 +81,7 @@ export function MemberManagerModal({
   const stagedHostId = userSelectedHostId ?? baseHostForSelectedMonth;
 
   const isHostDirty =
-    (userSelectedHostId !== null && userSelectedHostId !== baseHostForSelectedMonth) ||
-    (userSelectedMonth !== null && userSelectedMonth !== (currentMonth || ""));
+    userSelectedHostId !== null && userSelectedHostId !== baseHostForSelectedMonth;
 
   const handleSaveMonthlyHost = async () => {
     if (!onSetMonthlyHost || !selectedMonth) return;
@@ -95,47 +95,6 @@ export function MemberManagerModal({
       setIsSavingHost(false);
     }
   };
-
-  // Generate month options around current month (previous year, current year, next year)
-  const monthOptions = useMemo(() => {
-    const today = new Date();
-    const actualYear = today.getFullYear();
-    const actualMonth = today.getMonth() + 1;
-    const actualCurrentMonthStr = `${actualYear}-${String(actualMonth).padStart(2, "0")}`;
-
-    const baseYear = selectedMonth
-      ? parseInt(selectedMonth.split("-")[0], 10) || actualYear
-      : actualYear;
-
-    const startYear = Math.min(actualYear - 1, baseYear - 1);
-    const endYear = Math.max(actualYear + 1, baseYear + 1);
-
-    const options: Array<{ value: string; label: string }> = [];
-
-    for (let y = startYear; y <= endYear; y++) {
-      for (let m = 1; m <= 12; m++) {
-        const val = `${y}-${String(m).padStart(2, "0")}`;
-        const isCurrent = val === actualCurrentMonthStr;
-        options.push({
-          value: val,
-          label: `Tháng ${String(m).padStart(2, "0")}/${y}${isCurrent ? " (Hiện tại)" : ""}`,
-        });
-      }
-    }
-
-    if (selectedMonth && !options.some((o) => o.value === selectedMonth)) {
-      const parts = selectedMonth.split("-");
-      if (parts.length === 2) {
-        options.push({
-          value: selectedMonth,
-          label: `Tháng ${parts[1]}/${parts[0]}`,
-        });
-        options.sort((a, b) => a.value.localeCompare(b.value));
-      }
-    }
-
-    return options;
-  }, [selectedMonth]);
 
   // Editing bank for a specific member
   const [editingMemberId, setEditingMemberId] = useState<string | null>(null);
@@ -534,7 +493,7 @@ export function MemberManagerModal({
         <div className="flex-1 overflow-y-auto overscroll-contain p-4 sm:p-5 pt-3.5 space-y-3.5 min-h-0 touch-pan-y">
           {/* Monthly Host Management Section */}
           {onSetMonthlyHost && members.length > 0 && (
-            <div className="p-3 rounded-[12px] bg-amber-500/10 border border-amber-500/30 space-y-2 w-full max-w-full min-w-0 overflow-hidden box-border">
+            <div className="p-3 rounded-[12px] bg-amber-500/10 border border-amber-500/30 space-y-2 w-full max-w-full min-w-0 box-border relative">
               <div className="flex items-center justify-between flex-wrap gap-1">
                 <div className="flex items-center gap-1.5 text-xs font-bold text-amber-500">
                   <Crown className="w-4 h-4 fill-amber-500 text-amber-500 shrink-0" />
@@ -554,23 +513,13 @@ export function MemberManagerModal({
                   <label className="block text-[10.5px] text-[var(--muted)] mb-1 font-medium">
                     Tháng áp dụng
                   </label>
-                  <div className="relative w-full min-w-0">
-                    <select
-                      value={selectedMonth}
-                      onChange={(e) => {
-                        setUserSelectedMonth(e.target.value);
-                        setUserSelectedHostId(null);
-                      }}
-                      className="w-full max-w-full min-w-0 h-9 appearance-none pl-3 pr-8 text-xs font-semibold rounded-[8px] border border-amber-500/40 bg-[var(--card)] text-[var(--text)] outline-none focus:border-amber-500 cursor-pointer shadow-2xs truncate box-border"
-                    >
-                      {monthOptions.map((opt) => (
-                        <option key={opt.value} value={opt.value}>
-                          {opt.label}
-                        </option>
-                      ))}
-                    </select>
-                    <ChevronDown className="w-3.5 h-3.5 absolute right-2.5 top-1/2 -translate-y-1/2 pointer-events-none text-amber-500/80" />
-                  </div>
+                  <MonthYearPicker
+                    value={selectedMonth}
+                    onChange={(newMonth) => {
+                      setUserSelectedMonth(newMonth);
+                      setUserSelectedHostId(null);
+                    }}
+                  />
                 </div>
 
                 <div className="w-full min-w-0 sm:col-span-5">
