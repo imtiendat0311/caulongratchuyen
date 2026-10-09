@@ -35,6 +35,7 @@ import { HistoryDrawer } from "./HistoryDrawer";
 import { MemberManagerModal } from "./MemberManagerModal";
 import { TeamPhotoModal } from "./TeamPhotoModal";
 import { SideRaysModal } from "./SideRaysModal";
+import { TechText } from "./TechText";
 import { CostcoReceipt } from "./CostcoReceipt";
 import { CourtPickerAndMap, parseCourtsList } from "./CourtPickerAndMap";
 import { SkeletonImage } from "./SkeletonImage";
@@ -609,14 +610,34 @@ export function BadmintonCalculator() {
         </div>
 
         {/* Title row */}
-        <div className="flex items-center justify-center gap-2.5 mb-1.5 flex-wrap">
-          <div className="hover:scale-110 transition-transform">
+        <div className="flex items-center justify-center gap-2 sm:gap-3 mb-1.5 w-full">
+          <div className="hover:scale-110 transition-transform shrink-0">
             <PixelCat className="w-8 h-8 sm:w-9 sm:h-9" />
           </div>
-          <h1 className="text-2xl sm:text-3xl font-extrabold tracking-tight bg-gradient-to-r from-[var(--accent)] to-[var(--accent2)] bg-clip-text text-transparent select-none">
-            Cầu Lông Rất Chuyên
-          </h1>
-          <div className="hover:scale-110 transition-transform">
+          <div className="h-12 sm:h-14 md:h-16 w-[260px] sm:w-[340px] md:w-[420px] max-w-[calc(100vw-110px)] relative flex items-center justify-center">
+            <h1 className="sr-only">Cầu Lông Rất Chuyên</h1>
+            <TechText
+              text="Cầu Lông Rất Chuyên"
+              fontWeight={800}
+              fontSize={44}
+              color="var(--text)"
+              accentColor="var(--accent)"
+              reach={110}
+              softness={0.7}
+              dashLength={4}
+              dashGap={2}
+              strokeWidth={1.5}
+              lineStyle="dashed"
+              reveal="letter"
+              specks={8}
+              selection={true}
+              labels={true}
+              draggable={true}
+              sweep={true}
+              speed={1}
+            />
+          </div>
+          <div className="hover:scale-110 transition-transform shrink-0">
             <PixelRacket className="w-6 h-9 sm:w-7 sm:h-10" />
           </div>
         </div>
