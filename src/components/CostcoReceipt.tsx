@@ -12,6 +12,8 @@ import {
   Moon,
   Sparkles,
   Loader2,
+  X,
+  Download,
 } from "lucide-react";
 import { toBlob, toPng } from "html-to-image";
 import { Member, BankConfig } from "@/types";
@@ -88,6 +90,7 @@ export function CostcoReceipt({
 
   const receiptRef = useRef<HTMLDivElement>(null);
   const [isDownloading, setIsDownloading] = useState(false);
+  const [previewImage, setPreviewImage] = useState<string | null>(null);
 
   const handleDownloadReceiptImage = async () => {
     if (!receiptRef.current || isDownloading) return;
@@ -113,28 +116,66 @@ export function CostcoReceipt({
         });
       }
 
-      if (blob) {
-        const url = URL.createObjectURL(blob);
-        const link = document.createElement("a");
-        link.download = fileName;
-        link.href = url;
-        document.body.appendChild(link);
-        link.click();
-        document.body.removeChild(link);
-        setTimeout(() => URL.revokeObjectURL(url), 10000);
-      } else {
+      if (!blob) {
         const dataUrl = await toPng(receiptRef.current, {
           cacheBust: true,
           pixelRatio: 2.5,
           skipFonts: true,
         });
-        const link = document.createElement("a");
-        link.download = fileName;
-        link.href = dataUrl;
-        document.body.appendChild(link);
-        link.click();
-        document.body.removeChild(link);
+        const res = await fetch(dataUrl);
+        blob = await res.blob();
       }
+
+      if (!blob) return;
+
+      const file = new File([blob], fileName, { type: "image/png" });
+
+      // 1. Mobile with Web Share API: triggers native iOS Share Sheet so user can tap "Lưu hình ảnh" / "Save Image" to Photos app
+      if (
+        typeof navigator !== "undefined" &&
+        navigator.canShare &&
+        navigator.canShare({ files: [file] })
+      ) {
+        try {
+          await navigator.share({
+            files: [file],
+            title: "Biên lai Cầu Lông Rất Chuyên",
+            text: `Biên lai tiền sân cầu lông ngày ${date || "hôm nay"}`,
+          });
+          return;
+        } catch (shareErr: unknown) {
+          if (shareErr instanceof Error && shareErr.name === "AbortError") {
+            // User cancelled native share sheet
+            return;
+          }
+        }
+      }
+
+      // 2. Mobile without Web Share file support (e.g. inside Messenger/Zalo in-app webview):
+      // NEVER do link.click() which iOS Safari navigates to blob URL in same tab!
+      // Instead, show modal so user can long-press to "Lưu hình ảnh" into iOS Photos app.
+      const isMobile =
+        typeof window !== "undefined" &&
+        (/Android|iPhone|iPad|iPod|Opera Mini|IEMobile|WPDesktop/i.test(
+          navigator.userAgent
+        ) ||
+          (navigator.maxTouchPoints && navigator.maxTouchPoints > 1));
+
+      const objectUrl = URL.createObjectURL(blob);
+
+      if (isMobile) {
+        setPreviewImage(objectUrl);
+        return;
+      }
+
+      // 3. Desktop: trigger regular file download
+      const link = document.createElement("a");
+      link.download = fileName;
+      link.href = objectUrl;
+      document.body.appendChild(link);
+      link.click();
+      document.body.removeChild(link);
+      setTimeout(() => URL.revokeObjectURL(objectUrl), 10000);
     } catch (err) {
       console.error("Lỗi khi tải ảnh biên lai:", err);
     } finally {
@@ -519,6 +560,62 @@ export function CostcoReceipt({
           <span>In / Lưu biên lai</span>
         </button>
       </div>
+
+      {/* Mobile Save-to-Photos Preview Modal */}
+      {previewImage && (
+        <div
+          onClick={() => setPreviewImage(null)}
+          className="fixed inset-0 z-50 flex items-center justify-center p-3 sm:p-4 bg-black/80 backdrop-blur-xs animate-in fade-in duration-200"
+        >
+          <div
+            onClick={(e) => e.stopPropagation()}
+            className="relative w-full max-w-sm rounded-[16px] bg-[var(--card)] border border-[var(--border)] shadow-xl p-4 flex flex-col items-center max-h-[92vh] max-h-[92dvh] overflow-y-auto"
+          >
+            <button
+              type="button"
+              onClick={() => setPreviewImage(null)}
+              className="absolute top-3 right-3 p-1.5 rounded-lg text-[var(--muted)] hover:text-[var(--text)] hover:bg-[var(--bg)] cursor-pointer"
+              title="Đóng"
+            >
+              <X className="w-4 h-4" />
+            </button>
+
+            <h3 className="font-bold text-sm text-[var(--text)] mb-1">
+              Lưu Biên Lai Vào Máy
+            </h3>
+            <p className="text-xs text-[var(--muted)] text-center mb-3 leading-relaxed">
+              📱 <strong>Nhấn giữ vào ảnh 1-2 giây</strong> ➜ Chọn <strong>&quot;Lưu hình ảnh&quot;</strong> (Save Image) để lưu trực tiếp vào ứng dụng <strong>Ảnh</strong> của iPhone.
+            </p>
+
+            <div className="w-full flex justify-center rounded-xl overflow-hidden border border-[var(--border)] bg-white p-2 shadow-xs mb-3">
+              {/* eslint-disable-next-line @next/next/no-img-element */}
+              <img
+                src={previewImage}
+                alt="Biên lai chi phí"
+                className="max-h-[55vh] max-h-[55dvh] w-auto object-contain rounded-sm select-auto"
+              />
+            </div>
+
+            <div className="flex gap-2 w-full">
+              <a
+                href={previewImage}
+                download={`bien-lai-${date ? date.replace(/\//g, "-") : "session"}.png`}
+                className="flex-1 py-2 px-3 rounded-[8px] bg-[var(--accent)] hover:opacity-90 text-white font-semibold text-xs flex items-center justify-center gap-1.5 shadow-xs"
+              >
+                <Download className="w-3.5 h-3.5" />
+                <span>Tải về file</span>
+              </a>
+              <button
+                type="button"
+                onClick={() => setPreviewImage(null)}
+                className="py-2 px-4 rounded-[8px] border border-[var(--border)] text-xs font-semibold text-[var(--text)] hover:bg-[var(--bg)] cursor-pointer"
+              >
+                Đóng
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 }
