@@ -7,6 +7,7 @@ import {
   MonthlyHost,
 } from "@/types";
 import { supabase } from "./supabase";
+import { generateBillIdentifiers } from "./bill-utils";
 
 export const STORAGE_KEY = "cau-long-rat-chuyen-data";
 export const BANK_STORAGE_KEY = "cau-long-bank-data";
@@ -42,6 +43,8 @@ export const DEFAULT_DATA: BadmintonData = {
   noteNu: "",
   femaleRatio: 0.75,
   roundMode: "exact",
+  orderNumber: "",
+  serialNumber: "",
 };
 
 export const DEFAULT_BANK: BankConfig = {
@@ -93,12 +96,28 @@ export function getBadmintonSnapshot(): BadmintonData {
           noteNu: parsed.noteNu ?? DEFAULT_DATA.noteNu,
           femaleRatio: parsed.femaleRatio ?? DEFAULT_DATA.femaleRatio,
           roundMode: parsed.roundMode ?? DEFAULT_DATA.roundMode,
+          orderNumber: parsed.orderNumber || "",
+          serialNumber: parsed.serialNumber || "",
         };
       } else {
         badmintonState = { ...DEFAULT_DATA };
       }
     } catch {
       badmintonState = { ...DEFAULT_DATA };
+    }
+
+    if (badmintonState && (!badmintonState.orderNumber || !badmintonState.serialNumber)) {
+      const ids = generateBillIdentifiers(badmintonState.matchDate);
+      badmintonState = {
+        ...badmintonState,
+        orderNumber: badmintonState.orderNumber || ids.orderNumber,
+        serialNumber: badmintonState.serialNumber || ids.serialNumber,
+      };
+      try {
+        localStorage.setItem(STORAGE_KEY, JSON.stringify(badmintonState));
+      } catch {
+        // ignore
+      }
     }
   }
   return badmintonState ?? DEFAULT_DATA;
@@ -382,6 +401,8 @@ export async function saveSessionToCloud(): Promise<{ success: boolean; message?
       note_nu: calcData.noteNu || "",
       female_ratio: calcData.femaleRatio,
       round_mode: calcData.roundMode,
+      order_number: calcData.orderNumber || null,
+      serial_number: calcData.serialNumber || null,
       bank_id: bank.bankId || "MB",
       bank_account_no: bank.accountNo || "",
       bank_account_name: bank.accountName || "",
@@ -445,6 +466,8 @@ export async function loadSessionFromCloud(): Promise<{ success: boolean; messag
       noteNu: s.note_nu ?? "",
       femaleRatio: Number(s.female_ratio) ?? DEFAULT_DATA.femaleRatio,
       roundMode: (s.round_mode as BadmintonData["roundMode"]) || "exact",
+      orderNumber: s.order_number || undefined,
+      serialNumber: s.serial_number || undefined,
     };
     setBadmintonState(loadedData);
 
@@ -756,6 +779,12 @@ export async function addHistoryItem(item: HistoryItem) {
       shuttle_cost: item.shuttleCost,
       water_cost: item.waterCost,
       notes: item.notes || "",
+      order_number: item.orderNumber || null,
+      serial_number: item.serialNumber || null,
+      host_name: item.hostName || null,
+      host_member_id: item.hostMemberId || null,
+      court_name: item.courtName || null,
+      court_address: item.courtAddress || null,
     });
 
     if (error) {
@@ -848,6 +877,12 @@ export function initSupabaseSync() {
           shuttleCost: Number(row.shuttle_cost),
           waterCost: Number(row.water_cost),
           notes: row.notes || "",
+          orderNumber: row.order_number || undefined,
+          serialNumber: row.serial_number || undefined,
+          hostName: row.host_name || undefined,
+          hostMemberId: row.host_member_id || undefined,
+          courtName: row.court_name || undefined,
+          courtAddress: row.court_address || undefined,
         }));
         setHistoryState(loadedHistory);
       }
@@ -868,3 +903,67 @@ export function initSupabaseSync() {
       console.warn("Failed to load initial club directory from Supabase:", err);
     });
 }
+
+/**
+ * Searches receipts from Cloud by Host Name and/or Order Number.
+ * Enables the receipt retrieval system.
+ */
+export async function searchReceiptsFromCloud(query: {
+  hostName?: string;
+  orderNumber?: string;
+  keyword?: string;
+}): Promise<{ success: boolean; data: HistoryItem[]; message?: string }> {
+  try {
+    let builder = supabase.from("match_history").select("*");
+
+    const kw = query.keyword?.trim();
+    const ord = query.orderNumber?.trim();
+    const host = query.hostName?.trim();
+
+    if (ord) {
+      builder = builder.ilike("order_number", `%${ord}%`);
+    }
+    if (host) {
+      builder = builder.ilike("host_name", `%${host}%`);
+    }
+    if (kw && !ord && !host) {
+      builder = builder.or(
+        `order_number.ilike.%${kw}%,host_name.ilike.%${kw}%,date.ilike.%${kw}%,court_name.ilike.%${kw}%`
+      );
+    }
+
+    const { data, error } = await builder
+      .order("created_at", { ascending: false })
+      .limit(30);
+
+    if (error) {
+      return { success: false, data: [], message: error.message };
+    }
+
+    const items: HistoryItem[] = (data || []).map((row) => ({
+      id: row.id,
+      date: row.date,
+      totalCost: Number(row.total_cost),
+      costPerMale: Number(row.cost_per_male),
+      costPerFemale: Number(row.cost_per_female),
+      maleCount: Number(row.male_count),
+      femaleCount: Number(row.female_count),
+      courtCost: Number(row.court_cost),
+      shuttleCost: Number(row.shuttle_cost),
+      waterCost: Number(row.water_cost),
+      notes: row.notes || "",
+      orderNumber: row.order_number || undefined,
+      serialNumber: row.serial_number || undefined,
+      hostName: row.host_name || undefined,
+      hostMemberId: row.host_member_id || undefined,
+      courtName: row.court_name || undefined,
+      courtAddress: row.court_address || undefined,
+    }));
+
+    return { success: true, data: items };
+  } catch (err) {
+    const msg = err instanceof Error ? err.message : "Error searching receipts";
+    return { success: false, data: [], message: msg };
+  }
+}
+

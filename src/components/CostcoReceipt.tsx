@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useState, useRef, useEffect } from "react";
+import React, { useState, useRef, useEffect, useMemo } from "react";
 import {
   Share2,
   Copy,
@@ -21,6 +21,11 @@ import { Member, BankConfig } from "@/types";
 import { parseCourtsList } from "./CourtPickerAndMap";
 import { SkeletonImage } from "./SkeletonImage";
 import { RECEIPT_TEXTURE_LIGHT, RECEIPT_TEXTURE_DARK } from "@/lib/receipt-textures";
+import {
+  generateBillIdentifiers,
+  generateUpcBarcodeBars,
+  formatSerialNumber,
+} from "@/lib/bill-utils";
 
 interface CostcoReceiptProps {
   date: string; // DD/MM/YYYY
@@ -39,6 +44,8 @@ interface CostcoReceiptProps {
   finalNam: number;
   finalNu: number;
   ratio: number;
+  orderNumber?: string;
+  serialNumber?: string;
   onCopy: () => void;
   copied: boolean;
   onShare: () => void;
@@ -63,6 +70,8 @@ export function CostcoReceipt({
   finalNam,
   finalNu,
   ratio,
+  orderNumber,
+  serialNumber,
   onCopy,
   copied,
   onShare,
@@ -122,7 +131,19 @@ export function CostcoReceipt({
   const courtsCount = Math.max(1, courtsList.length);
   const rawDigits = courtNumber ? courtNumber.replace(/[^0-9]/g, "") : "";
   const storeNum = rawDigits.slice(0, 4) || "01";
-  const refNum = "73928" + (date ? date.replace(/\//g, "") : "102026") + "8472";
+
+  // Unique Bill Identifiers & Dynamic UPC-A Barcode
+  const defaultBillIds = useMemo(() => generateBillIdentifiers(date), [date]);
+  const effectiveOrderNumber = orderNumber || defaultBillIds.orderNumber;
+  const effectiveSerialNumber = serialNumber || defaultBillIds.serialNumber;
+  const formattedSerial = useMemo(
+    () => formatSerialNumber(effectiveSerialNumber),
+    [effectiveSerialNumber]
+  );
+  const barcodeBars = useMemo(
+    () => generateUpcBarcodeBars(effectiveSerialNumber),
+    [effectiveSerialNumber]
+  );
 
   // Account display
   const bankAcc = hostMember?.account_no || bankConfig.accountNo || "";
@@ -141,7 +162,7 @@ export function CostcoReceipt({
   const directVietQrUrl =
     bankId && bankAcc.trim()
       ? `https://img.vietqr.io/image/${bankId}-${bankAcc.trim()}-qr_only.png?addInfo=${encodeURIComponent(
-          "Cau long FC Rat Chuyen"
+          `Cau long ${effectiveOrderNumber}`
         )}&accountName=${encodeURIComponent(accName.trim())}`
       : null;
 
@@ -790,8 +811,8 @@ export function CostcoReceipt({
               <span className="text-[var(--receipt-text)] truncate text-right">{date} 20:30:15 PM</span>
             </div>
             <div className="flex justify-between items-baseline gap-1">
-              <span className="shrink-0">Mã giao dịch</span>
-              <span className="font-mono text-[var(--receipt-text)] truncate text-right">{refNum}</span>
+              <span className="shrink-0">Mã đơn hàng</span>
+              <span className="font-mono font-bold text-[var(--receipt-text)] truncate text-right">{effectiveOrderNumber}</span>
             </div>
             <div className="flex justify-between items-baseline gap-1 font-bold text-[var(--receipt-text)]">
               <span className="shrink-0">Trạng thái</span>
@@ -808,56 +829,18 @@ export function CostcoReceipt({
 
           {/* Barcode Section */}
           <div className="flex flex-col items-center justify-center my-3 text-[var(--receipt-text)]">
-            {/* SVG Barcode */}
+            {/* Dynamic UPC-A SVG Barcode */}
             <svg
               className="w-44 sm:w-56 h-10 sm:h-11 max-w-full"
               viewBox="0 0 200 45"
               fill="currentColor"
             >
-              {/* Barcode lines simulation */}
-              <rect x="0" y="0" width="3" height="45" />
-              <rect x="5" y="0" width="1" height="45" />
-              <rect x="8" y="0" width="4" height="45" />
-              <rect x="15" y="0" width="2" height="45" />
-              <rect x="19" y="0" width="1" height="45" />
-              <rect x="22" y="0" width="5" height="45" />
-              <rect x="29" y="0" width="2" height="45" />
-              <rect x="33" y="0" width="1" height="45" />
-              <rect x="36" y="0" width="3" height="45" />
-              <rect x="42" y="0" width="2" height="45" />
-              <rect x="46" y="0" width="4" height="45" />
-              <rect x="53" y="0" width="1" height="45" />
-              <rect x="56" y="0" width="3" height="45" />
-              <rect x="62" y="0" width="2" height="45" />
-              <rect x="66" y="0" width="5" height="45" />
-              <rect x="73" y="0" width="1" height="45" />
-              <rect x="76" y="0" width="4" height="45" />
-              <rect x="83" y="0" width="2" height="45" />
-              <rect x="87" y="0" width="3" height="45" />
-              <rect x="93" y="0" width="1" height="45" />
-              <rect x="96" y="0" width="4" height="45" />
-              <rect x="103" y="0" width="2" height="45" />
-              <rect x="107" y="0" width="5" height="45" />
-              <rect x="115" y="0" width="1" height="45" />
-              <rect x="118" y="0" width="3" height="45" />
-              <rect x="123" y="0" width="4" height="45" />
-              <rect x="130" y="0" width="2" height="45" />
-              <rect x="134" y="0" width="1" height="45" />
-              <rect x="137" y="0" width="5" height="45" />
-              <rect x="145" y="0" width="2" height="45" />
-              <rect x="149" y="0" width="3" height="45" />
-              <rect x="155" y="0" width="1" height="45" />
-              <rect x="158" y="0" width="4" height="45" />
-              <rect x="165" y="0" width="2" height="45" />
-              <rect x="169" y="0" width="3" height="45" />
-              <rect x="175" y="0" width="4" height="45" />
-              <rect x="182" y="0" width="1" height="45" />
-              <rect x="185" y="0" width="3" height="45" />
-              <rect x="190" y="0" width="2" height="45" />
-              <rect x="194" y="0" width="4" height="45" />
+              {barcodeBars.map((bar, idx) => (
+                <rect key={idx} x={bar.x} y={0} width={bar.width} height={45} />
+              ))}
             </svg>
             <div className="font-mono text-[10px] tracking-[0.25em] text-[var(--receipt-muted)] mt-1">
-              7 39281 04729 3
+              {formattedSerial}
             </div>
           </div>
 

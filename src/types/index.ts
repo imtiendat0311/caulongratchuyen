@@ -46,6 +46,8 @@ export interface BadmintonData {
   noteNu: string;
   femaleRatio: number; // default 0.75 (75%)
   roundMode: "exact" | "1k" | "5k";
+  orderNumber?: string; // unique order code e.g. "CL-261009-4729"
+  serialNumber?: string; // 12-digit UPC serial e.g. "826100947293"
 }
 
 export const PRESET_COURTS: BadmintonCourt[] = [
@@ -78,6 +80,12 @@ export interface HistoryItem {
   shuttleCost: number;
   waterCost: number;
   notes: string;
+  orderNumber?: string; // e.g. "CL-261009-4729"
+  serialNumber?: string; // e.g. "826100947293"
+  hostName?: string;
+  hostMemberId?: string;
+  courtName?: string;
+  courtAddress?: string;
 }
 
 export const POPULAR_BANKS = [

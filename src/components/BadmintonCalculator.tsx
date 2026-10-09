@@ -37,6 +37,7 @@ import { CostcoReceipt } from "./CostcoReceipt";
 import { CourtPickerAndMap, parseCourtsList } from "./CourtPickerAndMap";
 import { SkeletonImage } from "./SkeletonImage";
 import { BadmintonData, BankConfig, HistoryItem } from "@/types";
+import { generateBillIdentifiers } from "@/lib/bill-utils";
 import {
   DEFAULT_DATA,
   DEFAULT_BANK,
@@ -117,14 +118,17 @@ export function BadmintonCalculator() {
   // Initialize Supabase sync on client mount
   useEffect(() => {
     initSupabaseSync();
-    if (!getBadmintonSnapshot().matchDate) {
-      const today = getTodayDateString();
-      if (today) {
-        setBadmintonState((prev) => ({
-          ...prev,
-          matchDate: prev.matchDate || today,
-        }));
-      }
+    const snap = getBadmintonSnapshot();
+    const today = getTodayDateString();
+    const targetDate = snap.matchDate || today;
+    if (!snap.orderNumber || !snap.serialNumber || !snap.matchDate) {
+      const ids = generateBillIdentifiers(targetDate, snap.orderNumber);
+      setBadmintonState((prev) => ({
+        ...prev,
+        matchDate: prev.matchDate || today,
+        orderNumber: prev.orderNumber || ids.orderNumber,
+        serialNumber: prev.serialNumber || ids.serialNumber,
+      }));
     }
   }, []);
 
@@ -280,11 +284,35 @@ export function BadmintonCalculator() {
     setBadmintonState((prev) => ({ ...prev, [field]: val }));
   };
 
+  const handleDateChange = (newDate: string) => {
+    const newIds = generateBillIdentifiers(newDate, data.orderNumber);
+    setBadmintonState((prev) => ({
+      ...prev,
+      matchDate: newDate,
+      orderNumber: newIds.orderNumber,
+      serialNumber: newIds.serialNumber,
+    }));
+  };
+
+  const handleRegenerateBillId = () => {
+    const newIds = generateBillIdentifiers(data.matchDate);
+    setBadmintonState((prev) => ({
+      ...prev,
+      orderNumber: newIds.orderNumber,
+      serialNumber: newIds.serialNumber,
+    }));
+    showToast(`✓ Đã tạo mã hóa đơn mới: #${newIds.orderNumber}`);
+  };
+
   const handleReset = () => {
     if (window.confirm("Đặt lại toàn bộ về mặc định?")) {
+      const today = getTodayDateString();
+      const newIds = generateBillIdentifiers(today);
       setBadmintonState({
         ...DEFAULT_DATA,
-        matchDate: getTodayDateString(),
+        matchDate: today,
+        orderNumber: newIds.orderNumber,
+        serialNumber: newIds.serialNumber,
       });
     }
   };
@@ -418,8 +446,12 @@ export function BadmintonCalculator() {
         : ""
     }\n`;
 
+    if (data.orderNumber) {
+      msg += `\n🧾 Mã đơn: ${data.orderNumber}`;
+    }
+
     if (effectiveBankConfig.accountNo) {
-      msg += `\n💳 Chuyển khoản cho ${activeHostMember ? activeHostMember.name : "Host"}:\n• STK: ${effectiveBankConfig.accountNo} (${effectiveBankConfig.bankId})\n• Tên: ${effectiveBankConfig.accountName}`;
+      msg += `\n💳 Chuyển khoản cho ${activeHostMember ? activeHostMember.name : "Host"}:\n• STK: ${effectiveBankConfig.accountNo} (${effectiveBankConfig.bankId})\n• Tên: ${effectiveBankConfig.accountName}\n• Nội dung: ${data.orderNumber || "Cau long"} [Tên bạn]`;
     }
 
     msg += `\n\n🔗 caulongratchuyen.vercel.app`;
@@ -465,6 +497,13 @@ export function BadmintonCalculator() {
 
   const handleSaveToDB = async () => {
     const sessionRes = await saveSessionToCloud();
+    const billIds = (!data.orderNumber || !data.serialNumber)
+      ? generateBillIdentifiers(data.matchDate || displayDate)
+      : { orderNumber: data.orderNumber, serialNumber: data.serialNumber };
+
+    const hostName = activeHostMember ? activeHostMember.name : "FC Rất Chuyên";
+    const hostMemberId = activeHostMember?.id || data.hostMemberId || "";
+
     const newItem: HistoryItem = {
       id: Date.now().toString(),
       date: displayDate,
@@ -477,12 +516,18 @@ export function BadmintonCalculator() {
       shuttleCost: calculations.tongTienCau,
       waterCost: calculations.tongTienNuoc,
       notes: [data.noteNam, data.noteNu].filter(Boolean).join(" | "),
+      orderNumber: billIds.orderNumber,
+      serialNumber: billIds.serialNumber,
+      hostName,
+      hostMemberId,
+      courtName: data.courtName,
+      courtAddress: data.courtAddress,
     };
 
     await addHistoryItem(newItem);
     fireConfetti();
     if (sessionRes.success) {
-      showToast(`✓ Đã lưu buổi chơi ngày ${displayDate} vào lịch sử!`);
+      showToast(`✓ Đã lưu hóa đơn #${billIds.orderNumber} ngày ${displayDate} vào lịch sử!`);
     } else {
       showToast(`Lỗi lưu lịch sử: ${sessionRes.message || "Lỗi mạng"}`, "error");
     }
@@ -499,8 +544,16 @@ export function BadmintonCalculator() {
   };
 
   const handleRestoreHistory = (item: HistoryItem) => {
+    let matchDate = "";
+    if (item.date && item.date.includes("/")) {
+      const parts = item.date.split("/");
+      if (parts.length === 3) {
+        matchDate = `${parts[2]}-${parts[1]}-${parts[0]}`;
+      }
+    }
     setBadmintonState((prev) => ({
       ...prev,
+      matchDate: matchDate || prev.matchDate,
       nam: item.maleCount,
       nu: item.femaleCount,
       tienSan: Math.round(item.courtCost / 1000),
@@ -510,7 +563,13 @@ export function BadmintonCalculator() {
           ? Math.round(item.shuttleCost / 4 / 1000)
           : prev.giaQua,
       tienNuoc: Math.round(item.waterCost / 1000),
+      orderNumber: item.orderNumber || prev.orderNumber,
+      serialNumber: item.serialNumber || prev.serialNumber,
+      hostMemberId: item.hostMemberId || prev.hostMemberId,
+      courtName: item.courtName || prev.courtName,
+      courtAddress: item.courtAddress || prev.courtAddress,
     }));
+    showToast(`✓ Đã nạp lại hóa đơn #${item.orderNumber || item.date}!`);
     setIsHistoryOpen(false);
   };
 
@@ -650,7 +709,7 @@ export function BadmintonCalculator() {
             <input
               type="date"
               value={data.matchDate}
-              onChange={(e) => updateField("matchDate", e.target.value)}
+              onChange={(e) => handleDateChange(e.target.value)}
               className="py-1 px-2.5 text-xs font-semibold rounded-[8px] border border-[var(--border)] bg-[var(--bg)] text-[var(--text)] outline-none focus:border-[var(--accent)] cursor-pointer"
             />
             <motion.button
@@ -658,13 +717,32 @@ export function BadmintonCalculator() {
               type="button"
               onClick={() => {
                 const today = getTodayDateString();
-                if (today) updateField("matchDate", today);
+                if (today) handleDateChange(today);
               }}
               className="text-xs py-1 px-2 rounded-[8px] border border-[var(--border)] bg-[var(--bg)] text-[var(--muted)] hover:text-[var(--text)] hover:border-[var(--accent)] transition-colors cursor-pointer"
             >
               Hôm nay
             </motion.button>
           </div>
+
+          {/* Unique Order ID Badge with Refresh Button */}
+          {data.orderNumber && (
+            <div className="flex items-center gap-1.5 bg-[var(--bg)] px-2.5 py-1 rounded-xl border border-[var(--border)] shadow-2xs">
+              <span className="text-[11px] text-[var(--muted)] font-medium">Mã đơn:</span>
+              <span className="font-mono text-xs font-bold text-[var(--accent)] tracking-wider">
+                #{data.orderNumber}
+              </span>
+              <motion.button
+                whileTap={{ scale: 0.88 }}
+                type="button"
+                onClick={handleRegenerateBillId}
+                title="Tạo mã hóa đơn mới cho buổi này"
+                className="p-1 rounded-lg text-[var(--muted)] hover:text-[var(--accent)] transition-colors cursor-pointer"
+              >
+                <RotateCcw className="w-3 h-3" />
+              </motion.button>
+            </div>
+          )}
         </div>
 
         {/* Host for Today: Focused on TODAY's session only */}
@@ -1311,6 +1389,8 @@ export function BadmintonCalculator() {
             finalNam={calculations.finalNam}
             finalNu={calculations.finalNu}
             ratio={calculations.ratio}
+            orderNumber={data.orderNumber}
+            serialNumber={data.serialNumber}
             onCopy={handleCopy}
             copied={copied}
             onShare={handleShare}
@@ -1341,11 +1421,17 @@ export function BadmintonCalculator() {
                     className="p-2.5 rounded-[10px] bg-[var(--bg)] border border-[var(--border)] flex items-center justify-between text-xs"
                   >
                     <div>
-                      <div className="font-medium text-[var(--text)]">
-                        {item.date}
+                      <div className="font-medium text-[var(--text)] flex items-center gap-1.5 flex-wrap">
+                        <span>{item.date}</span>
+                        {item.orderNumber && (
+                          <span className="font-mono text-[10px] px-1.5 py-0.2 rounded bg-[var(--card)] border border-[var(--border)] text-[var(--accent)] font-semibold">
+                            #{item.orderNumber}
+                          </span>
+                        )}
                       </div>
                       <div className="text-[11px] text-[var(--muted)]">
                         {item.maleCount} Nam, {item.femaleCount} Nữ
+                        {item.hostName && ` • Host: ${item.hostName}`}
                       </div>
                     </div>
                     <div className="text-right">
@@ -1424,6 +1510,7 @@ export function BadmintonCalculator() {
         onSaveBankConfig={handleSaveBankConfig}
         amountNam={calculations.finalNam}
         amountNu={calculations.finalNu}
+        orderNumber={data.orderNumber}
         hostName={activeHostMember?.name}
         activeHostMember={activeHostMember}
         onUpdateMemberBank={updateMemberBank}

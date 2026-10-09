@@ -25,6 +25,7 @@ interface VietQRModalProps {
   onSaveBankConfig: (cfg: BankConfig) => void;
   amountNam: number;
   amountNu: number;
+  orderNumber?: string;
   hostName?: string;
   activeHostMember?: Member | null;
   onUpdateMemberBank?: (
@@ -42,6 +43,7 @@ export function VietQRModal({
   onSaveBankConfig,
   amountNam,
   amountNu,
+  orderNumber,
   hostName,
   activeHostMember,
   onUpdateMemberBank,
@@ -56,6 +58,7 @@ export function VietQRModal({
           onSaveBankConfig={onSaveBankConfig}
           amountNam={amountNam}
           amountNu={amountNu}
+          orderNumber={orderNumber}
           hostName={hostName}
           activeHostMember={activeHostMember}
           onUpdateMemberBank={onUpdateMemberBank}
@@ -73,6 +76,7 @@ function VietQRContent({
   onSaveBankConfig,
   amountNam,
   amountNu,
+  orderNumber,
   hostName,
   activeHostMember,
   onUpdateMemberBank,
@@ -136,7 +140,9 @@ function VietQRContent({
     qrTheme === "dark" || (qrTheme === "auto" && isSystemDark);
 
   const currentAmount = selectedGender === "nam" ? amountNam : amountNu;
-  const description = `Cau long ${selectedGender === "nam" ? "Nam" : "Nu"}`;
+  const description = orderNumber
+    ? `Cau long ${orderNumber} ${selectedGender === "nam" ? "Nam" : "Nu"}`
+    : `Cau long ${selectedGender === "nam" ? "Nam" : "Nu"}`;
 
   const qrUrl =
     bankId && accountNo.trim()
