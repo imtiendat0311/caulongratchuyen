@@ -196,16 +196,18 @@ export function CostcoReceipt({
                       const brightness = 0.299 * r + 0.587 * g + 0.114 * b;
 
                       if (brightness > 160 || a < 50) {
-                        // Background -> 100% transparent so it blends directly into receipt paper
-                        lightData.data[idx] = 0;
-                        lightData.data[idx + 1] = 0;
-                        lightData.data[idx + 2] = 0;
-                        lightData.data[idx + 3] = 0;
+                        // QR background -> Match EXACT receipt paper background color
+                        // Light mode: exact #fcfcfb (R: 252, G: 252, B: 251)
+                        lightData.data[idx] = 252;
+                        lightData.data[idx + 1] = 252;
+                        lightData.data[idx + 2] = 251;
+                        lightData.data[idx + 3] = 255;
 
-                        darkData.data[idx] = 0;
-                        darkData.data[idx + 1] = 0;
-                        darkData.data[idx + 2] = 0;
-                        darkData.data[idx + 3] = 0;
+                        // Dark mode: exact #14171f (R: 20, G: 23, B: 31) - completely replaces black with receipt background
+                        darkData.data[idx] = 20;
+                        darkData.data[idx + 1] = 23;
+                        darkData.data[idx + 2] = 31;
+                        darkData.data[idx + 3] = 255;
                       } else {
                         // QR module
                         // Light mode: authentic dark charcoal (#111111)
@@ -876,7 +878,7 @@ export function CostcoReceipt({
               )}
             </p>
 
-            <div className="w-full flex justify-center rounded-xl overflow-hidden border border-[var(--border)] bg-white p-2 shadow-xs mb-3">
+            <div className="w-full flex justify-center rounded-xl overflow-hidden border border-[var(--border)] bg-[var(--bg)] p-2 shadow-xs mb-3">
               {/* eslint-disable-next-line @next/next/no-img-element */}
               <img
                 src={previewData.url}
