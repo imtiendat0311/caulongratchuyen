@@ -200,9 +200,9 @@ export function CostcoReceipt({
           {/* Member & Session Info */}
           <div className="text-[10.5px] space-y-0.5 mb-2 text-[var(--receipt-text)]">
             <div className="flex justify-between items-baseline gap-1">
-              <span className="text-[var(--receipt-muted)] shrink-0">V5 Member:</span>
+              <span className="text-[var(--receipt-muted)] shrink-0">Thành viên:</span>
               <span className="font-bold truncate text-right">
-                {totalPlayers} BẠN ({namCount}M / {nuCount}F)
+                {totalPlayers} bạn ({namCount} Nam / {nuCount} Nữ)
               </span>
             </div>
             <div className="flex justify-between items-baseline gap-1">
@@ -221,7 +221,7 @@ export function CostcoReceipt({
           <div className="space-y-1 my-2">
             <div className="flex justify-between items-baseline">
               <span className="truncate pr-2 text-[var(--receipt-muted)]">
-                E TIEN SAN ({courtsCount > 1 ? `${courtsCount} SAN • ${courtNumber}` : (courtNumber || "2H")})
+                TIỀN SÂN ({courtsCount > 1 ? `${courtsCount} sân • ${courtNumber}` : (courtNumber || "2 giờ")})
               </span>
               <span className="font-semibold shrink-0 text-[var(--receipt-text)]">
                 {courtCost.toLocaleString("vi-VN")} đ
@@ -229,14 +229,14 @@ export function CostcoReceipt({
             </div>
             <div className="flex justify-between items-baseline">
               <span className="truncate pr-2 text-[var(--receipt-muted)]">
-                E CAU LONG ({soQua} QUA)
+                TIỀN CẦU ({soQua} quả)
               </span>
               <span className="font-semibold shrink-0 text-[var(--receipt-text)]">
                 {shuttleCost.toLocaleString("vi-VN")} đ
               </span>
             </div>
             <div className="flex justify-between items-baseline">
-              <span className="truncate pr-2 text-[var(--receipt-muted)]">E TIEN NUOC UONG</span>
+              <span className="truncate pr-2 text-[var(--receipt-muted)]">TIỀN NƯỚC UỐNG</span>
               <span className="font-semibold shrink-0 text-[var(--receipt-text)]">
                 {waterCost.toLocaleString("vi-VN")} đ
               </span>
@@ -249,16 +249,16 @@ export function CostcoReceipt({
           {/* Subtotal & Total */}
           <div className="space-y-1 mb-2">
             <div className="flex justify-between text-[var(--receipt-muted)]">
-              <span>SUBTOTAL</span>
+              <span>TỔNG CHI PHÍ</span>
               <span className="text-[var(--receipt-text)]">{totalCost.toLocaleString("vi-VN")} đ</span>
             </div>
             <div className="flex justify-between text-[var(--receipt-subtle)]">
-              <span>TAX (0%)</span>
+              <span>THUẾ (0%)</span>
               <span>0 đ</span>
             </div>
             <div className="border-b border-[var(--receipt-dashed)] my-1" />
             <div className="flex justify-between text-sm sm:text-base font-black text-[var(--receipt-text)]">
-              <span>TOTAL</span>
+              <span>TỔNG CỘNG</span>
               <span>{totalCost.toLocaleString("vi-VN")} đ</span>
             </div>
           </div>
@@ -292,33 +292,33 @@ export function CostcoReceipt({
           {/* Card / Bank Transfer Info */}
           <div className="text-[10px] leading-tight space-y-1 text-[var(--receipt-muted)] my-2">
             <div className="flex justify-between items-baseline gap-1">
-              <span className="shrink-0">Card number</span>
+              <span className="shrink-0">Số tài khoản</span>
               <span className="font-semibold text-[var(--receipt-text)] truncate text-right">{maskedAcc}</span>
             </div>
             <div className="flex justify-between items-baseline gap-1">
-              <span className="shrink-0">Card type</span>
+              <span className="shrink-0">Ngân hàng</span>
               <span className="text-[var(--receipt-text)] truncate text-right">
                 {bankName} ({accName})
               </span>
             </div>
             <div className="flex justify-between items-baseline gap-1">
-              <span className="shrink-0">Card entry</span>
-              <span className="text-[var(--receipt-text)] truncate text-right">CHUYEN KHOAN VIETQR</span>
+              <span className="shrink-0">Hình thức</span>
+              <span className="text-[var(--receipt-text)] truncate text-right">CHUYỂN KHOẢN VIETQR</span>
             </div>
             <div className="flex justify-between items-baseline gap-1">
-              <span className="shrink-0">Date/time</span>
+              <span className="shrink-0">Thời gian</span>
               <span className="text-[var(--receipt-text)] truncate text-right">{date} 20:30:15 PM</span>
             </div>
             <div className="flex justify-between items-baseline gap-1">
-              <span className="shrink-0">Reference #</span>
+              <span className="shrink-0">Mã giao dịch</span>
               <span className="font-mono text-[var(--receipt-text)] truncate text-right">{refNum}</span>
             </div>
             <div className="flex justify-between items-baseline gap-1 font-bold text-[var(--receipt-status)]">
-              <span className="shrink-0">Status</span>
-              <span className="truncate text-right">APPROVED / ĐÃ CHIA XONG</span>
+              <span className="shrink-0">Trạng thái</span>
+              <span className="truncate text-right">ĐÃ CHIA XONG</span>
             </div>
             <div className="flex justify-between items-baseline gap-1">
-              <span className="shrink-0">Finalized</span>
+              <span className="shrink-0">Hoàn tất</span>
               <span className="text-[var(--receipt-text)] truncate text-right">{date} 22:15:00 PM</span>
             </div>
           </div>
@@ -383,11 +383,11 @@ export function CostcoReceipt({
 
           {/* Footer Receipt Info */}
           <div className="text-center text-[10px] space-y-0.5 text-[var(--receipt-muted)] mt-2">
-            <div>OP #156 Name: {hostDisplayName}</div>
-            <div className="font-bold text-[var(--receipt-text)]">Thank you!</div>
-            <div>Please Come Again • Hẹn gặp lại buổi sau!</div>
+            <div>Thu ngân / Host: {hostDisplayName}</div>
+            <div className="font-bold text-[var(--receipt-text)]">Cảm ơn mọi người!</div>
+            <div>Hẹn gặp lại buổi sau!</div>
             <div className="mt-2 text-[var(--receipt-subtle)]">
-              Items Sold: {totalPlayers} người chơi
+              Số người chơi: {totalPlayers} bạn
             </div>
             <div className="text-[var(--receipt-subtle)]">
               {date} • caulongratchuyen.vercel.app
