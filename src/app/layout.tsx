@@ -7,26 +7,84 @@ const geist = Geist({subsets:['latin'],variable:'--font-sans'});
 
 export const metadata: Metadata = {
   metadataBase: new URL("https://caulongratchuyen.vercel.app"),
-  title: "Cầu Lông Rất Chuyên - FC Rất Chuyên",
+  title: {
+    default: "Cầu Lông Rất Chuyên - Chia Tiền Sân Cầu Lông Nhanh & Chuẩn",
+    template: "%s | Cầu Lông Rất Chuyên",
+  },
   description:
-    "Ứng dụng tính tiền chia sau mỗi buổi chơi cầu lông công bằng & nhanh gọn cho FC Rất Chuyên.",
+    "Ứng dụng tính tiền chia sau mỗi buổi chơi cầu lông công bằng, tự động & chuẩn xác cho các câu lạc bộ và nhóm bạn. Hỗ trợ điểm danh thành viên, tạo mã VietQR thanh toán, chia tiền Nam/Nữ và xuất biên lai chi phí.",
+  applicationName: "Cầu Lông Rất Chuyên",
   keywords: [
     "cầu lông",
-    "tính tiền cầu lông",
     "chia tiền cầu lông",
+    "tính tiền sân cầu lông",
     "cầu lông rất chuyên",
     "fc rất chuyên",
+    "tính bill cầu lông",
+    "phần mềm tính tiền cầu lông",
+    "chia tiền nam nữ",
+    "vietqr cầu lông",
+    "quản lý câu lạc bộ cầu lông",
+    "điểm danh cầu lông",
     "badminton cost calculator",
+    "badminton split bill",
+    "tiền sân cầu lông",
+    "biên lai cầu lông",
   ],
-  authors: [{ name: "FC Rất Chuyên" }],
+  authors: [{ name: "FC Rất Chuyên", url: "https://caulongratchuyen.vercel.app" }],
+  creator: "FC Rất Chuyên",
+  publisher: "FC Rất Chuyên",
+  category: "Sports & Utilities",
+  alternates: {
+    canonical: "/",
+  },
   icons: {
-    icon: "/team-photo.jpg",
-    apple: "/team-photo.jpg",
+    icon: [
+      { url: "/team-photo.jpg", sizes: "960x960", type: "image/jpeg" },
+    ],
+    apple: [
+      { url: "/team-photo.jpg", sizes: "960x960", type: "image/jpeg" },
+    ],
+    shortcut: ["/team-photo.jpg"],
   },
   openGraph: {
-    title: "Cầu Lông Rất Chuyên - FC Rất Chuyên",
-    description: "Tính tiền chia sau mỗi buổi chơi cầu lông công bằng & nhanh gọn.",
-    images: [{ url: "/team-photo.jpg", width: 960, height: 960, alt: "FC Rất Chuyên" }],
+    type: "website",
+    locale: "vi_VN",
+    url: "https://caulongratchuyen.vercel.app",
+    siteName: "Cầu Lông Rất Chuyên",
+    title: "Cầu Lông Rất Chuyên - Chia Tiền Sân Cầu Lông Nhanh & Chuẩn",
+    description:
+      "Ứng dụng tính tiền chia sân cầu lông công bằng, tự động tạo mã VietQR nhận tiền, xuất hóa đơn biên lai và quản lý điểm danh thành viên.",
+    images: [
+      {
+        url: "/team-photo.jpg",
+        width: 960,
+        height: 960,
+        alt: "Ảnh đội hình Cầu Lông FC Rất Chuyên",
+        type: "image/jpeg",
+      },
+    ],
+  },
+  twitter: {
+    card: "summary_large_image",
+    title: "Cầu Lông Rất Chuyên - Chia Tiền Sân Cầu Lông Nhanh & Chuẩn",
+    description:
+      "Tính tiền sân, tiền cầu, tiền nước nhanh chóng, chia đều Nam/Nữ và tạo mã VietQR thanh toán tiện lợi.",
+    images: ["/team-photo.jpg"],
+    creator: "@caulongratchuyen",
+  },
+  robots: {
+    index: true,
+    follow: true,
+    nocache: false,
+    googleBot: {
+      index: true,
+      follow: true,
+      noimageindex: false,
+      "max-video-preview": -1,
+      "max-image-preview": "large",
+      "max-snippet": -1,
+    },
   },
 };
 
@@ -49,6 +107,33 @@ export default function RootLayout({
   return (
     <html lang="vi" suppressHydrationWarning className={cn("font-sans", geist.variable)}>
       <head>
+        <script
+          type="application/ld+json"
+          dangerouslySetInnerHTML={{
+            __html: JSON.stringify({
+              "@context": "https://schema.org",
+              "@type": "WebApplication",
+              name: "Cầu Lông Rất Chuyên",
+              url: "https://caulongratchuyen.vercel.app",
+              applicationCategory: "SportsApplication",
+              operatingSystem: "All",
+              description:
+                "Ứng dụng tính tiền chia sau mỗi buổi chơi cầu lông công bằng, tự động & chuẩn xác cho các câu lạc bộ và nhóm bạn. Hỗ trợ điểm danh thành viên, tạo mã VietQR thanh toán, chia tiền Nam/Nữ và xuất hóa đơn chi phí.",
+              image: "https://caulongratchuyen.vercel.app/team-photo.jpg",
+              author: {
+                "@type": "Organization",
+                name: "FC Rất Chuyên",
+                url: "https://caulongratchuyen.vercel.app",
+                logo: "https://caulongratchuyen.vercel.app/team-photo.jpg",
+              },
+              offers: {
+                "@type": "Offer",
+                price: "0",
+                priceCurrency: "VND",
+              },
+            }),
+          }}
+        />
         <script
           dangerouslySetInnerHTML={{
             __html: `
