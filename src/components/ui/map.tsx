@@ -51,6 +51,19 @@ const blankMapStyle: MapLibreGL.StyleSpecification = {
   ],
 };
 
+function isWebGLSupported(): boolean {
+  if (typeof window === "undefined") return false;
+  try {
+    const canvas = document.createElement("canvas");
+    return !!(
+      window.WebGLRenderingContext &&
+      (canvas.getContext("webgl") || canvas.getContext("experimental-webgl"))
+    );
+  } catch {
+    return false;
+  }
+}
+
 // Prevent equivalent inline style objects from triggering a full map style reload.
 function useStableValue<T>(value: T): T {
   const key = useMemo(() => JSON.stringify(value) ?? "", [value]);
@@ -288,21 +301,31 @@ const Map = forwardRef<MapRef, MapProps>(function Map(
   // Initialize the map
   useEffect(() => {
     if (!containerRef.current) return;
+    if (!isWebGLSupported()) {
+      console.warn("WebGL is not supported in this environment; skipping map rendering.");
+      return;
+    }
 
     const initialStyle =
       resolvedTheme === "dark" ? mapStyles.dark : mapStyles.light;
     currentStyleRef.current = initialStyle;
 
-    const map = new MapLibreGL.Map({
-      container: containerRef.current,
-      style: initialStyle,
-      renderWorldCopies: false,
-      attributionControl: {
-        compact: true,
-      },
-      ...props,
-      ...viewport,
-    });
+    let map: MapLibreGL.Map;
+    try {
+      map = new MapLibreGL.Map({
+        container: containerRef.current,
+        style: initialStyle,
+        renderWorldCopies: false,
+        attributionControl: {
+          compact: true,
+        },
+        ...props,
+        ...viewport,
+      });
+    } catch (err) {
+      console.warn("Failed to initialize MapLibre GL map:", err);
+      return;
+    }
 
     const styleLoadHandler = () => {
       styleSwapInFlightRef.current = false;

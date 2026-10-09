@@ -208,17 +208,17 @@ export function CostcoReceipt({
                       const minVal = Math.min(g, b);
                       const alpha = Math.max(0, Math.min(1, 1 - (minVal / 248)));
 
-                      // Light mode: seamless blend with receipt paper
-                      lightData.data[idx] = Math.max(0, Math.min(255, Math.round(r + (1 - alpha) * (lightBgR - 255))));
-                      lightData.data[idx + 1] = Math.max(0, Math.min(255, Math.round(g + (1 - alpha) * (lightBgG - 255))));
-                      lightData.data[idx + 2] = Math.max(0, Math.min(255, Math.round(b + (1 - alpha) * (lightBgB - 255))));
-                      lightData.data[idx + 3] = 255;
+                      // Light mode: transparent blend onto receipt paper
+                      lightData.data[idx] = r;
+                      lightData.data[idx + 1] = g;
+                      lightData.data[idx + 2] = b;
+                      lightData.data[idx + 3] = Math.round(alpha * 255);
 
-                      // Dark mode: seamless blend with dark receipt background (no white/pink halo)
-                      darkData.data[idx] = Math.max(0, Math.min(255, Math.round(r + (1 - alpha) * (darkBgR - 255))));
-                      darkData.data[idx + 1] = Math.max(0, Math.min(255, Math.round(g + (1 - alpha) * (darkBgG - 255))));
-                      darkData.data[idx + 2] = Math.max(0, Math.min(255, Math.round(b + (1 - alpha) * (darkBgB - 255))));
-                      darkData.data[idx + 3] = 255;
+                      // Dark mode: transparent blend onto dark receipt paper
+                      darkData.data[idx] = r;
+                      darkData.data[idx + 1] = g;
+                      darkData.data[idx + 2] = b;
+                      darkData.data[idx + 3] = Math.round(alpha * 255);
                     } else {
                       const brightness = 0.299 * r + 0.587 * g + 0.114 * b;
 
@@ -229,17 +229,20 @@ export function CostcoReceipt({
                       // Smoothstep curve for clean contrast without blocky staircasing
                       t = t * t * (3 - 2 * t);
 
-                      // Light mode: t=1 is background, t=0 is module
-                      lightData.data[idx] = Math.round(lightModR * (1 - t) + lightBgR * t);
-                      lightData.data[idx + 1] = Math.round(lightModG * (1 - t) + lightBgG * t);
-                      lightData.data[idx + 2] = Math.round(lightModB * (1 - t) + lightBgB * t);
-                      lightData.data[idx + 3] = 255;
+                      // Module alpha: 0 for background (t=1), 255 for solid modules (t=0)
+                      const modAlpha = Math.round(255 * (1 - t));
 
-                      // Dark mode: t=1 (was white) is dark bg, t=0 (was black) is white module
-                      darkData.data[idx] = Math.round(darkModR * (1 - t) + darkBgR * t);
-                      darkData.data[idx + 1] = Math.round(darkModG * (1 - t) + darkBgG * t);
-                      darkData.data[idx + 2] = Math.round(darkModB * (1 - t) + darkBgB * t);
-                      darkData.data[idx + 3] = 255;
+                      // Light mode: solid dark modules (#111111) with transparent paper background
+                      lightData.data[idx] = lightModR;
+                      lightData.data[idx + 1] = lightModG;
+                      lightData.data[idx + 2] = lightModB;
+                      lightData.data[idx + 3] = modAlpha;
+
+                      // Dark mode: solid white modules (#ffffff) with transparent paper background
+                      darkData.data[idx] = darkModR;
+                      darkData.data[idx + 1] = darkModG;
+                      darkData.data[idx + 2] = darkModB;
+                      darkData.data[idx + 3] = modAlpha;
                     }
                   }
                 }

@@ -142,15 +142,16 @@ body {
   border-color: var(--accent);
 }
 
-/* Receipt Paper Theming (Authentic Black & White Receipt Style) */
+/* Receipt Paper Theming (Authentic Black & White Receipt Style with Scramble / Crumpled Texture) */
 .receipt-paper {
   --receipt-bg: #fcfcfb;
+  --receipt-texture: url('/receipt-scramble-light.webp');
   --receipt-text: #111111;
   --receipt-muted: #555555;
   --receipt-subtle: #777777;
   --receipt-border: #d0d0d0;
   --receipt-dashed: #888888;
-  --receipt-card: #f4f4f4;
+  --receipt-card: rgba(244, 244, 244, 0.7);
   --receipt-card-border: #dcdcdc;
   --receipt-male-label: #111111;
   --receipt-male-val: #111111;
@@ -159,21 +160,27 @@ body {
   --receipt-status: #111111;
   --receipt-brand-line: #111111;
   background-color: var(--receipt-bg);
+  background-image: var(--receipt-texture);
+  background-size: cover;
+  background-position: center top;
+  background-repeat: no-repeat;
   color: var(--receipt-text);
   border-color: var(--receipt-border);
-  transition: background-color 0.2s ease, color 0.2s ease, border-color 0.2s ease;
+  box-shadow: 0 16px 38px -10px rgba(0, 0, 0, 0.18), 0 4px 12px -2px rgba(0, 0, 0, 0.08);
+  transition: background-color 0.2s ease, color 0.2s ease, border-color 0.2s ease, box-shadow 0.2s ease;
 }
 
 :root[data-theme="dark"] .receipt-paper:not(.force-light),
 .dark .receipt-paper:not(.force-light),
 .receipt-paper.force-dark {
   --receipt-bg: #14171f;
+  --receipt-texture: url('/receipt-scramble-dark.webp');
   --receipt-text: #f0f2f5;
   --receipt-muted: #9aa1b2;
   --receipt-subtle: #6b7280;
   --receipt-border: #2b3045;
   --receipt-dashed: #474f68;
-  --receipt-card: #1c202d;
+  --receipt-card: rgba(28, 32, 45, 0.7);
   --receipt-card-border: #2e354a;
   --receipt-male-label: #f0f2f5;
   --receipt-male-val: #ffffff;
@@ -181,16 +188,18 @@ body {
   --receipt-female-val: #ffffff;
   --receipt-status: #f0f2f5;
   --receipt-brand-line: #ffffff;
+  box-shadow: 0 18px 45px -8px rgba(0, 0, 0, 0.65), 0 6px 16px -2px rgba(0, 0, 0, 0.45);
 }
 
 .receipt-paper.force-light {
   --receipt-bg: #fcfcfb !important;
+  --receipt-texture: url('/receipt-scramble-light.webp') !important;
   --receipt-text: #111111 !important;
   --receipt-muted: #555555 !important;
   --receipt-subtle: #777777 !important;
   --receipt-border: #d0d0d0 !important;
   --receipt-dashed: #888888 !important;
-  --receipt-card: #f4f4f4 !important;
+  --receipt-card: rgba(244, 244, 244, 0.7) !important;
   --receipt-card-border: #dcdcdc !important;
   --receipt-male-label: #111111 !important;
   --receipt-male-val: #111111 !important;
@@ -198,6 +207,7 @@ body {
   --receipt-female-val: #111111 !important;
   --receipt-status: #111111 !important;
   --receipt-brand-line: #111111 !important;
+  box-shadow: 0 16px 38px -10px rgba(0, 0, 0, 0.18), 0 4px 12px -2px rgba(0, 0, 0, 0.08) !important;
 }
 
 @media print {
