@@ -170,6 +170,12 @@ export function CostcoReceipt({
                 const lightData = ctx.createImageData(width, height);
                 const darkData = ctx.createImageData(width, height);
 
+                const lightBgR = 252, lightBgG = 252, lightBgB = 251;
+                const lightModR = 17, lightModG = 17, lightModB = 17;
+
+                const darkBgR = 20, darkBgG = 23, darkBgB = 31;
+                const darkModR = 255, darkModG = 255, darkModB = 255;
+
                 for (let y = 0; y < height; y++) {
                   for (let x = 0; x < width; x++) {
                     const idx = (y * width + x) * 4;
@@ -178,51 +184,47 @@ export function CostcoReceipt({
                     const b = pixels[idx + 2];
                     const a = pixels[idx + 3];
 
-                    // Check if pixel is part of the colored VietQR logo (red/accent colors)
+                    // Check if pixel is part of the colored VietQR logo (red V)
                     const diff = Math.max(r, g, b) - Math.min(r, g, b);
-                    const isColored = a > 50 && diff > 25;
+                    const isColored = a > 50 && diff > 22 && r > g && r > b;
 
                     if (isColored) {
-                      // Preserve authentic colored logo (red 'V') with smooth original colors
-                      lightData.data[idx] = r;
-                      lightData.data[idx + 1] = g;
-                      lightData.data[idx + 2] = b;
-                      lightData.data[idx + 3] = a;
+                      // Alpha de-fringing: un-premultiply white background to eliminate white halo
+                      const minVal = Math.min(g, b);
+                      const alpha = Math.max(0, Math.min(1, 1 - (minVal / 248)));
 
-                      darkData.data[idx] = r;
-                      darkData.data[idx + 1] = g;
-                      darkData.data[idx + 2] = b;
-                      darkData.data[idx + 3] = a;
+                      // Light mode: seamless blend with receipt paper
+                      lightData.data[idx] = Math.max(0, Math.min(255, Math.round(r + (1 - alpha) * (lightBgR - 255))));
+                      lightData.data[idx + 1] = Math.max(0, Math.min(255, Math.round(g + (1 - alpha) * (lightBgG - 255))));
+                      lightData.data[idx + 2] = Math.max(0, Math.min(255, Math.round(b + (1 - alpha) * (lightBgB - 255))));
+                      lightData.data[idx + 3] = 255;
+
+                      // Dark mode: seamless blend with dark receipt background (no white/pink halo)
+                      darkData.data[idx] = Math.max(0, Math.min(255, Math.round(r + (1 - alpha) * (darkBgR - 255))));
+                      darkData.data[idx + 1] = Math.max(0, Math.min(255, Math.round(g + (1 - alpha) * (darkBgG - 255))));
+                      darkData.data[idx + 2] = Math.max(0, Math.min(255, Math.round(b + (1 - alpha) * (darkBgB - 255))));
+                      darkData.data[idx + 3] = 255;
                     } else {
                       const brightness = 0.299 * r + 0.587 * g + 0.114 * b;
 
-                      if (brightness > 160 || a < 50) {
-                        // QR background -> Match EXACT receipt paper background color
-                        // Light mode: exact #fcfcfb (R: 252, G: 252, B: 251)
-                        lightData.data[idx] = 252;
-                        lightData.data[idx + 1] = 252;
-                        lightData.data[idx + 2] = 251;
-                        lightData.data[idx + 3] = 255;
+                      // Filter out JPEG compression noise while preserving smooth anti-aliased module edges
+                      let t = (brightness - 55) / (205 - 55);
+                      if (t < 0) t = 0;
+                      if (t > 1) t = 1;
+                      // Smoothstep curve for clean contrast without blocky staircasing
+                      t = t * t * (3 - 2 * t);
 
-                        // Dark mode: exact #14171f (R: 20, G: 23, B: 31) - completely replaces black with receipt background
-                        darkData.data[idx] = 20;
-                        darkData.data[idx + 1] = 23;
-                        darkData.data[idx + 2] = 31;
-                        darkData.data[idx + 3] = 255;
-                      } else {
-                        // QR module
-                        // Light mode: authentic dark charcoal (#111111)
-                        lightData.data[idx] = 17;
-                        lightData.data[idx + 1] = 17;
-                        lightData.data[idx + 2] = 17;
-                        lightData.data[idx + 3] = 255;
+                      // Light mode: t=1 is background, t=0 is module
+                      lightData.data[idx] = Math.round(lightModR * (1 - t) + lightBgR * t);
+                      lightData.data[idx + 1] = Math.round(lightModG * (1 - t) + lightBgG * t);
+                      lightData.data[idx + 2] = Math.round(lightModB * (1 - t) + lightBgB * t);
+                      lightData.data[idx + 3] = 255;
 
-                        // Dark mode: crisp white (#ffffff)
-                        darkData.data[idx] = 255;
-                        darkData.data[idx + 1] = 255;
-                        darkData.data[idx + 2] = 255;
-                        darkData.data[idx + 3] = 255;
-                      }
+                      // Dark mode: t=1 (was white) is dark bg, t=0 (was black) is white module
+                      darkData.data[idx] = Math.round(darkModR * (1 - t) + darkBgR * t);
+                      darkData.data[idx + 1] = Math.round(darkModG * (1 - t) + darkBgG * t);
+                      darkData.data[idx + 2] = Math.round(darkModB * (1 - t) + darkBgB * t);
+                      darkData.data[idx + 3] = 255;
                     }
                   }
                 }

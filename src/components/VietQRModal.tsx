@@ -173,6 +173,12 @@ function VietQRContent({
                 const lightData = ctx.createImageData(width, height);
                 const darkData = ctx.createImageData(width, height);
 
+                const lightBgR = 255, lightBgG = 255, lightBgB = 255;
+                const lightModR = 17, lightModG = 17, lightModB = 17;
+
+                const darkBgR = 28, darkBgG = 32, darkBgB = 48; // #1c2030 matching modal card
+                const darkModR = 255, darkModG = 255, darkModB = 255;
+
                 for (let y = 0; y < height; y++) {
                   for (let x = 0; x < width; x++) {
                     const idx = (y * width + x) * 4;
@@ -181,51 +187,44 @@ function VietQRContent({
                     const b = pixels[idx + 2];
                     const a = pixels[idx + 3];
 
-                    // Check if pixel is part of the colored VietQR / Bank logos
+                    // Check if pixel is part of colored logos (VietQR, Napas, Bank branding)
                     const diff = Math.max(r, g, b) - Math.min(r, g, b);
-                    const isColored = a > 50 && diff > 25;
+                    const isColored = a > 50 && diff > 22;
 
                     if (isColored) {
-                      // Preserve authentic colored logo (VietQR red, Napas blue, bank branding)
+                      // Alpha de-fringing against original white card background
+                      const minVal = Math.min(r, g, b);
+                      const alpha = Math.max(0, Math.min(1, 1 - (minVal / 248)));
+
+                      // Light mode: authentic logo colors
                       lightData.data[idx] = r;
                       lightData.data[idx + 1] = g;
                       lightData.data[idx + 2] = b;
                       lightData.data[idx + 3] = a;
 
-                      darkData.data[idx] = r;
-                      darkData.data[idx + 1] = g;
-                      darkData.data[idx + 2] = b;
-                      darkData.data[idx + 3] = a;
+                      // Dark mode: blend edge anti-aliasing towards dark card background
+                      darkData.data[idx] = Math.max(0, Math.min(255, Math.round(r + (1 - alpha) * (darkBgR - 255))));
+                      darkData.data[idx + 1] = Math.max(0, Math.min(255, Math.round(g + (1 - alpha) * (darkBgG - 255))));
+                      darkData.data[idx + 2] = Math.max(0, Math.min(255, Math.round(b + (1 - alpha) * (darkBgB - 255))));
+                      darkData.data[idx + 3] = 255;
                     } else {
                       const brightness = 0.299 * r + 0.587 * g + 0.114 * b;
 
-                      if (brightness > 160 || a < 50) {
-                        // QR background
-                        // Light mode: clean white (#ffffff)
-                        lightData.data[idx] = 255;
-                        lightData.data[idx + 1] = 255;
-                        lightData.data[idx + 2] = 255;
-                        lightData.data[idx + 3] = 255;
+                      // Filter JPEG ringing while preserving smooth anti-aliased module & font edges
+                      let t = (brightness - 55) / (205 - 55);
+                      if (t < 0) t = 0;
+                      if (t > 1) t = 1;
+                      t = t * t * (3 - 2 * t);
 
-                        // Dark mode: match modal card background #1c2030 (R: 28, G: 32, B: 48)
-                        darkData.data[idx] = 28;
-                        darkData.data[idx + 1] = 32;
-                        darkData.data[idx + 2] = 48;
-                        darkData.data[idx + 3] = 255;
-                      } else {
-                        // QR module & text
-                        // Light mode: authentic dark charcoal (#111111)
-                        lightData.data[idx] = 17;
-                        lightData.data[idx + 1] = 17;
-                        lightData.data[idx + 2] = 17;
-                        lightData.data[idx + 3] = 255;
+                      lightData.data[idx] = Math.round(lightModR * (1 - t) + lightBgR * t);
+                      lightData.data[idx + 1] = Math.round(lightModG * (1 - t) + lightBgG * t);
+                      lightData.data[idx + 2] = Math.round(lightModB * (1 - t) + lightBgB * t);
+                      lightData.data[idx + 3] = 255;
 
-                        // Dark mode: crisp high-contrast white (#ffffff)
-                        darkData.data[idx] = 255;
-                        darkData.data[idx + 1] = 255;
-                        darkData.data[idx + 2] = 255;
-                        darkData.data[idx + 3] = 255;
-                      }
+                      darkData.data[idx] = Math.round(darkModR * (1 - t) + darkBgR * t);
+                      darkData.data[idx + 1] = Math.round(darkModG * (1 - t) + darkBgG * t);
+                      darkData.data[idx + 2] = Math.round(darkModB * (1 - t) + darkBgB * t);
+                      darkData.data[idx + 3] = 255;
                     }
                   }
                 }
