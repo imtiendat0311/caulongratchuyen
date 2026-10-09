@@ -90,7 +90,31 @@ export function CostcoReceipt({
 
   const receiptRef = useRef<HTMLDivElement>(null);
   const [isDownloading, setIsDownloading] = useState(false);
-  const [previewImage, setPreviewImage] = useState<string | null>(null);
+  const [previewData, setPreviewData] = useState<{
+    url: string;
+    file: File;
+    platform: "ios" | "android" | "desktop";
+  } | null>(null);
+  const [downloadToast, setDownloadToast] = useState<string | null>(null);
+
+  const handleSharePreview = async () => {
+    if (!previewData) return;
+    if (
+      typeof navigator !== "undefined" &&
+      typeof navigator.canShare === "function" &&
+      navigator.canShare({ files: [previewData.file] })
+    ) {
+      try {
+        await navigator.share({
+          files: [previewData.file],
+          title: "Biên lai Cầu Lông Rất Chuyên",
+          text: `Biên lai tiền sân cầu lông ngày ${date || "hôm nay"}`,
+        });
+      } catch {
+        // user cancelled
+      }
+    }
+  };
 
   const handleDownloadReceiptImage = async () => {
     if (!receiptRef.current || isDownloading) return;
@@ -129,46 +153,82 @@ export function CostcoReceipt({
       if (!blob) return;
 
       const file = new File([blob], fileName, { type: "image/png" });
-
-      // 1. Mobile with Web Share API: triggers native iOS Share Sheet so user can tap "Lưu hình ảnh" / "Save Image" to Photos app
-      if (
-        typeof navigator !== "undefined" &&
-        navigator.canShare &&
-        navigator.canShare({ files: [file] })
-      ) {
-        try {
-          await navigator.share({
-            files: [file],
-            title: "Biên lai Cầu Lông Rất Chuyên",
-            text: `Biên lai tiền sân cầu lông ngày ${date || "hôm nay"}`,
-          });
-          return;
-        } catch (shareErr: unknown) {
-          if (shareErr instanceof Error && shareErr.name === "AbortError") {
-            // User cancelled native share sheet
-            return;
-          }
-        }
-      }
-
-      // 2. Mobile without Web Share file support (e.g. inside Messenger/Zalo in-app webview):
-      // NEVER do link.click() which iOS Safari navigates to blob URL in same tab!
-      // Instead, show modal so user can long-press to "Lưu hình ảnh" into iOS Photos app.
-      const isMobile =
-        typeof window !== "undefined" &&
-        (/Android|iPhone|iPad|iPod|Opera Mini|IEMobile|WPDesktop/i.test(
-          navigator.userAgent
-        ) ||
-          (navigator.maxTouchPoints && navigator.maxTouchPoints > 1));
-
       const objectUrl = URL.createObjectURL(blob);
 
-      if (isMobile) {
-        setPreviewImage(objectUrl);
+      const isIOS =
+        typeof navigator !== "undefined" &&
+        (/iPad|iPhone|iPod/.test(navigator.userAgent) ||
+          (navigator.platform === "MacIntel" && navigator.maxTouchPoints > 1));
+
+      const isAndroid =
+        typeof navigator !== "undefined" &&
+        /Android/i.test(navigator.userAgent);
+
+      const isInAppBrowser =
+        typeof navigator !== "undefined" &&
+        /FBAN|FBAV|Instagram|Messenger|Zalo|Line|Twitter|MicroMessenger/i.test(
+          navigator.userAgent
+        );
+
+      const platform: "ios" | "android" | "desktop" = isIOS
+        ? "ios"
+        : isAndroid
+        ? "android"
+        : "desktop";
+
+      // 1. iOS in native Safari / Chrome: Web Share API opens native iOS Share Sheet with "Lưu hình ảnh" (Save Image to Apple Photos)
+      if (isIOS && !isInAppBrowser) {
+        if (
+          typeof navigator !== "undefined" &&
+          typeof navigator.canShare === "function" &&
+          navigator.canShare({ files: [file] })
+        ) {
+          try {
+            await navigator.share({
+              files: [file],
+              title: "Biên lai Cầu Lông Rất Chuyên",
+              text: `Biên lai tiền sân cầu lông ngày ${date || "hôm nay"}`,
+            });
+            return;
+          } catch (shareErr: unknown) {
+            if (shareErr instanceof Error && shareErr.name === "AbortError") {
+              return; // User cancelled native share sheet
+            }
+          }
+        }
+        // Fallback for iOS if share sheet fails: in-app preview modal
+        setPreviewData({ url: objectUrl, file, platform: "ios" });
         return;
       }
 
-      // 3. Desktop: trigger regular file download
+      // 2. In-App Browsers on iOS or Android (Messenger, Zalo, Facebook, etc.):
+      // In-app webviews block direct file downloads and blob navigations.
+      // Show in-app preview modal so user can long-press to save image directly to Gallery / Photos.
+      if (isInAppBrowser) {
+        if (
+          typeof navigator !== "undefined" &&
+          typeof navigator.canShare === "function" &&
+          navigator.canShare({ files: [file] })
+        ) {
+          try {
+            await navigator.share({
+              files: [file],
+              title: "Biên lai Cầu Lông Rất Chuyên",
+              text: `Biên lai tiền sân cầu lông ngày ${date || "hôm nay"}`,
+            });
+            return;
+          } catch (shareErr: unknown) {
+            if (shareErr instanceof Error && shareErr.name === "AbortError") {
+              return;
+            }
+          }
+        }
+        setPreviewData({ url: objectUrl, file, platform });
+        return;
+      }
+
+      // 3. Android (Chrome, Samsung Internet, Edge, etc.) & Desktop:
+      // Trigger native download. On Android, this saves to /Download and automatically registers in Samsung Gallery / Google Photos!
       const link = document.createElement("a");
       link.download = fileName;
       link.href = objectUrl;
@@ -176,6 +236,12 @@ export function CostcoReceipt({
       link.click();
       document.body.removeChild(link);
       setTimeout(() => URL.revokeObjectURL(objectUrl), 10000);
+
+      // On Android, show confirmation toast
+      if (isAndroid) {
+        setDownloadToast("✓ Đã lưu biên lai vào Thư viện ảnh / Tải về!");
+        setTimeout(() => setDownloadToast(null), 3500);
+      }
     } catch (err) {
       console.error("Lỗi khi tải ảnh biên lai:", err);
     } finally {
@@ -561,10 +627,10 @@ export function CostcoReceipt({
         </button>
       </div>
 
-      {/* Mobile Save-to-Photos Preview Modal */}
-      {previewImage && (
+      {/* Mobile Save-to-Photos Preview Modal (iOS & Android) */}
+      {previewData && (
         <div
-          onClick={() => setPreviewImage(null)}
+          onClick={() => setPreviewData(null)}
           className="fixed inset-0 z-50 flex items-center justify-center p-3 sm:p-4 bg-black/80 backdrop-blur-xs animate-in fade-in duration-200"
         >
           <div
@@ -573,7 +639,7 @@ export function CostcoReceipt({
           >
             <button
               type="button"
-              onClick={() => setPreviewImage(null)}
+              onClick={() => setPreviewData(null)}
               className="absolute top-3 right-3 p-1.5 rounded-lg text-[var(--muted)] hover:text-[var(--text)] hover:bg-[var(--bg)] cursor-pointer"
               title="Đóng"
             >
@@ -584,36 +650,68 @@ export function CostcoReceipt({
               Lưu Biên Lai Vào Máy
             </h3>
             <p className="text-xs text-[var(--muted)] text-center mb-3 leading-relaxed">
-              📱 <strong>Nhấn giữ vào ảnh 1-2 giây</strong> ➜ Chọn <strong>&quot;Lưu hình ảnh&quot;</strong> (Save Image) để lưu trực tiếp vào ứng dụng <strong>Ảnh</strong> của iPhone.
+              {previewData.platform === "ios" ? (
+                <span>
+                  📱 <strong>Nhấn giữ vào ảnh 1-2 giây</strong> ➜ Chọn <strong>&quot;Lưu hình ảnh&quot;</strong> (Save Image) để lưu vào ứng dụng <strong>Ảnh</strong> của iPhone.
+                </span>
+              ) : previewData.platform === "android" ? (
+                <span>
+                  📱 <strong>Nhấn giữ vào ảnh 1-2 giây</strong> ➜ Chọn <strong>&quot;Tải hình ảnh xuống&quot;</strong> để lưu vào <strong>Bộ sưu tập (Gallery)</strong> của Android.
+                </span>
+              ) : (
+                <span>
+                  Nhấn giữ vào ảnh hoặc bấm <strong>Tải về máy</strong> để lưu biên lai.
+                </span>
+              )}
             </p>
 
             <div className="w-full flex justify-center rounded-xl overflow-hidden border border-[var(--border)] bg-white p-2 shadow-xs mb-3">
               {/* eslint-disable-next-line @next/next/no-img-element */}
               <img
-                src={previewImage}
+                src={previewData.url}
                 alt="Biên lai chi phí"
-                className="max-h-[55vh] max-h-[55dvh] w-auto object-contain rounded-sm select-auto"
+                className="max-h-[55vh] max-h-[55dvh] w-auto object-contain rounded-sm select-auto pointer-events-auto"
               />
             </div>
 
-            <div className="flex gap-2 w-full">
+            <div className="flex flex-col sm:flex-row gap-2 w-full">
               <a
-                href={previewImage}
+                href={previewData.url}
                 download={`bien-lai-${date ? date.replace(/\//g, "-") : "session"}.png`}
                 className="flex-1 py-2 px-3 rounded-[8px] bg-[var(--accent)] hover:opacity-90 text-white font-semibold text-xs flex items-center justify-center gap-1.5 shadow-xs"
               >
                 <Download className="w-3.5 h-3.5" />
-                <span>Tải về file</span>
+                <span>Tải về máy</span>
               </a>
+
+              {typeof navigator !== "undefined" && typeof navigator.canShare === "function" && (
+                <button
+                  type="button"
+                  onClick={handleSharePreview}
+                  className="flex-1 py-2 px-3 rounded-[8px] bg-[var(--card)] border border-[var(--border)] hover:border-[var(--accent)] text-[var(--text)] font-semibold text-xs flex items-center justify-center gap-1.5 cursor-pointer"
+                >
+                  <Share2 className="w-3.5 h-3.5 text-[var(--accent)]" />
+                  <span>Chia sẻ</span>
+                </button>
+              )}
+
               <button
                 type="button"
-                onClick={() => setPreviewImage(null)}
-                className="py-2 px-4 rounded-[8px] border border-[var(--border)] text-xs font-semibold text-[var(--text)] hover:bg-[var(--bg)] cursor-pointer"
+                onClick={() => setPreviewData(null)}
+                className="py-2 px-4 rounded-[8px] border border-[var(--border)] text-xs font-semibold text-[var(--muted)] hover:text-[var(--text)] hover:bg-[var(--bg)] cursor-pointer"
               >
                 Đóng
               </button>
             </div>
           </div>
+        </div>
+      )}
+
+      {/* Toast Notification (e.g. Android direct download confirmation) */}
+      {downloadToast && (
+        <div className="fixed bottom-6 left-1/2 -translate-x-1/2 z-50 px-4 py-2.5 rounded-full bg-emerald-600 text-white text-xs font-semibold shadow-lg animate-in fade-in slide-in-from-bottom-3 duration-200 flex items-center gap-2">
+          <Check className="w-4 h-4 stroke-[3]" />
+          <span>{downloadToast}</span>
         </div>
       )}
     </div>
