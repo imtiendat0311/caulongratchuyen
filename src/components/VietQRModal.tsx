@@ -489,14 +489,14 @@ function VietQRContent({
       onClick={(e) => {
         if (e.target === e.currentTarget) onClose();
       }}
-      className="fixed inset-0 z-50 flex items-center justify-center p-3 sm:p-4 bg-black/60 backdrop-blur-xs"
+      className="fixed inset-0 z-50 flex items-center justify-center p-3 sm:p-4 pt-[max(env(safe-area-inset-top),2.5rem)] pb-[max(env(safe-area-inset-bottom),4.5rem)] bg-black/60 backdrop-blur-xs"
     >
       <motion.div
         initial={{ opacity: 0, scale: 0.94, y: 15 }}
         animate={{ opacity: 1, scale: 1, y: 0 }}
         exit={{ opacity: 0, scale: 0.94, y: 10 }}
         transition={{ type: "spring", stiffness: 450, damping: 32 }}
-        className="relative w-full max-w-sm rounded-[16px] bg-[var(--card)] border border-[var(--border)] shadow-[var(--shadow)] p-5 text-[var(--text)] overflow-hidden max-h-[92vh] flex flex-col"
+        className="relative w-full max-w-sm rounded-2xl bg-[var(--card)] border border-[var(--border)] shadow-[var(--shadow)] p-4 sm:p-5 text-[var(--text)] overflow-hidden max-h-[78dvh] sm:max-h-[88vh] flex flex-col"
       >
         {/* Close button */}
         <motion.button

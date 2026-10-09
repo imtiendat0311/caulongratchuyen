@@ -28,7 +28,7 @@ export function TeamPhotoModal({ isOpen, onClose }: TeamPhotoModalProps) {
           animate={{ opacity: 1 }}
           exit={{ opacity: 0 }}
           transition={{ duration: 0.2 }}
-          className="fixed inset-0 z-50 flex items-center justify-center p-3 sm:p-4 bg-black/75 backdrop-blur-xs"
+          className="fixed inset-0 z-50 flex items-center justify-center p-3 sm:p-4 pt-[max(env(safe-area-inset-top),2.5rem)] pb-[max(env(safe-area-inset-bottom),4.5rem)] bg-black/75 backdrop-blur-xs"
           onClick={onClose}
         >
           <motion.div
@@ -36,7 +36,7 @@ export function TeamPhotoModal({ isOpen, onClose }: TeamPhotoModalProps) {
             animate={{ opacity: 1, scale: 1, y: 0 }}
             exit={{ opacity: 0, scale: 0.94, y: 10 }}
             transition={{ type: "spring", stiffness: 450, damping: 32 }}
-            className="relative w-full max-w-lg rounded-[20px] bg-[var(--card)] border border-[var(--border)] shadow-[var(--shadow)] overflow-hidden text-[var(--text)] flex flex-col max-h-[92vh]"
+            className="relative w-full max-w-lg rounded-2xl bg-[var(--card)] border border-[var(--border)] shadow-[var(--shadow)] overflow-hidden text-[var(--text)] flex flex-col max-h-[78dvh] sm:max-h-[88vh]"
             onClick={(e) => e.stopPropagation()}
           >
             {/* Close button */}

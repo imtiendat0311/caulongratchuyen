@@ -93,7 +93,7 @@ export function HistoryDrawer({
             className="w-full max-w-md h-full bg-[var(--card)] border-l border-[var(--border)] shadow-[var(--shadow)] flex flex-col text-[var(--text)]"
           >
             {/* Header */}
-            <div className="flex items-center justify-between p-4 border-b border-[var(--border)]">
+            <div className="flex items-center justify-between p-4 pt-[max(env(safe-area-inset-top),1rem)] border-b border-[var(--border)] shrink-0">
               <div className="flex items-center gap-2.5">
                 <div className="p-2 rounded-xl bg-[var(--bg)] border border-[var(--border)] text-[var(--accent2)]">
                   <History className="w-5 h-5" />
@@ -198,7 +198,7 @@ export function HistoryDrawer({
             </div>
 
             {/* List */}
-            <div className="flex-1 overflow-y-auto p-4 space-y-3">
+            <div className="flex-1 overflow-y-auto p-4 pb-[max(env(safe-area-inset-bottom),2rem)] space-y-3">
               {itemsToDisplay.length === 0 ? (
                 <div className="h-64 flex flex-col items-center justify-center text-center p-6 text-[var(--muted)]">
                   <History className="w-10 h-10 mb-2 stroke-1 opacity-50" />

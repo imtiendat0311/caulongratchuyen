@@ -1,6 +1,6 @@
 'use client';
 
-import React, { useState, useMemo } from 'react';
+import React, { useState, useMemo, useEffect } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import {
   TrendingUp,
@@ -171,6 +171,16 @@ export function HistoryGraphModal({
   const [gradientFade, setGradientFade] = useState(true);
   const [calcPercent, setCalcPercent] = useState(false);
   const [useSampleData, setUseSampleData] = useState(false);
+  const [graphHeight, setGraphHeight] = useState(240);
+
+  useEffect(() => {
+    const handleResize = () => {
+      setGraphHeight(window.innerWidth < 640 ? 210 : 300);
+    };
+    handleResize();
+    window.addEventListener('resize', handleResize);
+    return () => window.removeEventListener('resize', handleResize);
+  }, []);
 
   // Combine history items or sample items chronologically
   const activeItems: HistoryItem[] = useMemo(() => {
@@ -294,7 +304,7 @@ export function HistoryGraphModal({
 
   return (
     <AnimatePresence>
-      <div className="fixed inset-0 z-50 flex items-center justify-center p-3 sm:p-5 overflow-y-auto">
+      <div className="fixed inset-0 z-50 flex items-center justify-center p-3 sm:p-5 pt-[max(env(safe-area-inset-top),2.5rem)] pb-[max(env(safe-area-inset-bottom),4.5rem)] overflow-y-auto">
         {/* Backdrop */}
         <motion.div
           initial={{ opacity: 0 }}
@@ -310,27 +320,27 @@ export function HistoryGraphModal({
           animate={{ opacity: 1, scale: 1, y: 0 }}
           exit={{ opacity: 0, scale: 0.94, y: 15 }}
           transition={{ type: 'spring', damping: 26, stiffness: 320 }}
-          className="relative w-full max-w-4xl bg-[var(--card)] border border-[var(--border)] rounded-3xl shadow-2xl overflow-hidden z-10 flex flex-col max-h-[92vh] text-[var(--text)]"
+          className="relative w-full max-w-4xl bg-[var(--card)] border border-[var(--border)] rounded-2xl sm:rounded-3xl shadow-2xl overflow-hidden z-10 flex flex-col max-h-[75dvh] sm:max-h-[86vh] text-[var(--text)]"
         >
           {/* Header */}
-          <div className="flex items-center justify-between px-5 py-4 border-b border-[var(--border)] bg-[var(--card)]/90 backdrop-blur-sm">
-            <div className="flex items-center gap-3">
+          <div className="flex items-center justify-between px-3.5 py-2.5 sm:px-5 sm:py-4 border-b border-[var(--border)] bg-[var(--card)]/90 backdrop-blur-sm shrink-0">
+            <div className="flex items-center gap-2.5 sm:gap-3 min-w-0">
               <div
-                className="w-9 h-9 rounded-2xl flex items-center justify-center text-white shadow-xs"
+                className="w-8 h-8 sm:w-9 sm:h-9 rounded-xl sm:rounded-2xl flex items-center justify-center text-white shadow-xs shrink-0"
                 style={{ backgroundColor: metricConfig.color }}
               >
-                <TrendingUp className="w-5 h-5" />
+                <TrendingUp className="w-4 h-4 sm:w-5 sm:h-5" />
               </div>
-              <div>
-                <div className="flex items-center gap-2">
-                  <h3 className="font-bold text-base sm:text-lg text-[var(--text)]">
+              <div className="min-w-0">
+                <div className="flex items-center gap-1.5 sm:gap-2">
+                  <h3 className="font-bold text-sm sm:text-lg text-[var(--text)] truncate">
                     Biểu Đồ Lịch Sử Chi Phí
                   </h3>
-                  <span className="text-[10px] uppercase font-bold tracking-wider px-2 py-0.5 rounded-full bg-[var(--bg)] border border-[var(--border)] text-[var(--accent)]">
+                  <span className="text-[9px] sm:text-[10px] uppercase font-bold tracking-wider px-1.5 sm:px-2 py-0.2 sm:py-0.5 rounded-full bg-[var(--bg)] border border-[var(--border)] text-[var(--accent)] shrink-0">
                     Graph
                   </span>
                 </div>
-                <p className="text-xs text-[var(--muted)] line-clamp-1">
+                <p className="text-[11px] sm:text-xs text-[var(--muted)] line-clamp-1">
                   {metricConfig.description}
                 </p>
               </div>
@@ -338,17 +348,17 @@ export function HistoryGraphModal({
 
             <button
               onClick={onClose}
-              className="p-2 rounded-xl text-[var(--muted)] hover:text-[var(--text)] hover:bg-[var(--bg)] transition-colors cursor-pointer"
+              className="p-1.5 sm:p-2 rounded-xl text-[var(--muted)] hover:text-[var(--text)] hover:bg-[var(--bg)] transition-colors cursor-pointer shrink-0"
               title="Đóng biểu đồ"
             >
-              <X className="w-5 h-5" />
+              <X className="w-4 h-4 sm:w-5 sm:h-5" />
             </button>
           </div>
 
           {/* Modal Scrollable Body */}
-          <div className="p-4 sm:p-6 overflow-y-auto space-y-5">
+          <div className="p-3 sm:p-6 overflow-y-auto space-y-3 sm:space-y-5 flex-1 min-h-0">
             {/* Metric Segmented Tabs (Total / Men / Women / # of players) with sliding switch animation */}
-            <div className="grid grid-cols-2 sm:grid-cols-4 gap-2 p-1.5 rounded-2xl bg-[var(--bg)] border border-[var(--border)] relative">
+            <div className="grid grid-cols-2 sm:grid-cols-4 gap-1.5 sm:gap-2 p-1 sm:p-1.5 rounded-xl sm:rounded-2xl bg-[var(--bg)] border border-[var(--border)] relative">
               {(
                 [
                   { id: 'total', label: '💰 Tổng tiền', color: '#10B981' },
@@ -363,17 +373,17 @@ export function HistoryGraphModal({
                     key={tab.id}
                     type="button"
                     onClick={() => setMetric(tab.id)}
-                    className="relative py-2.5 px-3 rounded-xl text-xs sm:text-sm font-semibold transition-colors cursor-pointer flex items-center justify-center gap-1.5 z-1 select-none"
+                    className="relative py-1.5 sm:py-2.5 px-2 sm:px-3 rounded-lg sm:rounded-xl text-xs sm:text-sm font-semibold transition-colors cursor-pointer flex items-center justify-center gap-1 sm:gap-1.5 z-1 select-none"
                   >
                     {isActive && (
                       <motion.div
                         layoutId="activeMetricTab"
-                        className="absolute inset-0 bg-[var(--card)] rounded-xl shadow-xs border border-[var(--border)]"
+                        className="absolute inset-0 bg-[var(--card)] rounded-lg sm:rounded-xl shadow-xs border border-[var(--border)]"
                         transition={{ type: 'spring', stiffness: 500, damping: 35 }}
                       />
                     )}
                     <span
-                      className="relative z-2 w-2 h-2 rounded-full shrink-0 transition-transform duration-200"
+                      className="relative z-2 w-1.5 h-1.5 sm:w-2 sm:h-2 rounded-full shrink-0 transition-transform duration-200"
                       style={{
                         backgroundColor: tab.color,
                         boxShadow: isActive ? `0 0 8px ${tab.color}` : 'none',
@@ -381,7 +391,7 @@ export function HistoryGraphModal({
                       }}
                     />
                     <span
-                      className={`relative z-2 truncate transition-colors ${
+                      className={`relative z-2 truncate transition-colors text-[11px] sm:text-sm ${
                         isActive ? 'text-[var(--text)] font-bold' : 'text-[var(--muted)]'
                       }`}
                     >
@@ -393,9 +403,9 @@ export function HistoryGraphModal({
             </div>
 
             {/* Quick Stat Cards */}
-            <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
-              <div className="p-3.5 rounded-2xl bg-[var(--bg)] border border-[var(--border)]">
-                <span className="text-[11px] font-medium text-[var(--muted)] block mb-1">
+            <div className="grid grid-cols-2 sm:grid-cols-4 gap-2 sm:gap-3">
+              <div className="p-2.5 sm:p-3.5 rounded-xl sm:rounded-2xl bg-[var(--bg)] border border-[var(--border)]">
+                <span className="text-[10px] sm:text-[11px] font-medium text-[var(--muted)] block mb-0.5 sm:mb-1">
                   Buổi gần nhất
                 </span>
                 <AnimatePresence mode="wait">
@@ -405,14 +415,14 @@ export function HistoryGraphModal({
                     animate={{ opacity: 1, y: 0 }}
                     exit={{ opacity: 0, y: -4 }}
                     transition={{ duration: 0.15 }}
-                    className="text-base sm:text-lg font-extrabold text-[var(--text)] truncate"
+                    className="text-sm sm:text-lg font-extrabold text-[var(--text)] truncate"
                   >
                     {metricConfig.format(stats.latest)}
                   </motion.div>
                 </AnimatePresence>
                 {stats.change !== 0 && (
                   <span
-                    className={`text-[10px] font-bold inline-flex items-center gap-0.5 mt-0.5 ${
+                    className={`text-[9px] sm:text-[10px] font-bold inline-flex items-center gap-0.5 mt-0.5 ${
                       stats.change > 0 ? 'text-emerald-500' : 'text-rose-500'
                     }`}
                   >
@@ -422,8 +432,8 @@ export function HistoryGraphModal({
                 )}
               </div>
 
-              <div className="p-3.5 rounded-2xl bg-[var(--bg)] border border-[var(--border)]">
-                <span className="text-[11px] font-medium text-[var(--muted)] block mb-1">
+              <div className="p-2.5 sm:p-3.5 rounded-xl sm:rounded-2xl bg-[var(--bg)] border border-[var(--border)]">
+                <span className="text-[10px] sm:text-[11px] font-medium text-[var(--muted)] block mb-0.5 sm:mb-1">
                   Trung bình
                 </span>
                 <AnimatePresence mode="wait">
@@ -433,16 +443,16 @@ export function HistoryGraphModal({
                     animate={{ opacity: 1, y: 0 }}
                     exit={{ opacity: 0, y: -4 }}
                     transition={{ duration: 0.15 }}
-                    className="text-base sm:text-lg font-extrabold text-[var(--text)] truncate"
+                    className="text-sm sm:text-lg font-extrabold text-[var(--text)] truncate"
                   >
                     {metricConfig.format(stats.avg)}
                   </motion.div>
                 </AnimatePresence>
-                <span className="text-[10px] text-[var(--muted)]">Qua {graphData.length} buổi đấu</span>
+                <span className="text-[9px] sm:text-[10px] text-[var(--muted)]">Qua {graphData.length} buổi đấu</span>
               </div>
 
-              <div className="p-3.5 rounded-2xl bg-[var(--bg)] border border-[var(--border)]">
-                <span className="text-[11px] font-medium text-[var(--muted)] block mb-1">
+              <div className="p-2.5 sm:p-3.5 rounded-xl sm:rounded-2xl bg-[var(--bg)] border border-[var(--border)]">
+                <span className="text-[10px] sm:text-[11px] font-medium text-[var(--muted)] block mb-0.5 sm:mb-1">
                   Cao nhất
                 </span>
                 <AnimatePresence mode="wait">
@@ -452,16 +462,16 @@ export function HistoryGraphModal({
                     animate={{ opacity: 1, y: 0 }}
                     exit={{ opacity: 0, y: -4 }}
                     transition={{ duration: 0.15 }}
-                    className="text-base sm:text-lg font-extrabold text-emerald-500 truncate"
+                    className="text-sm sm:text-lg font-extrabold text-emerald-500 truncate"
                   >
                     {metricConfig.format(stats.max)}
                   </motion.div>
                 </AnimatePresence>
-                <span className="text-[10px] text-[var(--muted)]">Mức trần chi phí</span>
+                <span className="text-[9px] sm:text-[10px] text-[var(--muted)]">Mức trần chi phí</span>
               </div>
 
-              <div className="p-3.5 rounded-2xl bg-[var(--bg)] border border-[var(--border)]">
-                <span className="text-[11px] font-medium text-[var(--muted)] block mb-1">
+              <div className="p-2.5 sm:p-3.5 rounded-xl sm:rounded-2xl bg-[var(--bg)] border border-[var(--border)]">
+                <span className="text-[10px] sm:text-[11px] font-medium text-[var(--muted)] block mb-0.5 sm:mb-1">
                   Thấp nhất
                 </span>
                 <AnimatePresence mode="wait">
@@ -471,12 +481,12 @@ export function HistoryGraphModal({
                     animate={{ opacity: 1, y: 0 }}
                     exit={{ opacity: 0, y: -4 }}
                     transition={{ duration: 0.15 }}
-                    className="text-base sm:text-lg font-extrabold text-sky-500 truncate"
+                    className="text-sm sm:text-lg font-extrabold text-sky-500 truncate"
                   >
                     {metricConfig.format(stats.min)}
                   </motion.div>
                 </AnimatePresence>
-                <span className="text-[10px] text-[var(--muted)]">Mức sàn tiết kiệm</span>
+                <span className="text-[9px] sm:text-[10px] text-[var(--muted)]">Mức sàn tiết kiệm</span>
               </div>
             </div>
 
@@ -500,20 +510,20 @@ export function HistoryGraphModal({
             )}
 
             {/* Interactive Graph Canvas Container */}
-            <div className="p-4 sm:p-5 rounded-3xl bg-[var(--bg)] border border-[var(--border)] shadow-inner">
+            <div className="p-3 sm:p-5 rounded-2xl sm:rounded-3xl bg-[var(--bg)] border border-[var(--border)] shadow-inner">
               <div className="flex items-center justify-between mb-2 flex-wrap gap-2">
-                <div className="flex items-center gap-2">
+                <div className="flex items-center gap-1.5 sm:gap-2">
                   <span
-                    className="w-2.5 h-2.5 rounded-full animate-pulse"
+                    className="w-2 h-2 sm:w-2.5 sm:h-2.5 rounded-full animate-pulse"
                     style={{ backgroundColor: metricConfig.color }}
                   />
-                  <span className="text-xs font-bold uppercase tracking-wider text-[var(--text)]">
+                  <span className="text-[11px] sm:text-xs font-bold uppercase tracking-wider text-[var(--text)]">
                     {metricConfig.title}
                   </span>
                 </div>
 
                 {/* Quick Toggle Controls with animated switch toggle */}
-                <div className="flex items-center gap-2 flex-wrap">
+                <div className="flex items-center gap-1.5 sm:gap-2 flex-wrap">
                   <ToggleSwitch
                     label="Đường cong"
                     checked={curved}
@@ -539,7 +549,7 @@ export function HistoryGraphModal({
               </div>
 
               {/* SimpleGraph component with animated switch transition */}
-              <div className="w-full min-h-[300px] overflow-hidden">
+              <div className="w-full min-h-[210px] sm:min-h-[300px] overflow-hidden">
                 <AnimatePresence mode="wait">
                   <motion.div
                     key={`${metric}-${curved}-${gradientFade}-${calcPercent}`}
@@ -553,7 +563,7 @@ export function HistoryGraphModal({
                       data={graphData}
                       lineColor={metricConfig.color}
                       dotColor={metricConfig.color}
-                      height={300}
+                      height={graphHeight}
                       animationDuration={0.9}
                       curved={curved}
                       gradientFade={gradientFade}

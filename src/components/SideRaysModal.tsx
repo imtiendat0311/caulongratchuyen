@@ -64,7 +64,7 @@ export function SideRaysModal({ isOpen, onClose }: SideRaysModalProps) {
 
   return (
     <AnimatePresence>
-      <div className="fixed inset-0 z-50 flex items-center justify-center p-3 sm:p-5 overflow-y-auto">
+      <div className="fixed inset-0 z-50 flex items-center justify-center p-3 sm:p-5 pt-[max(env(safe-area-inset-top),2.5rem)] pb-[max(env(safe-area-inset-bottom),4.5rem)] overflow-y-auto">
         {/* Backdrop */}
         <motion.div
           initial={{ opacity: 0 }}
@@ -80,10 +80,10 @@ export function SideRaysModal({ isOpen, onClose }: SideRaysModalProps) {
           animate={{ opacity: 1, scale: 1, y: 0 }}
           exit={{ opacity: 0, scale: 0.94, y: 15 }}
           transition={{ type: "spring", damping: 26, stiffness: 320 }}
-          className="relative w-full max-w-4xl bg-[var(--card)] border border-[var(--border)] rounded-3xl shadow-2xl overflow-hidden z-10 flex flex-col max-h-[92vh]"
+          className="relative w-full max-w-4xl bg-[var(--card)] border border-[var(--border)] rounded-2xl sm:rounded-3xl shadow-2xl overflow-hidden z-10 flex flex-col max-h-[75dvh] sm:max-h-[86vh]"
         >
           {/* Header */}
-          <div className="flex items-center justify-between px-5 py-4 border-b border-[var(--border)] bg-[var(--card)]/90 backdrop-blur-sm">
+          <div className="flex items-center justify-between px-3.5 py-2.5 sm:px-5 sm:py-4 border-b border-[var(--border)] bg-[var(--card)]/90 backdrop-blur-sm shrink-0">
             <div className="flex items-center gap-2.5">
               <div className="w-8 h-8 rounded-xl bg-gradient-to-tr from-amber-500 to-sky-400 flex items-center justify-center text-white shadow-xs">
                 <Sun className="w-4 h-4" />

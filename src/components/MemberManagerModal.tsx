@@ -448,19 +448,19 @@ export function MemberManagerModal({
           onClick={(e) => {
             if (e.target === e.currentTarget) onClose();
           }}
-          className="fixed inset-0 z-50 flex items-center justify-center p-3 sm:p-4 bg-black/60 backdrop-blur-xs"
+          className="fixed inset-0 z-50 flex items-center justify-center p-3 sm:p-4 pt-[max(env(safe-area-inset-top),2.5rem)] pb-[max(env(safe-area-inset-bottom),4.5rem)] bg-black/60 backdrop-blur-xs"
         >
           <motion.div
             initial={{ opacity: 0, scale: 0.95, y: 16 }}
             animate={{ opacity: 1, scale: 1, y: 0 }}
             exit={{ opacity: 0, scale: 0.96, y: 12 }}
             transition={{ type: "spring", stiffness: 420, damping: 32 }}
-            className="relative w-full max-w-lg rounded-[16px] bg-[var(--card)] border border-[var(--border)] shadow-[var(--shadow)] text-[var(--text)] max-h-[90vh] max-h-[90dvh] flex flex-col overflow-hidden"
+            className="relative w-full max-w-lg rounded-2xl bg-[var(--card)] border border-[var(--border)] shadow-[var(--shadow)] text-[var(--text)] max-h-[75dvh] sm:max-h-[86vh] flex flex-col overflow-hidden"
           >
             {/* Fixed Header */}
-            <div className="p-4 sm:p-5 pb-3 border-b border-[var(--border)] shrink-0 flex items-center justify-between gap-2.5">
-              <div className="flex items-center gap-2.5 min-w-0 pr-2">
-                <div className="relative w-10 h-10 sm:w-11 sm:h-11 rounded-xl overflow-hidden border border-[var(--border)] shrink-0 bg-[var(--bg)] shadow-xs">
+            <div className="p-3.5 sm:p-5 pb-2.5 sm:pb-3 border-b border-[var(--border)] shrink-0 flex items-center justify-between gap-2">
+              <div className="flex items-center gap-2 sm:gap-2.5 min-w-0 pr-1 sm:pr-2">
+                <div className="relative w-9 h-9 sm:w-11 sm:h-11 rounded-xl overflow-hidden border border-[var(--border)] shrink-0 bg-[var(--bg)] shadow-xs">
                   <SkeletonImage
                     src="/team-photo.jpg"
                     alt="FC Rất Chuyên"
@@ -469,10 +469,10 @@ export function MemberManagerModal({
                   />
                 </div>
                 <div className="min-w-0">
-                  <h3 className="font-bold text-base text-[var(--text)] truncate">
+                  <h3 className="font-bold text-sm sm:text-base text-[var(--text)] truncate">
                     Danh Sách Thành Viên Cố Định
                   </h3>
-                  <p className="text-xs text-[var(--muted)] truncate">
+                  <p className="text-[11px] sm:text-xs text-[var(--muted)] truncate">
                     FC Rất Chuyên • Quản lý thành viên cố định, STK &amp; Host
                   </p>
                 </div>
@@ -490,7 +490,7 @@ export function MemberManagerModal({
             </div>
 
         {/* Unified Scrollable Body (Smooth scrolling across the entire screen on mobile) */}
-        <div className="flex-1 overflow-y-auto overscroll-contain p-4 sm:p-5 pt-3.5 space-y-3.5 min-h-0 touch-pan-y">
+        <div className="flex-1 overflow-y-auto overscroll-contain p-3 sm:p-5 pt-3 space-y-3 min-h-0 touch-pan-y">
           {/* Monthly Host Management Section */}
           {onSetMonthlyHost && members.length > 0 && (
             <div className="p-3 rounded-[12px] bg-amber-500/10 border border-amber-500/30 space-y-2 w-full max-w-full min-w-0 box-border relative">
