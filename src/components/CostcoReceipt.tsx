@@ -445,7 +445,7 @@ export function CostcoReceipt({
             className="flex items-center justify-center gap-1.5 py-2 px-2.5 rounded-[10px] bg-[var(--card)] border border-[var(--border)] hover:border-[var(--accent2)] text-[var(--text)] font-medium text-[11px] transition-colors cursor-pointer"
           >
             <BookmarkPlus className="w-3.5 h-3.5 text-[var(--accent2)]" />
-            <span>Lưu DB Supabase</span>
+            <span>Lưu lại lịch sử</span>
           </button>
         </div>
 

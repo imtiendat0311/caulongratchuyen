@@ -434,9 +434,9 @@ export function BadmintonCalculator() {
     await addHistoryItem(newItem);
     fireConfetti();
     if (sessionRes.success) {
-      showToast(`✓ Đã lưu buổi chơi ngày ${displayDate} vào DB Supabase!`);
+      showToast(`✓ Đã lưu buổi chơi ngày ${displayDate} vào lịch sử!`);
     } else {
-      showToast(`Lỗi lưu DB: ${sessionRes.message || "Lỗi mạng"}`, "error");
+      showToast(`Lỗi lưu lịch sử: ${sessionRes.message || "Lỗi mạng"}`, "error");
     }
   };
 
@@ -540,27 +540,27 @@ export function BadmintonCalculator() {
             {syncStatus === "syncing" && (
               <>
                 <RefreshCw className="w-3 h-3 text-[var(--accent)] animate-spin" />
-                <span className="text-[var(--accent)]">Đang lưu DB Supabase...</span>
+                <span className="text-[var(--accent)]">Đang lưu lịch sử...</span>
               </>
             )}
             {syncStatus === "synced" && (
               <>
                 <CloudCheck className="w-3.5 h-3.5 text-[var(--accent2)]" />
                 <span className="text-[var(--accent2)]">
-                  {lastSavedTime ? `Đã lưu DB (${lastSavedTime})` : "Đã lưu DB Supabase"}
+                  {lastSavedTime ? `Đã lưu lịch sử (${lastSavedTime})` : "Đã lưu lịch sử"}
                 </span>
               </>
             )}
             {syncStatus === "error" && (
               <>
                 <Cloud className="w-3 h-3 text-amber-500" />
-                <span className="text-amber-500">Chưa lưu vào DB</span>
+                <span className="text-amber-500">Chưa lưu lịch sử</span>
               </>
             )}
             {syncStatus === "idle" && (
               <>
                 <Database className="w-3 h-3 text-[var(--muted)]" />
-                <span>Chế độ Local (chỉ lưu khi bấm &quot;Lưu DB Supabase&quot;)</span>
+                <span>Chế độ Local (chỉ lưu khi bấm &quot;Lưu lại lịch sử&quot;)</span>
               </>
             )}
           </span>
@@ -1358,7 +1358,7 @@ export function BadmintonCalculator() {
 
       {/* Footer Info */}
       <footer className="mt-10 text-center text-xs text-[var(--muted)] space-y-1">
-        <p>Cầu Lông Rất Chuyên • Lưu vào Supabase khi bấm &quot;Lưu DB Supabase&quot;</p>
+        <p>Cầu Lông Rất Chuyên • Lưu lại lịch sử khi bấm &quot;Lưu lại lịch sử&quot;</p>
         <p className="text-[11px] opacity-80">
           Công thức: Tiền Nam = Tổng / (Nam + 0.75 * Nữ) • Tiền Nữ = 75% Nam
         </p>
