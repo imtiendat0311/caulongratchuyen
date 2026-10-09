@@ -1372,6 +1372,7 @@ export function BadmintonCalculator() {
         onUpdateMemberBank={updateMemberBank}
         currentMonth={currentMonth}
         monthlyHostId={monthlyHostId}
+        monthlyHosts={monthlyHosts}
         onSetMonthlyHost={handleMonthlyHostChange}
       />
 

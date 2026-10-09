@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useState } from "react";
+import React, { useState, useMemo } from "react";
 import {
   Users,
   X,
@@ -37,6 +37,7 @@ interface MemberManagerModalProps {
   ) => Promise<void>;
   currentMonth?: string;
   monthlyHostId?: string;
+  monthlyHosts?: Record<string, string>;
   onSetMonthlyHost?: (
     month: string,
     memberId: string
@@ -52,6 +53,7 @@ export function MemberManagerModal({
   onUpdateMemberBank,
   currentMonth,
   monthlyHostId,
+  monthlyHosts,
   onSetMonthlyHost,
 }: MemberManagerModalProps) {
   const [name, setName] = useState("");
@@ -69,10 +71,13 @@ export function MemberManagerModal({
   const [hostSaveSuccess, setHostSaveSuccess] = useState(false);
 
   const selectedMonth = userSelectedMonth ?? (currentMonth || "");
-  const stagedHostId = userSelectedHostId ?? (monthlyHostId || "");
+  const baseHostForSelectedMonth =
+    (monthlyHosts && monthlyHosts[selectedMonth]) ||
+    (selectedMonth === currentMonth ? (monthlyHostId || "") : "");
+  const stagedHostId = userSelectedHostId ?? baseHostForSelectedMonth;
 
   const isHostDirty =
-    (userSelectedHostId !== null && userSelectedHostId !== (monthlyHostId || "")) ||
+    (userSelectedHostId !== null && userSelectedHostId !== baseHostForSelectedMonth) ||
     (userSelectedMonth !== null && userSelectedMonth !== (currentMonth || ""));
 
   const handleSaveMonthlyHost = async () => {
@@ -82,12 +87,52 @@ export function MemberManagerModal({
       await onSetMonthlyHost(selectedMonth, stagedHostId);
       setHostSaveSuccess(true);
       setUserSelectedHostId(null);
-      setUserSelectedMonth(null);
       setTimeout(() => setHostSaveSuccess(false), 2500);
     } finally {
       setIsSavingHost(false);
     }
   };
+
+  // Generate month options around current month (previous year, current year, next year)
+  const monthOptions = useMemo(() => {
+    const today = new Date();
+    const actualYear = today.getFullYear();
+    const actualMonth = today.getMonth() + 1;
+    const actualCurrentMonthStr = `${actualYear}-${String(actualMonth).padStart(2, "0")}`;
+
+    const baseYear = selectedMonth
+      ? parseInt(selectedMonth.split("-")[0], 10) || actualYear
+      : actualYear;
+
+    const startYear = Math.min(actualYear - 1, baseYear - 1);
+    const endYear = Math.max(actualYear + 1, baseYear + 1);
+
+    const options: Array<{ value: string; label: string }> = [];
+
+    for (let y = startYear; y <= endYear; y++) {
+      for (let m = 1; m <= 12; m++) {
+        const val = `${y}-${String(m).padStart(2, "0")}`;
+        const isCurrent = val === actualCurrentMonthStr;
+        options.push({
+          value: val,
+          label: `Tháng ${String(m).padStart(2, "0")}/${y}${isCurrent ? " (Hiện tại)" : ""}`,
+        });
+      }
+    }
+
+    if (selectedMonth && !options.some((o) => o.value === selectedMonth)) {
+      const parts = selectedMonth.split("-");
+      if (parts.length === 2) {
+        options.push({
+          value: selectedMonth,
+          label: `Tháng ${parts[1]}/${parts[0]}`,
+        });
+        options.sort((a, b) => a.value.localeCompare(b.value));
+      }
+    }
+
+    return options;
+  }, [selectedMonth]);
 
   // Editing bank for a specific member
   const [editingMemberId, setEditingMemberId] = useState<string | null>(null);
@@ -225,12 +270,23 @@ export function MemberManagerModal({
                   <label className="block text-[10.5px] text-[var(--muted)] mb-1 font-medium">
                     Tháng áp dụng
                   </label>
-                  <input
-                    type="month"
-                    value={selectedMonth}
-                    onChange={(e) => setUserSelectedMonth(e.target.value)}
-                    className="w-full max-w-full min-w-0 block h-9 px-2.5 text-xs font-semibold rounded-[8px] border border-amber-500/30 bg-[var(--card)] text-[var(--text)] outline-none focus:border-amber-500 shadow-2xs box-border"
-                  />
+                  <div className="relative w-full min-w-0">
+                    <select
+                      value={selectedMonth}
+                      onChange={(e) => {
+                        setUserSelectedMonth(e.target.value);
+                        setUserSelectedHostId(null);
+                      }}
+                      className="w-full max-w-full min-w-0 h-9 appearance-none pl-3 pr-8 text-xs font-semibold rounded-[8px] border border-amber-500/40 bg-[var(--card)] text-[var(--text)] outline-none focus:border-amber-500 cursor-pointer shadow-2xs truncate box-border"
+                    >
+                      {monthOptions.map((opt) => (
+                        <option key={opt.value} value={opt.value}>
+                          {opt.label}
+                        </option>
+                      ))}
+                    </select>
+                    <ChevronDown className="w-3.5 h-3.5 absolute right-2.5 top-1/2 -translate-y-1/2 pointer-events-none text-amber-500/80" />
+                  </div>
                 </div>
 
                 <div className="w-full min-w-0 sm:col-span-5">
