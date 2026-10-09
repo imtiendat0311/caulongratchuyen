@@ -330,8 +330,10 @@ export function HistoryDrawer({
 
                     {/* Note Section (if present) */}
                     {item.notes && (
-                      <div className="px-3.5 pb-2 text-[10px] text-[var(--muted)] border-t border-dashed border-[var(--border)]/70 pt-1.5 italic line-clamp-2 bg-[var(--card)]">
-                        &quot;{item.notes}&quot;
+                      <div className="px-3.5 py-2.5 border-t border-dashed border-[var(--border)]/70 bg-[var(--card)]">
+                        <p className="font-mono text-[10px] leading-relaxed text-[var(--muted)] whitespace-pre-wrap break-words italic">
+                          &quot;{item.notes}&quot;
+                        </p>
                       </div>
                     )}
 
