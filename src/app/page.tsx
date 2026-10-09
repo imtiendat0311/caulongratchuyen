@@ -1,36 +1,20 @@
 import { Suspense } from "react";
 import { BadmintonCalculator } from "@/components/BadmintonCalculator";
-import GradientWaves from "@/components/GradientWaves";
+import Iridescence from "@/components/Iridescence";
 
 export default function Home() {
   return (
     <main className="min-h-screen flex flex-col justify-between relative overflow-hidden">
-      {/* Ambient animated GradientWaves backdrop */}
+      {/* Ambient animated Iridescence backdrop from React Bits */}
       <div
         aria-hidden="true"
-        className="pointer-events-none absolute top-0 left-1/2 -translate-x-1/2 w-full max-w-7xl h-[420px] sm:h-[480px] -z-10 opacity-35 dark:opacity-25 [mask-image:radial-gradient(ellipse_at_top,black_45%,transparent_80%)]"
+        className="pointer-events-none absolute top-0 left-1/2 -translate-x-1/2 w-full max-w-7xl h-[420px] sm:h-[480px] -z-10 opacity-30 dark:opacity-20 [mask-image:radial-gradient(ellipse_at_top,black_45%,transparent_80%)]"
       >
-        <GradientWaves
-          horizonColor="#5227FF"
-          waveColor="#FF9FFC"
-          crestColor="#FFFFFF"
-          speed={0.4}
-          amplitude={2.5}
-          waveScale={0.6}
-          waveRatio={0.9}
-          swell={35}
-          turbulence={20}
-          tilt={1.11}
-          zoom={1.0}
-          height={5.5}
-          fogDepth={15}
-          detail="medium"
-          brightness={1.0}
-          opacity={1.0}
-          mouseInteraction={true}
-          parallaxStrength={0.5}
-          grain={true}
-          grainIntensity={0.05}
+        <Iridescence
+          color={[1, 1, 1]}
+          speed={0.8}
+          amplitude={0.12}
+          mouseReact={true}
         />
       </div>
 
@@ -40,4 +24,3 @@ export default function Home() {
     </main>
   );
 }
-
