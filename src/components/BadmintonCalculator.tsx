@@ -35,7 +35,6 @@ import { MemberManagerModal } from "./MemberManagerModal";
 import { TeamPhotoModal } from "./TeamPhotoModal";
 import { SideRaysModal } from "./SideRaysModal";
 import { TechText } from "./TechText";
-import { FlipCard } from "./FlipCard";
 import { HistoryGraphModal } from "./HistoryGraphModal";
 import { CostcoReceipt } from "./CostcoReceipt";
 import { CourtPickerAndMap, parseCourtsList } from "./CourtPickerAndMap";
@@ -584,62 +583,28 @@ export function BadmintonCalculator() {
     <div className="w-full max-w-full md:max-w-4xl lg:max-w-5xl mx-auto px-3 sm:px-4 py-4 sm:py-6 md:py-8 lg:py-10 overflow-x-hidden min-w-0">
       {/* Header with Mascots, Title, and Action Toolbar */}
       <header className="mb-6 md:mb-8 text-center">
-        {/* Team Avatar Flip Card */}
-        <div className="flex flex-col items-center justify-center mb-3">
-          <div className="relative group">
-            <div className="absolute -inset-1 bg-gradient-to-r from-[var(--accent)] to-[var(--accent2)] rounded-full blur-xs opacity-70 group-hover:opacity-100 transition duration-300 pointer-events-none" />
-            <FlipCard
-              width={78}
-              height={78}
-              radius={9999}
-              perspective={900}
-              tiltMax={15}
-              glareOpacity={0.25}
-              hoverScale={1.06}
-              ariaLabel="Ảnh đại diện FC Rất Chuyên (chạm hoặc kéo để lật)"
-              front={
-                <div
-                  className="relative w-full h-full rounded-full overflow-hidden border-2 border-[var(--border)] bg-[var(--card)] select-none"
-                  onDoubleClick={() => setIsTeamPhotoOpen(true)}
-                  title="Chạm để lật, nhấp đúp để xem ảnh CLB"
-                >
-                  <SkeletonImage
-                    src="/team-photo.jpg"
-                    alt="FC Rất Chuyên Team Avatar"
-                    wrapperClassName="w-full h-full rounded-full"
-                    className="w-full h-full object-cover"
-                  />
-                  <span className="absolute bottom-1 right-1 p-1 bg-[var(--card)]/90 backdrop-blur-xs rounded-full border border-[var(--border)] shadow-xs text-[10px] leading-none select-none pointer-events-none">
-                    🏸
-                  </span>
-                </div>
-              }
-              back={
-                <div
-                  className="relative w-full h-full rounded-full overflow-hidden border-2 border-[var(--accent)] bg-gradient-to-br from-[var(--card)] via-[var(--bg)] to-[var(--card)] p-1.5 flex flex-col items-center justify-center text-center select-none"
-                  title="Chạm để lật lại"
-                >
-                  <div className="text-xl select-none leading-none mb-0.5 filter drop-shadow-xs">
-                    🏸
-                  </div>
-                  <span className="text-[9px] font-black tracking-tight text-[var(--accent)] uppercase leading-tight select-none">
-                    Rất Chuyên
-                  </span>
-                  <button
-                    type="button"
-                    onClick={(e) => {
-                      e.stopPropagation();
-                      setIsTeamPhotoOpen(true);
-                    }}
-                    className="mt-1 px-1.5 py-0.5 rounded-full bg-[var(--accent)] text-white text-[8px] font-bold tracking-wider hover:opacity-90 active:scale-95 transition-all cursor-pointer shadow-xs select-none"
-                    title="Mở ảnh kích thước đầy đủ"
-                  >
-                    Xem ảnh
-                  </button>
-                </div>
-              }
-            />
-          </div>
+        {/* Team Avatar Badge */}
+        <div className="flex flex-col items-center justify-center mb-2.5">
+          <motion.button
+            whileTap={{ scale: 0.93 }}
+            type="button"
+            onClick={() => setIsTeamPhotoOpen(true)}
+            className="group relative cursor-pointer focus:outline-none"
+            title="Bấm để xem ảnh kỷ niệm FC Rất Chuyên"
+          >
+            <div className="absolute -inset-1 bg-gradient-to-r from-[var(--accent)] to-[var(--accent2)] rounded-full blur-xs opacity-70 group-hover:opacity-100 transition duration-300" />
+            <div className="relative w-16 h-16 sm:w-20 sm:h-20 rounded-full overflow-hidden border-2 border-[var(--border)] shadow-md bg-[var(--card)]">
+              <SkeletonImage
+                src="/team-photo.jpg"
+                alt="FC Rất Chuyên Team Avatar"
+                wrapperClassName="w-full h-full rounded-full"
+                className="w-full h-full object-cover group-hover:scale-108 transition-transform duration-300"
+              />
+            </div>
+            <span className="absolute bottom-0 right-0 p-1 bg-[var(--card)] rounded-full border border-[var(--border)] shadow-xs text-[11px] group-hover:scale-110 transition-transform">
+              🏸
+            </span>
+          </motion.button>
         </div>
 
         {/* Title row */}
