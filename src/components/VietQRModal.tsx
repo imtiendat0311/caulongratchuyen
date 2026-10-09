@@ -96,6 +96,7 @@ function VietQRContent({
     light: string;
     dark: string;
   } | null>(null);
+  const [isQrLoading, setIsQrLoading] = useState(true);
 
   useEffect(() => {
     const checkDark = () => {
@@ -143,9 +144,11 @@ function VietQRContent({
   useEffect(() => {
     if (!qrUrl) {
       setProcessedQrs(null);
+      setIsQrLoading(false);
       return;
     }
     let isCurrent = true;
+    setIsQrLoading(true);
 
     fetch(qrUrl)
       .then((res) => res.blob())
@@ -235,22 +238,26 @@ function VietQRContent({
 
                 if (isCurrent) {
                   setProcessedQrs({ light: lightUrl, dark: darkUrl });
+                  setIsQrLoading(false);
                 }
               }
             }
           } catch (procErr) {
             console.warn("Lỗi xử lý canvas VietQR:", procErr);
+            if (isCurrent) setIsQrLoading(false);
           } finally {
             URL.revokeObjectURL(blobUrl);
           }
         };
         img.onerror = () => {
           URL.revokeObjectURL(blobUrl);
+          if (isCurrent) setIsQrLoading(false);
         };
         img.src = blobUrl;
       })
       .catch((err) => {
         console.warn("Lỗi tải VietQR blob:", err);
+        if (isCurrent) setIsQrLoading(false);
       });
 
     return () => {
@@ -506,18 +513,85 @@ function VietQRContent({
 
               {/* QR Image Frame */}
               <div
-                className={`p-2.5 rounded-[12px] border transition-all flex items-center justify-center ${
+                className={`relative w-44 sm:w-48 aspect-[27/32] p-2 rounded-[14px] border transition-all flex items-center justify-center overflow-hidden ${
                   isDarkQR
                     ? "bg-[#1c2030] border-[#2b3045] shadow-inner"
                     : "bg-white border-slate-200 shadow-xs"
                 }`}
               >
+                {/* Skeleton Loading State */}
+                <div
+                  className={`absolute inset-0 p-3 flex flex-col justify-between transition-opacity duration-300 pointer-events-none ${
+                    isQrLoading ? "opacity-100" : "opacity-0"
+                  }`}
+                  aria-hidden={!isQrLoading}
+                >
+                  {/* Top Bar: Logos placeholder */}
+                  <div className="flex items-center justify-between w-full pt-0.5">
+                    <div
+                      className={`h-4 w-14 rounded-md ${
+                        isDarkQR ? "bg-slate-700/60" : "bg-slate-200"
+                      } animate-pulse`}
+                    />
+                    <div
+                      className={`h-4 w-12 rounded-md ${
+                        isDarkQR ? "bg-slate-700/60" : "bg-slate-200"
+                      } animate-pulse`}
+                    />
+                  </div>
+
+                  {/* Center: QR box placeholder */}
+                  <div className="flex flex-col items-center justify-center my-auto">
+                    <div
+                      className={`relative w-28 h-28 sm:w-32 sm:h-32 rounded-xl flex items-center justify-center border overflow-hidden ${
+                        isDarkQR
+                          ? "bg-slate-800/80 border-slate-700/50"
+                          : "bg-slate-100 border-slate-200/80"
+                      }`}
+                    >
+                      <QrCode
+                        className={`w-12 h-12 ${
+                          isDarkQR ? "text-slate-600/70" : "text-slate-300"
+                        } animate-pulse`}
+                      />
+                      <div className="absolute inset-0 -translate-x-full animate-shimmer bg-gradient-to-r from-transparent via-white/10 to-transparent pointer-events-none" />
+                    </div>
+                    <div
+                      className={`h-2.5 w-20 rounded-full mt-2.5 ${
+                        isDarkQR ? "bg-slate-700/50" : "bg-slate-200"
+                      } animate-pulse`}
+                    />
+                  </div>
+
+                  {/* Bottom: Account info lines placeholder */}
+                  <div className="w-full space-y-1.5 pb-0.5">
+                    <div
+                      className={`h-2.5 w-4/5 mx-auto rounded-full ${
+                        isDarkQR ? "bg-slate-700/60" : "bg-slate-200"
+                      } animate-pulse`}
+                    />
+                    <div
+                      className={`h-2 w-3/5 mx-auto rounded-full ${
+                        isDarkQR ? "bg-slate-700/40" : "bg-slate-200/70"
+                      } animate-pulse`}
+                    />
+                  </div>
+                </div>
+
+                {/* QR Image */}
                 {/* eslint-disable-next-line @next/next/no-img-element */}
                 <img
                   src={activeQrSrc || qrUrl}
                   alt="Mã VietQR Chuyển khoản"
-                  className="w-44 sm:w-48 h-auto object-contain rounded-lg transition-opacity duration-200"
-                  loading="lazy"
+                  className={`w-full h-full object-contain rounded-lg transition-all duration-300 ${
+                    isQrLoading ? "opacity-0 scale-95" : "opacity-100 scale-100"
+                  }`}
+                  loading="eager"
+                  onLoad={() => {
+                    if (processedQrs) {
+                      setIsQrLoading(false);
+                    }
+                  }}
                 />
               </div>
 

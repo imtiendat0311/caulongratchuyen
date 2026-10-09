@@ -731,14 +731,22 @@ export function CostcoReceipt({
               </div>
 
               {/* QR Container - Blends seamlessly into receipt paper, transparent background, white QR in dark mode */}
-              <div className="p-2 inline-block bg-transparent min-h-[112px] sm:min-h-[128px]">
+              <div className="relative p-2 inline-block bg-transparent w-32 h-32 sm:w-36 sm:h-36">
+                {!processedQrs && (
+                  <div className="absolute inset-2 flex flex-col items-center justify-center rounded-lg border border-dashed border-[var(--receipt-dashed)] bg-[var(--receipt-card)] animate-pulse transition-opacity duration-300">
+                    <QrCode className="w-8 h-8 text-[var(--receipt-muted)] opacity-50 mb-1" />
+                    <span className="text-[8.5px] font-mono text-[var(--receipt-subtle)]">
+                      Đang nạp mã QR...
+                    </span>
+                  </div>
+                )}
                 {/* eslint-disable-next-line @next/next/no-img-element */}
                 <img
                   crossOrigin="anonymous"
                   src={activeQrDataUrl || qrUrl}
                   alt="Mã VietQR thanh toán tiền sân"
-                  className={`w-28 h-28 sm:w-32 sm:h-32 object-contain block mx-auto transition-opacity duration-200 ${
-                    !processedQrs ? "opacity-0" : "opacity-100"
+                  className={`w-28 h-28 sm:w-32 sm:h-32 object-contain block mx-auto transition-all duration-300 ${
+                    !processedQrs ? "opacity-0 scale-95" : "opacity-100 scale-100"
                   }`}
                 />
               </div>
