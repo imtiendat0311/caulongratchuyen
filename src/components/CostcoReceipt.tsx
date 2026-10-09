@@ -67,6 +67,38 @@ export function CostcoReceipt({
   onSaveToHistory,
 }: CostcoReceiptProps) {
   const [receiptTheme, setReceiptTheme] = useState<"auto" | "light" | "dark">("auto");
+  const [isSystemDark, setIsSystemDark] = useState(false);
+
+  useEffect(() => {
+    const checkDark = () => {
+      const isDocDark =
+        document.documentElement.classList.contains("dark") ||
+        document.documentElement.getAttribute("data-theme") === "dark";
+      const isMediaDark =
+        typeof window !== "undefined" &&
+        window.matchMedia("(prefers-color-scheme: dark)").matches;
+      setIsSystemDark(isDocDark || isMediaDark);
+    };
+    checkDark();
+
+    const observer = new MutationObserver(checkDark);
+    observer.observe(document.documentElement, {
+      attributes: true,
+      attributeFilter: ["class", "data-theme"],
+    });
+
+    const media = window.matchMedia("(prefers-color-scheme: dark)");
+    const handleMedia = () => checkDark();
+    media.addEventListener("change", handleMedia);
+
+    return () => {
+      observer.disconnect();
+      media.removeEventListener("change", handleMedia);
+    };
+  }, []);
+
+  const isDarkReceipt =
+    receiptTheme === "dark" || (receiptTheme === "auto" && isSystemDark);
 
   const totalPlayers = namCount + nuCount;
   const courtsList = parseCourtsList(courtNumber);
@@ -97,14 +129,20 @@ export function CostcoReceipt({
       : null;
 
   const [qrDataUrl, setQrDataUrl] = useState<string | null>(null);
+  const [processedQrs, setProcessedQrs] = useState<{
+    light: string;
+    dark: string;
+  } | null>(null);
 
   useEffect(() => {
     if (!qrUrl) return;
     let isCurrent = true;
+
     fetch(qrUrl)
       .then((res) => res.blob())
       .then((blob) => {
         if (!isCurrent) return;
+        const blobUrl = URL.createObjectURL(blob);
         const reader = new FileReader();
         reader.onloadend = () => {
           if (isCurrent && typeof reader.result === "string") {
@@ -112,16 +150,162 @@ export function CostcoReceipt({
           }
         };
         reader.readAsDataURL(blob);
+
+        const img = new Image();
+        img.onload = () => {
+          try {
+            const width = img.naturalWidth || img.width;
+            const height = img.naturalHeight || img.height;
+            if (width > 0 && height > 0) {
+              const canvas = document.createElement("canvas");
+              canvas.width = width;
+              canvas.height = height;
+              const ctx = canvas.getContext("2d", { willReadFrequently: true });
+              if (ctx) {
+                ctx.drawImage(img, 0, 0);
+                const imgData = ctx.getImageData(0, 0, width, height);
+                const pixels = imgData.data;
+
+                // Detect colored logo if present in center 50%
+                let logoMinX = width;
+                let logoMaxX = 0;
+                let logoMinY = height;
+                let logoMaxY = 0;
+                let hasLogo = false;
+
+                const sMinX = Math.floor(width * 0.25);
+                const sMaxX = Math.floor(width * 0.75);
+                const sMinY = Math.floor(height * 0.25);
+                const sMaxY = Math.floor(height * 0.75);
+
+                for (let y = sMinY; y < sMaxY; y++) {
+                  for (let x = sMinX; x < sMaxX; x++) {
+                    const idx = (y * width + x) * 4;
+                    const r = pixels[idx];
+                    const g = pixels[idx + 1];
+                    const b = pixels[idx + 2];
+                    const a = pixels[idx + 3];
+
+                    if (a > 100) {
+                      const maxC = Math.max(r, g, b);
+                      const minC = Math.min(r, g, b);
+                      if (maxC - minC > 30) {
+                        hasLogo = true;
+                        if (x < logoMinX) logoMinX = x;
+                        if (x > logoMaxX) logoMaxX = x;
+                        if (y < logoMinY) logoMinY = y;
+                        if (y > logoMaxY) logoMaxY = y;
+                      }
+                    }
+                  }
+                }
+
+                if (hasLogo) {
+                  logoMinX = Math.max(0, logoMinX - 3);
+                  logoMaxX = Math.min(width - 1, logoMaxX + 3);
+                  logoMinY = Math.max(0, logoMinY - 3);
+                  logoMaxY = Math.min(height - 1, logoMaxY + 3);
+                }
+
+                const lightData = ctx.createImageData(width, height);
+                const darkData = ctx.createImageData(width, height);
+
+                for (let y = 0; y < height; y++) {
+                  for (let x = 0; x < width; x++) {
+                    const idx = (y * width + x) * 4;
+                    const r = pixels[idx];
+                    const g = pixels[idx + 1];
+                    const b = pixels[idx + 2];
+                    const a = pixels[idx + 3];
+
+                    const inLogo =
+                      hasLogo &&
+                      x >= logoMinX &&
+                      x <= logoMaxX &&
+                      y >= logoMinY &&
+                      y <= logoMaxY;
+
+                    if (inLogo) {
+                      // Preserve authentic center logo badge (VietQR / bank logo)
+                      lightData.data[idx] = r;
+                      lightData.data[idx + 1] = g;
+                      lightData.data[idx + 2] = b;
+                      lightData.data[idx + 3] = a;
+
+                      darkData.data[idx] = r;
+                      darkData.data[idx + 1] = g;
+                      darkData.data[idx + 2] = b;
+                      darkData.data[idx + 3] = a;
+                    } else {
+                      const brightness = 0.299 * r + 0.587 * g + 0.114 * b;
+
+                      if (brightness > 190 || a < 50) {
+                        // White background -> 100% transparent so it blends into receipt paper
+                        lightData.data[idx] = 0;
+                        lightData.data[idx + 1] = 0;
+                        lightData.data[idx + 2] = 0;
+                        lightData.data[idx + 3] = 0;
+
+                        darkData.data[idx] = 0;
+                        darkData.data[idx + 1] = 0;
+                        darkData.data[idx + 2] = 0;
+                        darkData.data[idx + 3] = 0;
+                      } else {
+                        // QR module
+                        // Light mode: authentic dark charcoal (#111111)
+                        lightData.data[idx] = 17;
+                        lightData.data[idx + 1] = 17;
+                        lightData.data[idx + 2] = 17;
+                        lightData.data[idx + 3] = 255;
+
+                        // Dark mode: crisp white (#ffffff)
+                        darkData.data[idx] = 255;
+                        darkData.data[idx + 1] = 255;
+                        darkData.data[idx + 2] = 255;
+                        darkData.data[idx + 3] = 255;
+                      }
+                    }
+                  }
+                }
+
+                ctx.putImageData(lightData, 0, 0);
+                const lightUrl = canvas.toDataURL("image/png");
+
+                ctx.putImageData(darkData, 0, 0);
+                const darkUrl = canvas.toDataURL("image/png");
+
+                if (isCurrent) {
+                  setProcessedQrs({ light: lightUrl, dark: darkUrl });
+                }
+              }
+            }
+          } catch (procErr) {
+            console.warn("Lỗi xử lý canvas QR:", procErr);
+          } finally {
+            URL.revokeObjectURL(blobUrl);
+          }
+        };
+        img.onerror = () => {
+          URL.revokeObjectURL(blobUrl);
+        };
+        img.src = blobUrl;
       })
       .catch((err) => {
         console.warn("Lỗi tải VietQR data URL:", err);
       });
+
     return () => {
       isCurrent = false;
     };
   }, [qrUrl]);
 
-  const activeQrDataUrl = qrUrl ? qrDataUrl : null;
+  const displayQrSrc = qrUrl
+    ? isDarkReceipt
+      ? processedQrs?.dark || qrDataUrl || qrUrl
+      : processedQrs?.light || qrDataUrl || qrUrl
+    : null;
+
+  const activeQrDataUrl = displayQrSrc || qrDataUrl;
 
   const receiptRef = useRef<HTMLDivElement>(null);
   const [isDownloading, setIsDownloading] = useState(false);
@@ -591,14 +775,16 @@ export function CostcoReceipt({
                 Chuyển khoản trực tiếp cho {hostDisplayName}
               </div>
 
-              {/* QR Container - Pure white container with quiet-zone padding ensuring 100% scan rate in both light and dark modes */}
-              <div className="p-2 sm:p-2.5 rounded-lg bg-white border border-[var(--receipt-dashed)] shadow-2xs inline-block">
+              {/* QR Container - Blends seamlessly into receipt paper, transparent background, white QR in dark mode */}
+              <div className="p-2 inline-block bg-transparent">
                 {/* eslint-disable-next-line @next/next/no-img-element */}
                 <img
                   crossOrigin="anonymous"
                   src={activeQrDataUrl || qrUrl}
                   alt="Mã VietQR thanh toán tiền sân"
-                  className="w-28 h-28 sm:w-32 sm:h-32 object-contain block"
+                  className={`w-28 h-28 sm:w-32 sm:h-32 object-contain block mx-auto transition-opacity duration-150 ${
+                    isDarkReceipt && !processedQrs ? "invert mix-blend-screen" : ""
+                  }`}
                 />
               </div>
 
