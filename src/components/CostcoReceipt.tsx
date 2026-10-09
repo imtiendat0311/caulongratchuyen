@@ -26,6 +26,7 @@ import {
   generateUpcBarcodeBars,
   formatSerialNumber,
 } from "@/lib/bill-utils";
+import { RollingNumber } from "./RollingNumber";
 
 interface CostcoReceiptProps {
   date: string; // DD/MM/YYYY
@@ -341,6 +342,7 @@ export function CostcoReceipt({
 
   const [isDownloading, setIsDownloading] = useState(false);
   const [isCopyingImage, setIsCopyingImage] = useState(false);
+  const isExportingImage = isDownloading || isCopyingImage;
   const [copiedImageToast, setCopiedImageToast] = useState(false);
   const [previewData, setPreviewData] = useState<{
     url: string;
@@ -507,6 +509,25 @@ export function CostcoReceipt({
       },
     };
 
+    // Ensure all rolling numbers display final target text without in-flight rolling highlights during export
+    const rollingElements = Array.from(node.querySelectorAll<HTMLElement>("[data-rolling-number='true']"));
+    const savedRollingStates = rollingElements.map((el) => ({
+      el,
+      text: el.textContent,
+      className: el.className,
+      color: el.style.color,
+    }));
+
+    rollingElements.forEach((el) => {
+      if (el.dataset.finalText) {
+        el.textContent = el.dataset.finalText;
+      }
+      if (el.dataset.baseClass) {
+        el.className = el.dataset.baseClass;
+      }
+      el.style.color = "var(--receipt-text)";
+    });
+
     let domCanvas: HTMLCanvasElement | null = null;
     try {
       domCanvas = await toCanvas(node, exportOptions);
@@ -530,6 +551,13 @@ export function CostcoReceipt({
       } catch (domErr) {
         console.warn("Lỗi toCanvas/toPng DOM:", domErr);
       }
+    } finally {
+      // Restore rolling elements
+      savedRollingStates.forEach(({ el, text, className, color }) => {
+        el.textContent = text;
+        el.className = className;
+        el.style.color = color;
+      });
     }
 
     if (domCanvas) {
@@ -880,7 +908,7 @@ export function CostcoReceipt({
                 TIỀN SÂN ({courtsCount > 1 ? `${courtsCount} sân • ${courtNumber}` : (courtNumber || "2 giờ")})
               </span>
               <span className="font-semibold shrink-0 text-[var(--receipt-text)]">
-                {courtCost.toLocaleString("vi-VN")} đ
+                <RollingNumber value={courtCost} isExporting={isExportingImage} />
               </span>
             </div>
             <div className="flex justify-between items-baseline">
@@ -888,13 +916,13 @@ export function CostcoReceipt({
                 TIỀN CẦU ({soQua} quả)
               </span>
               <span className="font-semibold shrink-0 text-[var(--receipt-text)]">
-                {shuttleCost.toLocaleString("vi-VN")} đ
+                <RollingNumber value={shuttleCost} isExporting={isExportingImage} />
               </span>
             </div>
             <div className="flex justify-between items-baseline">
               <span className="truncate pr-2 text-[var(--receipt-muted)]">TIỀN NƯỚC UỐNG</span>
               <span className="font-semibold shrink-0 text-[var(--receipt-text)]">
-                {waterCost.toLocaleString("vi-VN")} đ
+                <RollingNumber value={waterCost} isExporting={isExportingImage} />
               </span>
             </div>
           </div>
@@ -906,7 +934,11 @@ export function CostcoReceipt({
           <div className="space-y-1 mb-2">
             <div className="flex justify-between text-[var(--receipt-muted)]">
               <span>TỔNG CHI PHÍ</span>
-              <span className="text-[var(--receipt-text)]">{totalCost.toLocaleString("vi-VN")} đ</span>
+              <RollingNumber
+                value={totalCost}
+                isExporting={isExportingImage}
+                className="text-[var(--receipt-text)]"
+              />
             </div>
             <div className="flex justify-between text-[var(--receipt-subtle)]">
               <span>THUẾ (0%)</span>
@@ -915,7 +947,11 @@ export function CostcoReceipt({
             <div className="border-b border-[var(--receipt-dashed)] my-1" />
             <div className="flex justify-between text-sm sm:text-base font-black text-[var(--receipt-text)]">
               <span>TỔNG CỘNG</span>
-              <span>{totalCost.toLocaleString("vi-VN")} đ</span>
+              <RollingNumber
+                value={totalCost}
+                isExporting={isExportingImage}
+                className="font-black text-[var(--receipt-text)]"
+              />
             </div>
           </div>
 
@@ -931,17 +967,21 @@ export function CostcoReceipt({
               <span className="font-semibold text-[var(--receipt-text)] truncate">
                 MỖI NAM ({namCount} bạn):
               </span>
-              <span className="font-bold text-[var(--receipt-text)] text-sm shrink-0">
-                {finalNam.toLocaleString("vi-VN")} đ
-              </span>
+              <RollingNumber
+                value={finalNam}
+                isExporting={isExportingImage}
+                className="font-bold text-[var(--receipt-text)] text-sm shrink-0"
+              />
             </div>
             <div className="flex justify-between items-center text-xs gap-1">
               <span className="font-semibold text-[var(--receipt-text)] truncate">
                 MỖI NỮ ({nuCount} bạn{ratio !== 1 ? `, ${Math.round(ratio * 100)}%` : ""}):
               </span>
-              <span className="font-bold text-[var(--receipt-text)] text-sm shrink-0">
-                {finalNu.toLocaleString("vi-VN")} đ
-              </span>
+              <RollingNumber
+                value={finalNu}
+                isExporting={isExportingImage}
+                className="font-bold text-[var(--receipt-text)] text-sm shrink-0"
+              />
             </div>
           </div>
 
