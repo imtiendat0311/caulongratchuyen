@@ -308,6 +308,29 @@ export function BadmintonCalculator() {
     setGuestName("");
   };
 
+  const maleMembers = useMemo(
+    () => members.filter((m) => m.gender === "male"),
+    [members]
+  );
+  const femaleMembers = useMemo(
+    () => members.filter((m) => m.gender === "female"),
+    [members]
+  );
+
+  const maleGuests = useMemo(
+    () => (data.guests || []).filter((g) => g.gender === "male"),
+    [data.guests]
+  );
+  const femaleGuests = useMemo(
+    () => (data.guests || []).filter((g) => g.gender === "female"),
+    [data.guests]
+  );
+
+  const selectedStableMembersCount = useMemo(
+    () => (data.attendeeIds || []).filter((id) => members.some((m) => m.id === id)).length,
+    [data.attendeeIds, members]
+  );
+
   const generateShareMessage = () => {
     let msg = `🏸 CẦU LÔNG RẤT CHUYÊN 🏸\n`;
     msg += `📅 Ngày: ${displayDate}\n`;
@@ -332,9 +355,43 @@ export function BadmintonCalculator() {
           : ""
       }\n`;
     }
-    msg += `\n👥 Người chơi (${calculations.namCount + calculations.nuCount} bạn):\n`;
-    msg += `• ${calculations.namCount} Nam${data.noteNam ? `: ${data.noteNam}` : ""}\n`;
-    msg += `• ${calculations.nuCount} Nữ${data.noteNu ? `: ${data.noteNu}` : ""}\n\n`;
+
+    const attendingMaleNames = [
+      ...maleMembers
+        .filter((m) => data.attendeeIds?.includes(m.id))
+        .map((m) => m.name),
+      ...maleGuests.map((g) =>
+        g.name.toLowerCase().includes("khách") ? g.name : `${g.name} (Khách)`
+      ),
+    ];
+
+    const attendingFemaleNames = [
+      ...femaleMembers
+        .filter((m) => data.attendeeIds?.includes(m.id))
+        .map((m) => m.name),
+      ...femaleGuests.map((g) =>
+        g.name.toLowerCase().includes("khách") ? g.name : `${g.name} (Khách)`
+      ),
+    ];
+
+    const totalPlayersCount = calculations.namCount + calculations.nuCount;
+    msg += `\n👥 Người chơi (${totalPlayersCount} bạn: ${calculations.namCount} Nam / ${calculations.nuCount} Nữ):\n`;
+
+    const maleListStr =
+      attendingMaleNames.length > 0
+        ? attendingMaleNames.join(", ")
+        : data.noteNam || "";
+    msg += `• Nam (${calculations.namCount} bạn)${
+      maleListStr ? `: ${maleListStr}` : ""
+    }\n`;
+
+    const femaleListStr =
+      attendingFemaleNames.length > 0
+        ? attendingFemaleNames.join(", ")
+        : data.noteNu || "";
+    msg += `• Nữ (${calculations.nuCount} bạn)${
+      femaleListStr ? `: ${femaleListStr}` : ""
+    }\n\n`;
 
     msg += `💰 Chi phí buổi chơi:\n`;
     msg += `• Sân: ${calculations.tongTienSan.toLocaleString("vi-VN")} đ\n`;
@@ -446,28 +503,6 @@ export function BadmintonCalculator() {
     setIsHistoryOpen(false);
   };
 
-  const maleMembers = useMemo(
-    () => members.filter((m) => m.gender === "male"),
-    [members]
-  );
-  const femaleMembers = useMemo(
-    () => members.filter((m) => m.gender === "female"),
-    [members]
-  );
-
-  const maleGuests = useMemo(
-    () => (data.guests || []).filter((g) => g.gender === "male"),
-    [data.guests]
-  );
-  const femaleGuests = useMemo(
-    () => (data.guests || []).filter((g) => g.gender === "female"),
-    [data.guests]
-  );
-
-  const selectedStableMembersCount = useMemo(
-    () => (data.attendeeIds || []).filter((id) => members.some((m) => m.id === id)).length,
-    [data.attendeeIds, members]
-  );
 
   return (
     <div className="w-full max-w-full md:max-w-4xl lg:max-w-5xl mx-auto px-3 sm:px-4 py-4 sm:py-6 md:py-8 lg:py-10 overflow-x-hidden min-w-0">
