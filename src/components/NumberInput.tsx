@@ -2,6 +2,7 @@
 
 import React from "react";
 import { Minus, Plus } from "lucide-react";
+import { motion } from "framer-motion";
 
 interface NumberInputProps {
   id: string;
@@ -61,14 +62,15 @@ export function NumberInput({
       </div>
 
       <div className="relative flex items-center rounded-[10px] bg-[var(--bg)] border border-[var(--border)] transition-colors focus-within:border-[var(--accent)] overflow-hidden w-full min-w-0">
-        <button
+        <motion.button
+          whileTap={{ scale: 0.88 }}
           type="button"
           onClick={handleDecrement}
-          className="h-9 sm:h-10 px-2 sm:px-2.5 text-[var(--muted)] hover:text-[var(--text)] active:scale-95 transition-all cursor-pointer rounded-l-[10px] flex items-center justify-center shrink-0"
+          className="h-9 sm:h-10 px-2 sm:px-2.5 text-[var(--muted)] hover:text-[var(--text)] transition-colors cursor-pointer rounded-l-[10px] flex items-center justify-center shrink-0"
           aria-label={`Giảm ${label}`}
         >
           <Minus className="w-3.5 h-3.5" />
-        </button>
+        </motion.button>
 
         <input
           id={id}
@@ -87,14 +89,15 @@ export function NumberInput({
           </span>
         )}
 
-        <button
+        <motion.button
+          whileTap={{ scale: 0.88 }}
           type="button"
           onClick={handleIncrement}
-          className="h-9 sm:h-10 px-2 sm:px-2.5 text-[var(--muted)] hover:text-[var(--text)] active:scale-95 transition-all cursor-pointer rounded-r-[10px] flex items-center justify-center shrink-0"
+          className="h-9 sm:h-10 px-2 sm:px-2.5 text-[var(--muted)] hover:text-[var(--text)] transition-colors cursor-pointer rounded-r-[10px] flex items-center justify-center shrink-0"
           aria-label={`Tăng ${label}`}
         >
           <Plus className="w-3.5 h-3.5" />
-        </button>
+        </motion.button>
       </div>
     </div>
   );

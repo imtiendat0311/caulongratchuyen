@@ -2,6 +2,7 @@
 
 import React from "react";
 import { History, X, Trash2, ArrowUpRight } from "lucide-react";
+import { motion, AnimatePresence } from "framer-motion";
 import { HistoryItem } from "@/types";
 
 interface HistoryDrawerProps {
@@ -21,46 +22,63 @@ export function HistoryDrawer({
   onClear,
   onRestore,
 }: HistoryDrawerProps) {
-  if (!isOpen) return null;
-
   return (
-    <div className="fixed inset-0 z-50 flex justify-end bg-black/60 backdrop-blur-xs animate-in fade-in duration-200">
-      <div className="w-full max-w-md h-full bg-[var(--card)] border-l border-[var(--border)] shadow-[var(--shadow)] flex flex-col text-[var(--text)]">
-        {/* Header */}
-        <div className="flex items-center justify-between p-4 border-b border-[var(--border)]">
-          <div className="flex items-center gap-2.5">
-            <div className="p-2 rounded-xl bg-[var(--bg)] border border-[var(--border)] text-[var(--accent2)]">
-              <History className="w-5 h-5" />
-            </div>
-            <div>
-              <h3 className="font-bold text-base text-[var(--text)]">
-                Lịch Sử Buổi Chơi
-              </h3>
-              <p className="text-xs text-[var(--muted)]">
-                {history.length} buổi chơi đã lưu
-              </p>
-            </div>
-          </div>
+    <AnimatePresence>
+      {isOpen && (
+        <motion.div
+          initial={{ opacity: 0 }}
+          animate={{ opacity: 1 }}
+          exit={{ opacity: 0 }}
+          transition={{ duration: 0.2 }}
+          onClick={(e) => {
+            if (e.target === e.currentTarget) onClose();
+          }}
+          className="fixed inset-0 z-50 flex justify-end bg-black/60 backdrop-blur-xs"
+        >
+          <motion.div
+            initial={{ x: "100%" }}
+            animate={{ x: 0 }}
+            exit={{ x: "100%" }}
+            transition={{ type: "spring", stiffness: 420, damping: 36 }}
+            className="w-full max-w-md h-full bg-[var(--card)] border-l border-[var(--border)] shadow-[var(--shadow)] flex flex-col text-[var(--text)]"
+          >
+            {/* Header */}
+            <div className="flex items-center justify-between p-4 border-b border-[var(--border)]">
+              <div className="flex items-center gap-2.5">
+                <div className="p-2 rounded-xl bg-[var(--bg)] border border-[var(--border)] text-[var(--accent2)]">
+                  <History className="w-5 h-5" />
+                </div>
+                <div>
+                  <h3 className="font-bold text-base text-[var(--text)]">
+                    Lịch Sử Buổi Chơi
+                  </h3>
+                  <p className="text-xs text-[var(--muted)]">
+                    {history.length} buổi chơi đã lưu
+                  </p>
+                </div>
+              </div>
 
-          <div className="flex items-center gap-1">
-            {history.length > 0 && (
-              <button
-                onClick={onClear}
-                className="p-2 rounded-xl text-[var(--muted)] hover:text-red-500 hover:bg-[var(--bg)] transition-colors cursor-pointer"
-                title="Xóa tất cả lịch sử"
-              >
-                <Trash2 className="w-4 h-4" />
-              </button>
-            )}
-            <button
-              onClick={onClose}
-              className="p-2 rounded-xl text-[var(--muted)] hover:text-[var(--text)] hover:bg-[var(--bg)] transition-colors cursor-pointer"
-              aria-label="Đóng"
-            >
-              <X className="w-4 h-4" />
-            </button>
-          </div>
-        </div>
+              <div className="flex items-center gap-1">
+                {history.length > 0 && (
+                  <motion.button
+                    whileTap={{ scale: 0.88 }}
+                    onClick={onClear}
+                    className="p-2 rounded-xl text-[var(--muted)] hover:text-red-500 hover:bg-[var(--bg)] transition-colors cursor-pointer"
+                    title="Xóa tất cả lịch sử"
+                  >
+                    <Trash2 className="w-4 h-4" />
+                  </motion.button>
+                )}
+                <motion.button
+                  whileTap={{ scale: 0.88 }}
+                  onClick={onClose}
+                  className="p-2 rounded-xl text-[var(--muted)] hover:text-[var(--text)] hover:bg-[var(--bg)] transition-colors cursor-pointer"
+                  aria-label="Đóng"
+                >
+                  <X className="w-4 h-4" />
+                </motion.button>
+              </div>
+            </div>
 
         {/* List */}
         <div className="flex-1 overflow-y-auto p-4 space-y-3">
@@ -137,7 +155,9 @@ export function HistoryDrawer({
             ))
           )}
         </div>
-      </div>
-    </div>
+          </motion.div>
+        </motion.div>
+      )}
+    </AnimatePresence>
   );
 }

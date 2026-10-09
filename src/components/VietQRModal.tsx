@@ -2,6 +2,7 @@
 
 import React, { useState } from "react";
 import { QrCode, X, Copy, Check, ExternalLink, Crown, ChevronDown } from "lucide-react";
+import { motion, AnimatePresence } from "framer-motion";
 import { BankConfig, Member, POPULAR_BANKS } from "@/types";
 
 interface VietQRModalProps {
@@ -32,20 +33,22 @@ export function VietQRModal({
   activeHostMember,
   onUpdateMemberBank,
 }: VietQRModalProps) {
-  if (!isOpen) return null;
-
   return (
-    <VietQRContent
-      key={activeHostMember?.id || "default-bank"}
-      onClose={onClose}
-      bankConfig={bankConfig}
-      onSaveBankConfig={onSaveBankConfig}
-      amountNam={amountNam}
-      amountNu={amountNu}
-      hostName={hostName}
-      activeHostMember={activeHostMember}
-      onUpdateMemberBank={onUpdateMemberBank}
-    />
+    <AnimatePresence>
+      {isOpen && (
+        <VietQRContent
+          key={activeHostMember?.id || "default-bank"}
+          onClose={onClose}
+          bankConfig={bankConfig}
+          onSaveBankConfig={onSaveBankConfig}
+          amountNam={amountNam}
+          amountNu={amountNu}
+          hostName={hostName}
+          activeHostMember={activeHostMember}
+          onUpdateMemberBank={onUpdateMemberBank}
+        />
+      )}
+    </AnimatePresence>
   );
 }
 
@@ -123,16 +126,32 @@ function VietQRContent({
   };
 
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center p-3 sm:p-4 bg-black/60 backdrop-blur-xs animate-in fade-in duration-200">
-      <div className="relative w-full max-w-sm rounded-[16px] bg-[var(--card)] border border-[var(--border)] shadow-[var(--shadow)] p-5 text-[var(--text)] overflow-hidden max-h-[92vh] flex flex-col">
+    <motion.div
+      initial={{ opacity: 0 }}
+      animate={{ opacity: 1 }}
+      exit={{ opacity: 0 }}
+      transition={{ duration: 0.2 }}
+      onClick={(e) => {
+        if (e.target === e.currentTarget) onClose();
+      }}
+      className="fixed inset-0 z-50 flex items-center justify-center p-3 sm:p-4 bg-black/60 backdrop-blur-xs"
+    >
+      <motion.div
+        initial={{ opacity: 0, scale: 0.94, y: 15 }}
+        animate={{ opacity: 1, scale: 1, y: 0 }}
+        exit={{ opacity: 0, scale: 0.94, y: 10 }}
+        transition={{ type: "spring", stiffness: 450, damping: 32 }}
+        className="relative w-full max-w-sm rounded-[16px] bg-[var(--card)] border border-[var(--border)] shadow-[var(--shadow)] p-5 text-[var(--text)] overflow-hidden max-h-[92vh] flex flex-col"
+      >
         {/* Close button */}
-        <button
+        <motion.button
+          whileTap={{ scale: 0.88 }}
           onClick={onClose}
           className="absolute top-4 right-4 p-1.5 rounded-lg text-[var(--muted)] hover:text-[var(--text)] hover:bg-[var(--bg)] transition-colors cursor-pointer"
           aria-label="Đóng"
         >
           <X className="w-4 h-4" />
-        </button>
+        </motion.button>
 
         <div className="flex items-center gap-2.5 mb-3">
           <div className="p-2 rounded-xl bg-[var(--bg)] border border-[var(--border)] text-[var(--accent)]">
@@ -213,7 +232,8 @@ function VietQRContent({
 
           {/* Gender selector for QR amount */}
           <div className="flex rounded-[10px] bg-[var(--bg)] border border-[var(--border)] p-1">
-            <button
+            <motion.button
+              whileTap={{ scale: 0.96 }}
               type="button"
               onClick={() => setSelectedGender("nam")}
               className={`flex-1 py-1.5 text-xs font-semibold rounded-[8px] transition-all cursor-pointer ${
@@ -223,8 +243,9 @@ function VietQRContent({
               }`}
             >
               Nam: {Math.round(amountNam).toLocaleString("vi-VN")} đ
-            </button>
-            <button
+            </motion.button>
+            <motion.button
+              whileTap={{ scale: 0.96 }}
               type="button"
               onClick={() => setSelectedGender("nu")}
               className={`flex-1 py-1.5 text-xs font-semibold rounded-[8px] transition-all cursor-pointer ${
@@ -234,7 +255,7 @@ function VietQRContent({
               }`}
             >
               Nữ: {Math.round(amountNu).toLocaleString("vi-VN")} đ
-            </button>
+            </motion.button>
           </div>
 
           {/* QR Display */}
@@ -248,7 +269,8 @@ function VietQRContent({
                 loading="lazy"
               />
               <div className="flex items-center gap-2 mt-2">
-                <button
+                <motion.button
+                  whileTap={{ scale: 0.94 }}
                   type="button"
                   onClick={handleCopyAcc}
                   className="flex items-center gap-1 text-[11px] font-medium text-slate-700 hover:text-blue-600 bg-slate-100 px-2.5 py-1 rounded-md transition-colors cursor-pointer"
@@ -259,7 +281,7 @@ function VietQRContent({
                     <Copy className="w-3 h-3" />
                   )}
                   {copied ? "Đã chép STK" : "Sao chép STK"}
-                </button>
+                </motion.button>
                 <a
                   href={qrUrl}
                   target="_blank"
@@ -277,7 +299,7 @@ function VietQRContent({
             </div>
           )}
         </div>
-      </div>
-    </div>
+      </motion.div>
+    </motion.div>
   );
 }

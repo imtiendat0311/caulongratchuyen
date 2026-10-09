@@ -15,6 +15,7 @@ import {
   X,
   Download,
 } from "lucide-react";
+import { motion, AnimatePresence } from "framer-motion";
 import { toBlob, toPng } from "html-to-image";
 import { Member, BankConfig } from "@/types";
 import { parseCourtsList } from "./CourtPickerAndMap";
@@ -442,7 +443,8 @@ export function CostcoReceipt({
           <span>Biên lai chi phí</span>
         </span>
         <div className="inline-flex p-0.5 rounded-[8px] bg-[var(--card)] border border-[var(--border)] text-[10px] shrink-0">
-          <button
+          <motion.button
+            whileTap={{ scale: 0.92 }}
             type="button"
             onClick={() => setReceiptTheme("auto")}
             className={`px-2 py-0.5 rounded-[6px] font-medium transition-all cursor-pointer flex items-center gap-1 ${
@@ -454,8 +456,9 @@ export function CostcoReceipt({
           >
             <Sparkles className="w-3 h-3" />
             <span>Tự động</span>
-          </button>
-          <button
+          </motion.button>
+          <motion.button
+            whileTap={{ scale: 0.92 }}
             type="button"
             onClick={() => setReceiptTheme("light")}
             className={`px-2 py-0.5 rounded-[6px] font-medium transition-all cursor-pointer flex items-center gap-1 ${
@@ -467,8 +470,9 @@ export function CostcoReceipt({
           >
             <Sun className="w-3 h-3" />
             <span>Giấy sáng</span>
-          </button>
-          <button
+          </motion.button>
+          <motion.button
+            whileTap={{ scale: 0.92 }}
             type="button"
             onClick={() => setReceiptTheme("dark")}
             className={`px-2 py-0.5 rounded-[6px] font-medium transition-all cursor-pointer flex items-center gap-1 ${
@@ -480,12 +484,15 @@ export function CostcoReceipt({
           >
             <Moon className="w-3 h-3" />
             <span>Giấy tối</span>
-          </button>
+          </motion.button>
         </div>
       </div>
 
       {/* Receipt Paper Card */}
-      <div
+      <motion.div
+        initial={{ opacity: 0, y: 15 }}
+        animate={{ opacity: 1, y: 0 }}
+        transition={{ type: "spring", stiffness: 360, damping: 28 }}
         ref={receiptRef}
         className={`receipt-paper ${themeClass} relative w-full max-w-full sm:max-w-[380px] shadow-2xl rounded-sm border font-mono text-[11px] leading-[1.35] tracking-tight selection:bg-neutral-500/20 overflow-hidden mx-auto`}
       >
@@ -780,52 +787,57 @@ export function CostcoReceipt({
             <polygon points="0,0 2.5,10 5,0 7.5,10 10,0 12.5,10 15,0 17.5,10 20,0 22.5,10 25,0 27.5,10 30,0 32.5,10 35,0 37.5,10 40,0 42.5,10 45,0 47.5,10 50,0 52.5,10 55,0 57.5,10 60,0 62.5,10 65,0 67.5,10 70,0 72.5,10 75,0 77.5,10 80,0 82.5,10 85,0 87.5,10 90,0 92.5,10 95,0 97.5,10 100,0" />
           </svg>
         </div>
-      </div>
+      </motion.div>
 
       {/* Action Buttons Toolbar Below Receipt */}
       <div className="w-full max-w-full sm:max-w-[380px] mt-3 space-y-2 no-print mx-auto">
         <div className="grid grid-cols-2 gap-2">
-          <button
+          <motion.button
+            whileTap={{ scale: 0.95 }}
             type="button"
             onClick={onCopy}
-            className="flex items-center justify-center gap-1.5 py-2.5 px-3 rounded-[10px] bg-[var(--accent)] hover:opacity-90 active:scale-98 text-white font-bold text-xs transition-all shadow-xs cursor-pointer"
+            className="flex items-center justify-center gap-1.5 py-2.5 px-3 rounded-[10px] bg-[var(--accent)] hover:opacity-90 text-white font-bold text-xs transition-all shadow-xs cursor-pointer"
           >
             {copied ? <Check className="w-4 h-4 stroke-[3]" /> : <Copy className="w-4 h-4" />}
             <span>{copied ? "Đã sao chép!" : "Sao chép Zalo"}</span>
-          </button>
+          </motion.button>
 
-          <button
+          <motion.button
+            whileTap={{ scale: 0.95 }}
             type="button"
             onClick={onShare}
             className="flex items-center justify-center gap-1.5 py-2.5 px-3 rounded-[10px] bg-[var(--card)] border border-[var(--border)] hover:border-[var(--accent)] text-[var(--text)] font-semibold text-xs transition-all cursor-pointer"
           >
             <Share2 className="w-4 h-4 text-[var(--accent)]" />
             <span>Chia sẻ</span>
-          </button>
+          </motion.button>
         </div>
 
         <div className="grid grid-cols-2 gap-2">
-          <button
+          <motion.button
+            whileTap={{ scale: 0.95 }}
             type="button"
             onClick={onOpenVietQR}
             className="flex items-center justify-center gap-1.5 py-2 px-2.5 rounded-[10px] bg-[var(--card)] border border-[var(--border)] hover:border-[var(--accent)] text-[var(--text)] font-medium text-[11px] transition-colors cursor-pointer"
           >
             <QrCode className="w-3.5 h-3.5 text-[var(--accent)]" />
             <span>Mã VietQR</span>
-          </button>
+          </motion.button>
 
-          <button
+          <motion.button
+            whileTap={{ scale: 0.95 }}
             type="button"
             onClick={onSaveToHistory}
             className="flex items-center justify-center gap-1.5 py-2 px-2.5 rounded-[10px] bg-[var(--card)] border border-[var(--border)] hover:border-[var(--accent2)] text-[var(--text)] font-medium text-[11px] transition-colors cursor-pointer"
           >
             <BookmarkPlus className="w-3.5 h-3.5 text-[var(--accent2)]" />
             <span>Lưu lại lịch sử</span>
-          </button>
+          </motion.button>
         </div>
 
         {/* Download receipt as image helper button */}
-        <button
+        <motion.button
+          whileTap={{ scale: 0.96 }}
           type="button"
           onClick={handleDownloadReceiptImage}
           disabled={isDownloading}
@@ -837,96 +849,118 @@ export function CostcoReceipt({
             <Printer className="w-3.5 h-3.5" />
           )}
           <span>In / Lưu biên lai</span>
-        </button>
+        </motion.button>
       </div>
 
       {/* Mobile Save-to-Photos Preview Modal (iOS & Android) */}
-      {previewData && (
-        <div
-          onClick={() => setPreviewData(null)}
-          className="fixed inset-0 z-50 flex items-center justify-center p-3 sm:p-4 bg-black/80 backdrop-blur-xs animate-in fade-in duration-200"
-        >
-          <div
-            onClick={(e) => e.stopPropagation()}
-            className="relative w-full max-w-sm rounded-[16px] bg-[var(--card)] border border-[var(--border)] shadow-xl p-4 flex flex-col items-center max-h-[92vh] max-h-[92dvh] overflow-y-auto"
+      <AnimatePresence>
+        {previewData && (
+          <motion.div
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            exit={{ opacity: 0 }}
+            transition={{ duration: 0.2 }}
+            onClick={() => setPreviewData(null)}
+            className="fixed inset-0 z-50 flex items-center justify-center p-3 sm:p-4 bg-black/80 backdrop-blur-xs"
           >
-            <button
-              type="button"
-              onClick={() => setPreviewData(null)}
-              className="absolute top-3 right-3 p-1.5 rounded-lg text-[var(--muted)] hover:text-[var(--text)] hover:bg-[var(--bg)] cursor-pointer"
-              title="Đóng"
+            <motion.div
+              initial={{ opacity: 0, scale: 0.92, y: 16 }}
+              animate={{ opacity: 1, scale: 1, y: 0 }}
+              exit={{ opacity: 0, scale: 0.94, y: 12 }}
+              transition={{ type: "spring", stiffness: 420, damping: 32 }}
+              onClick={(e) => e.stopPropagation()}
+              className="relative w-full max-w-sm rounded-[16px] bg-[var(--card)] border border-[var(--border)] shadow-xl p-4 flex flex-col items-center max-h-[92vh] max-h-[92dvh] overflow-y-auto"
             >
-              <X className="w-4 h-4" />
-            </button>
-
-            <h3 className="font-bold text-sm text-[var(--text)] mb-1">
-              Lưu Biên Lai Vào Máy
-            </h3>
-            <p className="text-xs text-[var(--muted)] text-center mb-3 leading-relaxed">
-              {previewData.platform === "ios" ? (
-                <span>
-                  📱 <strong>Nhấn giữ vào ảnh 1-2 giây</strong> ➜ Chọn <strong>&quot;Lưu hình ảnh&quot;</strong> (Save Image) để lưu vào ứng dụng <strong>Ảnh</strong> của iPhone.
-                </span>
-              ) : previewData.platform === "android" ? (
-                <span>
-                  📱 <strong>Nhấn giữ vào ảnh 1-2 giây</strong> ➜ Chọn <strong>&quot;Tải hình ảnh xuống&quot;</strong> để lưu vào <strong>Bộ sưu tập (Gallery)</strong> của Android.
-                </span>
-              ) : (
-                <span>
-                  Nhấn giữ vào ảnh hoặc bấm <strong>Tải về máy</strong> để lưu biên lai.
-                </span>
-              )}
-            </p>
-
-            <div className="w-full flex justify-center rounded-xl overflow-hidden border border-[var(--border)] bg-[var(--bg)] p-2 shadow-xs mb-3">
-              {/* eslint-disable-next-line @next/next/no-img-element */}
-              <img
-                src={previewData.url}
-                alt="Biên lai chi phí"
-                className="max-h-[55vh] max-h-[55dvh] w-auto object-contain rounded-sm select-auto pointer-events-auto"
-              />
-            </div>
-
-            <div className="flex flex-col sm:flex-row gap-2 w-full">
-              <a
-                href={previewData.url}
-                download={`bien-lai-${date ? date.replace(/\//g, "-") : "session"}.png`}
-                className="flex-1 py-2 px-3 rounded-[8px] bg-[var(--accent)] hover:opacity-90 text-white font-semibold text-xs flex items-center justify-center gap-1.5 shadow-xs"
-              >
-                <Download className="w-3.5 h-3.5" />
-                <span>Tải về máy</span>
-              </a>
-
-              {typeof navigator !== "undefined" && typeof navigator.canShare === "function" && (
-                <button
-                  type="button"
-                  onClick={handleSharePreview}
-                  className="flex-1 py-2 px-3 rounded-[8px] bg-[var(--card)] border border-[var(--border)] hover:border-[var(--accent)] text-[var(--text)] font-semibold text-xs flex items-center justify-center gap-1.5 cursor-pointer"
-                >
-                  <Share2 className="w-3.5 h-3.5 text-[var(--accent)]" />
-                  <span>Chia sẻ</span>
-                </button>
-              )}
-
-              <button
+              <motion.button
+                whileTap={{ scale: 0.88 }}
                 type="button"
                 onClick={() => setPreviewData(null)}
-                className="py-2 px-4 rounded-[8px] border border-[var(--border)] text-xs font-semibold text-[var(--muted)] hover:text-[var(--text)] hover:bg-[var(--bg)] cursor-pointer"
+                className="absolute top-3 right-3 p-1.5 rounded-lg text-[var(--muted)] hover:text-[var(--text)] hover:bg-[var(--bg)] cursor-pointer"
+                title="Đóng"
               >
-                Đóng
-              </button>
-            </div>
-          </div>
-        </div>
-      )}
+                <X className="w-4 h-4" />
+              </motion.button>
+
+              <h3 className="font-bold text-sm text-[var(--text)] mb-1">
+                Lưu Biên Lai Vào Máy
+              </h3>
+              <p className="text-xs text-[var(--muted)] text-center mb-3 leading-relaxed">
+                {previewData.platform === "ios" ? (
+                  <span>
+                    📱 <strong>Nhấn giữ vào ảnh 1-2 giây</strong> ➜ Chọn <strong>&quot;Lưu hình ảnh&quot;</strong> (Save Image) để lưu vào ứng dụng <strong>Ảnh</strong> của iPhone.
+                  </span>
+                ) : previewData.platform === "android" ? (
+                  <span>
+                    📱 <strong>Nhấn giữ vào ảnh 1-2 giây</strong> ➜ Chọn <strong>&quot;Tải hình ảnh xuống&quot;</strong> để lưu vào <strong>Bộ sưu tập (Gallery)</strong> của Android.
+                  </span>
+                ) : (
+                  <span>
+                    Nhấn giữ vào ảnh hoặc bấm <strong>Tải về máy</strong> để lưu biên lai.
+                  </span>
+                )}
+              </p>
+
+              <div className="w-full flex justify-center rounded-xl overflow-hidden border border-[var(--border)] bg-[var(--bg)] p-2 shadow-xs mb-3">
+                {/* eslint-disable-next-line @next/next/no-img-element */}
+                <img
+                  src={previewData.url}
+                  alt="Biên lai chi phí"
+                  className="max-h-[55vh] max-h-[55dvh] w-auto object-contain rounded-sm select-auto pointer-events-auto"
+                />
+              </div>
+
+              <div className="flex flex-col sm:flex-row gap-2 w-full">
+                <motion.a
+                  whileTap={{ scale: 0.95 }}
+                  href={previewData.url}
+                  download={`bien-lai-${date ? date.replace(/\//g, "-") : "session"}.png`}
+                  className="flex-1 py-2 px-3 rounded-[8px] bg-[var(--accent)] hover:opacity-90 text-white font-semibold text-xs flex items-center justify-center gap-1.5 shadow-xs"
+                >
+                  <Download className="w-3.5 h-3.5" />
+                  <span>Tải về máy</span>
+                </motion.a>
+
+                {typeof navigator !== "undefined" && typeof navigator.canShare === "function" && (
+                  <motion.button
+                    whileTap={{ scale: 0.95 }}
+                    type="button"
+                    onClick={handleSharePreview}
+                    className="flex-1 py-2 px-3 rounded-[8px] bg-[var(--card)] border border-[var(--border)] hover:border-[var(--accent)] text-[var(--text)] font-semibold text-xs flex items-center justify-center gap-1.5 cursor-pointer"
+                  >
+                    <Share2 className="w-3.5 h-3.5 text-[var(--accent)]" />
+                    <span>Chia sẻ</span>
+                  </motion.button>
+                )}
+
+                <motion.button
+                  whileTap={{ scale: 0.95 }}
+                  type="button"
+                  onClick={() => setPreviewData(null)}
+                  className="py-2 px-4 rounded-[8px] border border-[var(--border)] text-xs font-semibold text-[var(--muted)] hover:text-[var(--text)] hover:bg-[var(--bg)] cursor-pointer"
+                >
+                  Đóng
+                </motion.button>
+              </div>
+            </motion.div>
+          </motion.div>
+        )}
+      </AnimatePresence>
 
       {/* Toast Notification (e.g. Android direct download confirmation) */}
-      {downloadToast && (
-        <div className="fixed bottom-6 left-1/2 -translate-x-1/2 z-50 px-4 py-2.5 rounded-full bg-emerald-600 text-white text-xs font-semibold shadow-lg animate-in fade-in slide-in-from-bottom-3 duration-200 flex items-center gap-2">
-          <Check className="w-4 h-4 stroke-[3]" />
-          <span>{downloadToast}</span>
-        </div>
-      )}
+      <AnimatePresence>
+        {downloadToast && (
+          <motion.div
+            initial={{ opacity: 0, y: 20, scale: 0.95 }}
+            animate={{ opacity: 1, y: 0, scale: 1 }}
+            exit={{ opacity: 0, y: 15, scale: 0.95 }}
+            transition={{ type: "spring", stiffness: 450, damping: 30 }}
+            className="fixed bottom-6 left-1/2 -translate-x-1/2 z-50 px-4 py-2.5 rounded-full bg-emerald-600 text-white text-xs font-semibold shadow-lg flex items-center gap-2"
+          >
+            <Check className="w-4 h-4 stroke-[3]" />
+            <span>{downloadToast}</span>
+          </motion.div>
+        )}
+      </AnimatePresence>
     </div>
   );
 }

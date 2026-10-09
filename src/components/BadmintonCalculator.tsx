@@ -24,6 +24,7 @@ import {
   Calculator,
   Settings,
 } from "lucide-react";
+import { motion, AnimatePresence } from "framer-motion";
 import { PixelCat, PixelRacket } from "./PixelArt";
 import { ThemeToggle } from "./ThemeToggle";
 import { NumberInput } from "./NumberInput";
@@ -510,7 +511,8 @@ export function BadmintonCalculator() {
       <header className="mb-6 md:mb-8 text-center">
         {/* Team Avatar Badge */}
         <div className="flex flex-col items-center justify-center mb-2.5">
-          <button
+          <motion.button
+            whileTap={{ scale: 0.93 }}
             type="button"
             onClick={() => setIsTeamPhotoOpen(true)}
             className="group relative cursor-pointer focus:outline-none"
@@ -528,7 +530,7 @@ export function BadmintonCalculator() {
             <span className="absolute bottom-0 right-0 p-1 bg-[var(--card)] rounded-full border border-[var(--border)] shadow-xs text-[11px] group-hover:scale-110 transition-transform">
               🏸
             </span>
-          </button>
+          </motion.button>
           <div className="text-[10px] sm:text-[11px] font-bold uppercase tracking-wider text-[var(--accent)] mt-1.5">
             FC Rất Chuyên
           </div>
@@ -554,7 +556,8 @@ export function BadmintonCalculator() {
         {/* Compact action toolbar */}
         <div className="inline-flex items-center gap-1.5 p-1 rounded-2xl bg-[var(--card)] border border-[var(--border)] shadow-[var(--shadow)] flex-wrap justify-center">
           {/* Members manager button */}
-          <button
+          <motion.button
+            whileTap={{ scale: 0.93 }}
             onClick={() => setIsMemberModalOpen(true)}
             className="flex items-center gap-1.5 h-8 px-2.5 rounded-xl text-xs font-medium text-[var(--text)] hover:bg-[var(--bg)] transition-colors cursor-pointer"
             title="Quản lý danh sách thành viên cố định"
@@ -566,10 +569,11 @@ export function BadmintonCalculator() {
                 {members.length}
               </span>
             )}
-          </button>
+          </motion.button>
 
           {/* History button */}
-          <button
+          <motion.button
+            whileTap={{ scale: 0.93 }}
             onClick={() => setIsHistoryOpen(true)}
             className="flex items-center gap-1.5 h-8 px-2.5 rounded-xl text-xs font-medium text-[var(--text)] hover:bg-[var(--bg)] transition-colors cursor-pointer"
             title="Lịch sử các buổi chơi"
@@ -581,37 +585,40 @@ export function BadmintonCalculator() {
                 {history.length}
               </span>
             )}
-          </button>
+          </motion.button>
 
           {/* QR button */}
-          <button
+          <motion.button
+            whileTap={{ scale: 0.93 }}
             onClick={() => setIsVietQROpen(true)}
             className="flex items-center gap-1.5 h-8 px-2.5 rounded-xl text-xs font-medium text-[var(--text)] hover:bg-[var(--bg)] transition-colors cursor-pointer"
             title="Tạo mã VietQR nhận tiền"
           >
             <QrCode className="w-3.5 h-3.5 text-[var(--accent)]" />
             <span>Mã QR</span>
-          </button>
+          </motion.button>
 
           {/* Team Photo button */}
-          <button
+          <motion.button
+            whileTap={{ scale: 0.93 }}
             onClick={() => setIsTeamPhotoOpen(true)}
             className="flex items-center gap-1.5 h-8 px-2.5 rounded-xl text-xs font-medium text-[var(--text)] hover:bg-[var(--bg)] transition-colors cursor-pointer"
             title="Xem ảnh kỷ niệm giải đấu FC Rất Chuyên"
           >
             <Camera className="w-3.5 h-3.5 text-amber-500" />
             <span>Ảnh CLB</span>
-          </button>
+          </motion.button>
 
           {/* Reset button */}
-          <button
+          <motion.button
+            whileTap={{ scale: 0.93 }}
             onClick={handleReset}
             className="flex items-center gap-1.5 h-8 px-2.5 rounded-xl text-xs font-medium text-[var(--muted)] hover:text-[var(--text)] hover:bg-[var(--bg)] transition-colors cursor-pointer"
             title="Đặt lại về mặc định"
           >
             <RotateCcw className="w-3.5 h-3.5" />
             <span className="hidden sm:inline">Đặt lại</span>
-          </button>
+          </motion.button>
 
           <div className="w-[1px] h-4 bg-[var(--border)] mx-0.5" />
 
@@ -636,7 +643,8 @@ export function BadmintonCalculator() {
               onChange={(e) => updateField("matchDate", e.target.value)}
               className="py-1 px-2.5 text-xs font-semibold rounded-[8px] border border-[var(--border)] bg-[var(--bg)] text-[var(--text)] outline-none focus:border-[var(--accent)] cursor-pointer"
             />
-            <button
+            <motion.button
+              whileTap={{ scale: 0.92 }}
               type="button"
               onClick={() => {
                 const today = getTodayDateString();
@@ -645,7 +653,7 @@ export function BadmintonCalculator() {
               className="text-xs py-1 px-2 rounded-[8px] border border-[var(--border)] bg-[var(--bg)] text-[var(--muted)] hover:text-[var(--text)] hover:border-[var(--accent)] transition-colors cursor-pointer"
             >
               Hôm nay
-            </button>
+            </motion.button>
           </div>
         </div>
 
@@ -722,17 +730,19 @@ export function BadmintonCalculator() {
             </div>
 
             {isHostOverridden && (
-              <button
+              <motion.button
+                whileTap={{ scale: 0.88 }}
                 type="button"
                 onClick={() => handleDailyHostChange("")}
                 className="h-8 w-8 flex items-center justify-center rounded-[8px] border border-[var(--border)] text-xs text-[var(--muted)] hover:text-purple-400 hover:bg-[var(--card)] cursor-pointer transition-colors"
                 title="Khôi phục về Host mặc định tháng"
               >
                 <RotateCcw className="w-3.5 h-3.5" />
-              </button>
+              </motion.button>
             )}
 
-            <button
+            <motion.button
+              whileTap={{ scale: 0.92 }}
               type="button"
               onClick={() => setIsMemberModalOpen(true)}
               className="h-8 flex items-center gap-1.5 px-2.5 rounded-[8px] border border-[var(--border)] text-xs text-[var(--muted)] hover:text-[var(--text)] hover:bg-[var(--card)] cursor-pointer transition-colors"
@@ -740,7 +750,7 @@ export function BadmintonCalculator() {
             >
               <Settings className="w-3.5 h-3.5 text-amber-500" />
               <span className="text-[10px] hidden sm:inline">Cài đặt tháng</span>
-            </button>
+            </motion.button>
           </div>
         </div>
 
@@ -763,14 +773,15 @@ export function BadmintonCalculator() {
             </div>
 
             <div className="flex items-center gap-2">
-              <button
+              <motion.button
+                whileTap={{ scale: 0.94 }}
                 type="button"
                 onClick={() => setIsVietQROpen(true)}
                 className="text-[11px] font-semibold text-[var(--accent)] hover:underline flex items-center gap-1 cursor-pointer shrink-0"
               >
                 <QrCode className="w-3 h-3" />
                 <span>Mã QR &amp; Cài STK</span>
-              </button>
+              </motion.button>
             </div>
           </div>
         )}
@@ -803,14 +814,15 @@ export function BadmintonCalculator() {
                 Người chơi
               </h2>
               <div className="flex items-center gap-2">
-                <button
+                <motion.button
+                  whileTap={{ scale: 0.94 }}
                   type="button"
                   onClick={() => setIsMemberModalOpen(true)}
                   className="text-xs font-medium text-[var(--accent)] hover:underline flex items-center gap-1 cursor-pointer"
                 >
                   <UserPlus className="w-3.5 h-3.5" />
                   <span>DS thành viên ({members.length})</span>
-                </button>
+                </motion.button>
                 <span className="text-xs font-semibold px-2 py-0.5 rounded-full bg-[var(--bg)] border border-[var(--border)] text-[var(--muted)]">
                   Tổng {calculations.namCount + calculations.nuCount} bạn
                 </span>
@@ -825,21 +837,23 @@ export function BadmintonCalculator() {
                   Thành viên cố định đi hôm nay:
                 </span>
                 <div className="flex items-center gap-2">
-                  <button
+                  <motion.button
+                    whileTap={{ scale: 0.92 }}
                     type="button"
                     onClick={selectAllAttendees}
                     className="text-[11px] text-[var(--accent)] hover:underline cursor-pointer"
                   >
                     Chọn hết
-                  </button>
+                  </motion.button>
                   <span className="text-[10px] text-[var(--muted)]">|</span>
-                  <button
+                  <motion.button
+                    whileTap={{ scale: 0.92 }}
                     type="button"
                     onClick={clearAllAttendees}
                     className="text-[11px] text-[var(--muted)] hover:text-red-500 cursor-pointer"
                   >
                     Bỏ chọn
-                  </button>
+                  </motion.button>
                   <span className="text-[11px] font-bold text-[var(--accent2)] bg-[var(--card)] px-1.5 py-0.5 rounded-[6px] border border-[var(--border)]">
                     {selectedStableMembersCount}/{members.length}
                   </span>
@@ -869,7 +883,8 @@ export function BadmintonCalculator() {
                         {maleMembers.map((m) => {
                           const isSelected = data.attendeeIds?.includes(m.id);
                           return (
-                            <button
+                            <motion.button
+                              whileTap={{ scale: 0.92 }}
                               key={m.id}
                               type="button"
                               onClick={() => toggleAttendee(m.id)}
@@ -881,7 +896,7 @@ export function BadmintonCalculator() {
                             >
                               {isSelected && <Check className="w-3 h-3 stroke-[3]" />}
                               <span>{m.name}</span>
-                            </button>
+                            </motion.button>
                           );
                         })}
                       </div>
@@ -898,7 +913,8 @@ export function BadmintonCalculator() {
                         {femaleMembers.map((m) => {
                           const isSelected = data.attendeeIds?.includes(m.id);
                           return (
-                            <button
+                            <motion.button
+                              whileTap={{ scale: 0.92 }}
                               key={m.id}
                               type="button"
                               onClick={() => toggleAttendee(m.id)}
@@ -910,7 +926,7 @@ export function BadmintonCalculator() {
                             >
                               {isSelected && <Check className="w-3 h-3 stroke-[3]" />}
                               <span>{m.name}</span>
-                            </button>
+                            </motion.button>
                           );
                         })}
                       </div>
@@ -945,7 +961,8 @@ export function BadmintonCalculator() {
                 <div className="flex items-center justify-between sm:justify-start gap-2 shrink-0 w-full sm:w-auto">
                   {/* Gender toggle */}
                   <div className="inline-flex rounded-[8px] border border-[var(--border)] p-0.5 bg-[var(--card)] shrink-0">
-                    <button
+                    <motion.button
+                      whileTap={{ scale: 0.92 }}
                       type="button"
                       onClick={() => setGuestGender("male")}
                       className={`py-1 px-3 text-[11px] font-semibold rounded-[6px] transition-all cursor-pointer ${
@@ -955,8 +972,9 @@ export function BadmintonCalculator() {
                       }`}
                     >
                       Nam
-                    </button>
-                    <button
+                    </motion.button>
+                    <motion.button
+                      whileTap={{ scale: 0.92 }}
                       type="button"
                       onClick={() => setGuestGender("female")}
                       className={`py-1 px-3 text-[11px] font-semibold rounded-[6px] transition-all cursor-pointer ${
@@ -966,17 +984,18 @@ export function BadmintonCalculator() {
                       }`}
                     >
                       Nữ
-                    </button>
+                    </motion.button>
                   </div>
 
-                  <button
+                  <motion.button
+                    whileTap={{ scale: 0.94 }}
                     type="submit"
                     disabled={!guestName.trim()}
-                    className="py-1.5 px-3 text-xs font-semibold rounded-[8px] bg-[var(--accent2)] hover:opacity-90 active:scale-98 text-white transition-all cursor-pointer disabled:opacity-40 flex items-center justify-center gap-1 shadow-xs shrink-0 flex-1 sm:flex-initial"
+                    className="py-1.5 px-3 text-xs font-semibold rounded-[8px] bg-[var(--accent2)] hover:opacity-90 text-white transition-all cursor-pointer disabled:opacity-40 flex items-center justify-center gap-1 shadow-xs shrink-0 flex-1 sm:flex-initial"
                   >
                     <Plus className="w-3.5 h-3.5" />
                     <span>Thêm</span>
-                  </button>
+                  </motion.button>
                 </div>
               </form>
 
@@ -989,14 +1008,15 @@ export function BadmintonCalculator() {
                       className="inline-flex items-center gap-1.5 py-1 px-2.5 rounded-full text-xs font-medium border border-blue-400/50 bg-blue-50/20 dark:bg-blue-950/40 text-[var(--accent)] max-w-full"
                     >
                       <span className="truncate max-w-[200px]">👨 {g.name} (Khách)</span>
-                      <button
+                      <motion.button
+                        whileTap={{ scale: 0.88 }}
                         type="button"
                         onClick={() => removeGuestAttendee(g.id)}
                         className="p-0.5 rounded-full hover:bg-[var(--border)] text-[var(--muted)] hover:text-red-500 cursor-pointer transition-colors shrink-0"
                         title="Xóa khách này"
                       >
                         <X className="w-3 h-3" />
-                      </button>
+                      </motion.button>
                     </span>
                   ))}
 
@@ -1006,14 +1026,15 @@ export function BadmintonCalculator() {
                       className="inline-flex items-center gap-1.5 py-1 px-2.5 rounded-full text-xs font-medium border border-pink-400/50 bg-pink-50/20 dark:bg-pink-950/40 text-[var(--female)] max-w-full"
                     >
                       <span className="truncate max-w-[200px]">👩 {g.name} (Khách)</span>
-                      <button
+                      <motion.button
+                        whileTap={{ scale: 0.88 }}
                         type="button"
                         onClick={() => removeGuestAttendee(g.id)}
                         className="p-0.5 rounded-full hover:bg-[var(--border)] text-[var(--muted)] hover:text-red-500 cursor-pointer transition-colors shrink-0"
                         title="Xóa khách này"
                       >
                         <X className="w-3 h-3" />
-                      </button>
+                      </motion.button>
                     </span>
                   ))}
                 </div>
@@ -1088,13 +1109,14 @@ export function BadmintonCalculator() {
                     </span>
                   </div>
                   {data.tienSan !== courtsCount * 260 ? (
-                    <button
+                    <motion.button
+                      whileTap={{ scale: 0.94 }}
                       type="button"
                       onClick={() => updateField("tienSan", courtsCount * 260)}
                       className="w-full sm:w-auto py-1 px-2.5 rounded-[6px] bg-emerald-500/10 hover:bg-emerald-500/20 text-emerald-600 dark:text-emerald-400 font-semibold text-[11px] border border-emerald-500/30 transition-colors cursor-pointer text-center"
                     >
                       Áp dụng {courtsCount * 260}k
-                    </button>
+                    </motion.button>
                   ) : (
                     <span className="text-[11px] font-semibold text-emerald-600 dark:text-emerald-400">
                       ✓ Đã khớp ({courtsCount * 260}k)
@@ -1155,74 +1177,86 @@ export function BadmintonCalculator() {
                 )}
               </button>
 
-              {showAdvanced && (
-                <div className="mt-3 p-3 rounded-[12px] bg-[var(--bg)] border border-[var(--border)] space-y-3 animate-in fade-in duration-150">
-                  {/* Female ratio options */}
-                  <div>
-                    <div className="flex items-center justify-between mb-1.5 text-xs">
-                      <span className="text-[var(--text)] font-medium">
-                        Mức đóng Nữ so với Nam
-                      </span>
-                      <span className="font-bold text-[var(--female)]">
-                        {Math.round(data.femaleRatio * 100)}%
-                      </span>
-                    </div>
-                    <div className="grid grid-cols-4 gap-1.5">
-                      {[
-                        { val: 0.75, label: "75% (Chuẩn)" },
-                        { val: 0.8, label: "80%" },
-                        { val: 0.5, label: "50%" },
-                        { val: 1.0, label: "100% (Đều)" },
-                      ].map((opt) => (
-                        <button
-                          key={opt.val}
-                          type="button"
-                          onClick={() => updateField("femaleRatio", opt.val)}
-                          className={`py-1.5 px-1 text-[11px] font-semibold rounded-[8px] transition-all cursor-pointer ${
-                            data.femaleRatio === opt.val
-                              ? "bg-[var(--accent)] text-white shadow-xs"
-                              : "bg-[var(--card)] border border-[var(--border)] text-[var(--text)] hover:border-[var(--accent)]"
-                          }`}
-                        >
-                          {opt.label}
-                        </button>
-                      ))}
-                    </div>
-                  </div>
+              <AnimatePresence>
+                {showAdvanced && (
+                  <motion.div
+                    initial={{ opacity: 0, height: 0 }}
+                    animate={{ opacity: 1, height: "auto" }}
+                    exit={{ opacity: 0, height: 0 }}
+                    transition={{ duration: 0.2, ease: "easeInOut" }}
+                    className="overflow-hidden"
+                  >
+                    <div className="mt-3 p-3 rounded-[12px] bg-[var(--bg)] border border-[var(--border)] space-y-3">
+                      {/* Female ratio options */}
+                      <div>
+                        <div className="flex items-center justify-between mb-1.5 text-xs">
+                          <span className="text-[var(--text)] font-medium">
+                            Mức đóng Nữ so với Nam
+                          </span>
+                          <span className="font-bold text-[var(--female)]">
+                            {Math.round(data.femaleRatio * 100)}%
+                          </span>
+                        </div>
+                        <div className="grid grid-cols-4 gap-1.5">
+                          {[
+                            { val: 0.75, label: "75% (Chuẩn)" },
+                            { val: 0.8, label: "80%" },
+                            { val: 0.5, label: "50%" },
+                            { val: 1.0, label: "100% (Đều)" },
+                          ].map((opt) => (
+                            <motion.button
+                              whileTap={{ scale: 0.93 }}
+                              key={opt.val}
+                              type="button"
+                              onClick={() => updateField("femaleRatio", opt.val)}
+                              className={`py-1.5 px-1 text-[11px] font-semibold rounded-[8px] transition-all cursor-pointer ${
+                                data.femaleRatio === opt.val
+                                  ? "bg-[var(--accent)] text-white shadow-xs"
+                                  : "bg-[var(--card)] border border-[var(--border)] text-[var(--text)] hover:border-[var(--accent)]"
+                              }`}
+                            >
+                              {opt.label}
+                            </motion.button>
+                          ))}
+                        </div>
+                      </div>
 
-                  {/* Rounding mode */}
-                  <div>
-                    <span className="block text-xs text-[var(--text)] font-medium mb-1.5">
-                      Làm tròn tiền
-                    </span>
-                    <div className="grid grid-cols-3 gap-1.5">
-                      {[
-                        { key: "exact", label: "Chuẩn xác" },
-                        { key: "1k", label: "Tròn 1k" },
-                        { key: "5k", label: "Tròn 5k" },
-                      ].map((m) => (
-                        <button
-                          key={m.key}
-                          type="button"
-                          onClick={() =>
-                            updateField(
-                              "roundMode",
-                              m.key as BadmintonData["roundMode"]
-                            )
-                          }
-                          className={`py-1.5 px-1 text-[11px] font-semibold rounded-[8px] transition-all cursor-pointer ${
-                            data.roundMode === m.key
-                              ? "bg-[var(--accent2)] text-white shadow-xs"
-                              : "bg-[var(--card)] border border-[var(--border)] text-[var(--text)] hover:border-[var(--accent2)]"
-                          }`}
-                        >
-                          {m.label}
-                        </button>
-                      ))}
+                      {/* Rounding mode */}
+                      <div>
+                        <span className="block text-xs text-[var(--text)] font-medium mb-1.5">
+                          Làm tròn tiền
+                        </span>
+                        <div className="grid grid-cols-3 gap-1.5">
+                          {[
+                            { key: "exact", label: "Chuẩn xác" },
+                            { key: "1k", label: "Tròn 1k" },
+                            { key: "5k", label: "Tròn 5k" },
+                          ].map((m) => (
+                            <motion.button
+                              whileTap={{ scale: 0.93 }}
+                              key={m.key}
+                              type="button"
+                              onClick={() =>
+                                updateField(
+                                  "roundMode",
+                                  m.key as BadmintonData["roundMode"]
+                                )
+                              }
+                              className={`py-1.5 px-1 text-[11px] font-semibold rounded-[8px] transition-all cursor-pointer ${
+                                data.roundMode === m.key
+                                  ? "bg-[var(--accent2)] text-white shadow-xs"
+                                  : "bg-[var(--card)] border border-[var(--border)] text-[var(--text)] hover:border-[var(--accent2)]"
+                              }`}
+                            >
+                              {m.label}
+                            </motion.button>
+                          ))}
+                        </div>
+                      </div>
                     </div>
-                  </div>
-                </div>
-              )}
+                  </motion.div>
+                )}
+              </AnimatePresence>
             </div>
           </section>
         </div>
@@ -1287,12 +1321,13 @@ export function BadmintonCalculator() {
                       <div className="font-bold text-[var(--accent2)]">
                         {Math.round(item.totalCost).toLocaleString("vi-VN")} đ
                       </div>
-                      <button
+                      <motion.button
+                        whileTap={{ scale: 0.92 }}
                         onClick={() => handleRestoreHistory(item)}
                         className="text-[11px] text-[var(--accent)] hover:underline cursor-pointer"
                       >
                         Nạp lại
-                      </button>
+                      </motion.button>
                     </div>
                   </div>
                 ))}
@@ -1393,21 +1428,29 @@ export function BadmintonCalculator() {
       />
 
       {/* Floating Toast Notification */}
-      {toastMessage && (
-        <div className="fixed bottom-5 right-5 z-50 animate-in fade-in slide-in-from-bottom-4 duration-300 pointer-events-none">
-          <div
-            className={`px-4 py-3 rounded-xl shadow-lg border text-sm font-medium flex items-center gap-2.5 backdrop-blur-md ${
-              toastMessage.type === "error"
-                ? "bg-red-500/95 text-white border-red-600 shadow-red-500/20"
-                : toastMessage.type === "info"
-                ? "bg-blue-600/95 text-white border-blue-700 shadow-blue-500/20"
-                : "bg-emerald-600/95 text-white border-emerald-700 shadow-emerald-500/20"
-            }`}
+      <AnimatePresence>
+        {toastMessage && (
+          <motion.div
+            initial={{ opacity: 0, y: 25, scale: 0.95 }}
+            animate={{ opacity: 1, y: 0, scale: 1 }}
+            exit={{ opacity: 0, y: 20, scale: 0.95 }}
+            transition={{ type: "spring", stiffness: 450, damping: 30 }}
+            className="fixed bottom-5 right-5 z-50 pointer-events-none"
           >
-            <span>{toastMessage.text}</span>
-          </div>
-        </div>
-      )}
+            <div
+              className={`px-4 py-3 rounded-xl shadow-lg border text-sm font-medium flex items-center gap-2.5 backdrop-blur-md ${
+                toastMessage.type === "error"
+                  ? "bg-red-500/95 text-white border-red-600 shadow-red-500/20"
+                  : toastMessage.type === "info"
+                  ? "bg-blue-600/95 text-white border-blue-700 shadow-blue-500/20"
+                  : "bg-emerald-600/95 text-white border-emerald-700 shadow-emerald-500/20"
+              }`}
+            >
+              <span>{toastMessage.text}</span>
+            </div>
+          </motion.div>
+        )}
+      </AnimatePresence>
     </div>
   );
 }
