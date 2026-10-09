@@ -1,7 +1,18 @@
 "use client";
 
-import React, { useState } from "react";
-import { QrCode, X, Copy, Check, ExternalLink, Crown, ChevronDown } from "lucide-react";
+import React, { useState, useEffect } from "react";
+import {
+  QrCode,
+  X,
+  Copy,
+  Check,
+  ExternalLink,
+  Crown,
+  ChevronDown,
+  Sparkles,
+  Sun,
+  Moon,
+} from "lucide-react";
 import { motion, AnimatePresence } from "framer-motion";
 import { BankConfig, Member, POPULAR_BANKS } from "@/types";
 
@@ -78,6 +89,45 @@ function VietQRContent({
   const [selectedGender, setSelectedGender] = useState<"nam" | "nu">("nam");
   const [copied, setCopied] = useState(false);
 
+  // QR Theme mode
+  const [qrTheme, setQrTheme] = useState<"auto" | "light" | "dark">("auto");
+  const [isSystemDark, setIsSystemDark] = useState(false);
+  const [processedQrs, setProcessedQrs] = useState<{
+    light: string;
+    dark: string;
+  } | null>(null);
+
+  useEffect(() => {
+    const checkDark = () => {
+      const isDocDark =
+        document.documentElement.classList.contains("dark") ||
+        document.documentElement.getAttribute("data-theme") === "dark";
+      const isMediaDark =
+        typeof window !== "undefined" &&
+        window.matchMedia("(prefers-color-scheme: dark)").matches;
+      setIsSystemDark(isDocDark || isMediaDark);
+    };
+    checkDark();
+
+    const observer = new MutationObserver(checkDark);
+    observer.observe(document.documentElement, {
+      attributes: true,
+      attributeFilter: ["class", "data-theme"],
+    });
+
+    const media = window.matchMedia("(prefers-color-scheme: dark)");
+    const handleMedia = () => checkDark();
+    media.addEventListener("change", handleMedia);
+
+    return () => {
+      observer.disconnect();
+      media.removeEventListener("change", handleMedia);
+    };
+  }, []);
+
+  const isDarkQR =
+    qrTheme === "dark" || (qrTheme === "auto" && isSystemDark);
+
   const currentAmount = selectedGender === "nam" ? amountNam : amountNu;
   const description = `Cau long ${selectedGender === "nam" ? "Nam" : "Nu"}`;
 
@@ -90,11 +140,153 @@ function VietQRContent({
         )}`
       : null;
 
+  useEffect(() => {
+    if (!qrUrl) {
+      setProcessedQrs(null);
+      return;
+    }
+    let isCurrent = true;
+
+    fetch(qrUrl)
+      .then((res) => res.blob())
+      .then((blob) => {
+        if (!isCurrent) return;
+        const blobUrl = URL.createObjectURL(blob);
+        const img = new Image();
+        img.onload = () => {
+          try {
+            const width = img.naturalWidth || img.width;
+            const height = img.naturalHeight || img.height;
+            if (width > 0 && height > 0) {
+              const canvas = document.createElement("canvas");
+              canvas.width = width;
+              canvas.height = height;
+              const ctx = canvas.getContext("2d", { willReadFrequently: true });
+              if (ctx) {
+                ctx.drawImage(img, 0, 0);
+                const imgData = ctx.getImageData(0, 0, width, height);
+                const pixels = imgData.data;
+
+                const lightData = ctx.createImageData(width, height);
+                const darkData = ctx.createImageData(width, height);
+
+                for (let y = 0; y < height; y++) {
+                  for (let x = 0; x < width; x++) {
+                    const idx = (y * width + x) * 4;
+                    const r = pixels[idx];
+                    const g = pixels[idx + 1];
+                    const b = pixels[idx + 2];
+                    const a = pixels[idx + 3];
+
+                    // Check if pixel is part of the colored VietQR / Bank logos
+                    const diff = Math.max(r, g, b) - Math.min(r, g, b);
+                    const isColored = a > 50 && diff > 25;
+
+                    if (isColored) {
+                      // Preserve authentic colored logo (VietQR red, Napas blue, bank branding)
+                      lightData.data[idx] = r;
+                      lightData.data[idx + 1] = g;
+                      lightData.data[idx + 2] = b;
+                      lightData.data[idx + 3] = a;
+
+                      darkData.data[idx] = r;
+                      darkData.data[idx + 1] = g;
+                      darkData.data[idx + 2] = b;
+                      darkData.data[idx + 3] = a;
+                    } else {
+                      const brightness = 0.299 * r + 0.587 * g + 0.114 * b;
+
+                      if (brightness > 160 || a < 50) {
+                        // QR background
+                        // Light mode: clean white (#ffffff)
+                        lightData.data[idx] = 255;
+                        lightData.data[idx + 1] = 255;
+                        lightData.data[idx + 2] = 255;
+                        lightData.data[idx + 3] = 255;
+
+                        // Dark mode: match modal card background #1c2030 (R: 28, G: 32, B: 48)
+                        darkData.data[idx] = 28;
+                        darkData.data[idx + 1] = 32;
+                        darkData.data[idx + 2] = 48;
+                        darkData.data[idx + 3] = 255;
+                      } else {
+                        // QR module & text
+                        // Light mode: authentic dark charcoal (#111111)
+                        lightData.data[idx] = 17;
+                        lightData.data[idx + 1] = 17;
+                        lightData.data[idx + 2] = 17;
+                        lightData.data[idx + 3] = 255;
+
+                        // Dark mode: crisp high-contrast white (#ffffff)
+                        darkData.data[idx] = 255;
+                        darkData.data[idx + 1] = 255;
+                        darkData.data[idx + 2] = 255;
+                        darkData.data[idx + 3] = 255;
+                      }
+                    }
+                  }
+                }
+
+                ctx.putImageData(lightData, 0, 0);
+                const lightUrl = canvas.toDataURL("image/png");
+
+                ctx.putImageData(darkData, 0, 0);
+                const darkUrl = canvas.toDataURL("image/png");
+
+                if (isCurrent) {
+                  setProcessedQrs({ light: lightUrl, dark: darkUrl });
+                }
+              }
+            }
+          } catch (procErr) {
+            console.warn("Lỗi xử lý canvas VietQR:", procErr);
+          } finally {
+            URL.revokeObjectURL(blobUrl);
+          }
+        };
+        img.onerror = () => {
+          URL.revokeObjectURL(blobUrl);
+        };
+        img.src = blobUrl;
+      })
+      .catch((err) => {
+        console.warn("Lỗi tải VietQR blob:", err);
+      });
+
+    return () => {
+      isCurrent = false;
+    };
+  }, [qrUrl]);
+
+  const activeQrSrc = qrUrl
+    ? isDarkQR
+      ? processedQrs?.dark || qrUrl
+      : processedQrs?.light || qrUrl
+    : null;
+
   const handleCopyAcc = () => {
     if (!accountNo) return;
     navigator.clipboard.writeText(`${accountNo} - ${bankId} (${accountName})`);
     setCopied(true);
     setTimeout(() => setCopied(false), 2000);
+  };
+
+  const handleOpenLargeImage = () => {
+    if (!activeQrSrc && !qrUrl) return;
+    const targetSrc = activeQrSrc || qrUrl;
+    if (targetSrc?.startsWith("data:")) {
+      fetch(targetSrc)
+        .then((res) => res.blob())
+        .then((blob) => {
+          const blobUrl = URL.createObjectURL(blob);
+          window.open(blobUrl, "_blank");
+        })
+        .catch(() => {
+          window.open(qrUrl || targetSrc, "_blank");
+        });
+    } else if (targetSrc) {
+      window.open(targetSrc, "_blank");
+    }
   };
 
   const handleBankChange = (newBankId: string) => {
@@ -260,37 +452,99 @@ function VietQRContent({
 
           {/* QR Display */}
           {qrUrl ? (
-            <div className="flex flex-col items-center justify-center p-3 bg-white rounded-[12px] border border-[var(--border)] shadow-xs">
-              {/* eslint-disable-next-line @next/next/no-img-element */}
-              <img
-                src={qrUrl}
-                alt="Mã VietQR Chuyển khoản"
-                className="w-44 sm:w-48 h-auto object-contain rounded-lg"
-                loading="lazy"
-              />
-              <div className="flex items-center gap-2 mt-2">
+            <div className="flex flex-col items-center justify-center p-3 bg-[var(--bg)] rounded-[14px] border border-[var(--border)] shadow-xs transition-colors">
+              {/* Theme selector bar for QR */}
+              <div className="w-full flex items-center justify-between mb-2.5 px-0.5">
+                <span className="text-[11px] font-semibold text-[var(--muted)]">
+                  Chế độ hiển thị QR
+                </span>
+                <div className="inline-flex p-0.5 rounded-[8px] bg-[var(--card)] border border-[var(--border)] text-[10px]">
+                  <motion.button
+                    whileTap={{ scale: 0.92 }}
+                    type="button"
+                    onClick={() => setQrTheme("auto")}
+                    className={`px-2 py-0.5 rounded-[6px] font-medium transition-all cursor-pointer flex items-center gap-1 ${
+                      qrTheme === "auto"
+                        ? "bg-[var(--accent)] text-white shadow-xs"
+                        : "text-[var(--muted)] hover:text-[var(--text)]"
+                    }`}
+                    title="Tự động theo giao diện"
+                  >
+                    <Sparkles className="w-3 h-3" />
+                    <span>Tự động</span>
+                  </motion.button>
+                  <motion.button
+                    whileTap={{ scale: 0.92 }}
+                    type="button"
+                    onClick={() => setQrTheme("light")}
+                    className={`px-2 py-0.5 rounded-[6px] font-medium transition-all cursor-pointer flex items-center gap-1 ${
+                      qrTheme === "light"
+                        ? "bg-[var(--accent)] text-white shadow-xs"
+                        : "text-[var(--muted)] hover:text-[var(--text)]"
+                    }`}
+                    title="Nền sáng truyền thống"
+                  >
+                    <Sun className="w-3 h-3" />
+                    <span>Sáng</span>
+                  </motion.button>
+                  <motion.button
+                    whileTap={{ scale: 0.92 }}
+                    type="button"
+                    onClick={() => setQrTheme("dark")}
+                    className={`px-2 py-0.5 rounded-[6px] font-medium transition-all cursor-pointer flex items-center gap-1 ${
+                      qrTheme === "dark"
+                        ? "bg-[var(--accent)] text-white shadow-xs"
+                        : "text-[var(--muted)] hover:text-[var(--text)]"
+                    }`}
+                    title="Nền tối hòa hợp"
+                  >
+                    <Moon className="w-3 h-3" />
+                    <span>Tối</span>
+                  </motion.button>
+                </div>
+              </div>
+
+              {/* QR Image Frame */}
+              <div
+                className={`p-2.5 rounded-[12px] border transition-all flex items-center justify-center ${
+                  isDarkQR
+                    ? "bg-[#1c2030] border-[#2b3045] shadow-inner"
+                    : "bg-white border-slate-200 shadow-xs"
+                }`}
+              >
+                {/* eslint-disable-next-line @next/next/no-img-element */}
+                <img
+                  src={activeQrSrc || qrUrl}
+                  alt="Mã VietQR Chuyển khoản"
+                  className="w-44 sm:w-48 h-auto object-contain rounded-lg transition-opacity duration-200"
+                  loading="lazy"
+                />
+              </div>
+
+              {/* Action buttons */}
+              <div className="flex items-center gap-2 mt-3">
                 <motion.button
                   whileTap={{ scale: 0.94 }}
                   type="button"
                   onClick={handleCopyAcc}
-                  className="flex items-center gap-1 text-[11px] font-medium text-slate-700 hover:text-blue-600 bg-slate-100 px-2.5 py-1 rounded-md transition-colors cursor-pointer"
+                  className="flex items-center gap-1.5 text-[11px] font-medium text-[var(--text)] hover:text-[var(--accent)] bg-[var(--card)] hover:bg-[var(--bg)] border border-[var(--border)] px-3 py-1.5 rounded-lg shadow-2xs transition-colors cursor-pointer"
                 >
                   {copied ? (
-                    <Check className="w-3 h-3 text-green-600" />
+                    <Check className="w-3.5 h-3.5 text-emerald-500" />
                   ) : (
-                    <Copy className="w-3 h-3" />
+                    <Copy className="w-3.5 h-3.5" />
                   )}
                   {copied ? "Đã chép STK" : "Sao chép STK"}
                 </motion.button>
-                <a
-                  href={qrUrl}
-                  target="_blank"
-                  rel="noreferrer"
-                  className="flex items-center gap-1 text-[11px] font-medium text-slate-700 hover:text-blue-600 bg-slate-100 px-2.5 py-1 rounded-md transition-colors"
+                <motion.button
+                  whileTap={{ scale: 0.94 }}
+                  type="button"
+                  onClick={handleOpenLargeImage}
+                  className="flex items-center gap-1.5 text-[11px] font-medium text-[var(--text)] hover:text-[var(--accent)] bg-[var(--card)] hover:bg-[var(--bg)] border border-[var(--border)] px-3 py-1.5 rounded-lg shadow-2xs transition-colors cursor-pointer"
                 >
-                  <ExternalLink className="w-3 h-3" />
+                  <ExternalLink className="w-3.5 h-3.5" />
                   Mở ảnh lớn
-                </a>
+                </motion.button>
               </div>
             </div>
           ) : (
