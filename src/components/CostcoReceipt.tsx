@@ -263,7 +263,7 @@ export function CostcoReceipt({
             <div className="flex justify-between items-baseline gap-1">
               <span className="text-[var(--receipt-muted)] shrink-0">Host:</span>
               <span className="font-bold truncate text-right">
-                👑 {hostDisplayName}
+                {hostDisplayName}
               </span>
             </div>
             <div className="flex justify-between items-baseline gap-1">
@@ -322,23 +322,23 @@ export function CostcoReceipt({
           <div className="border-b border-dashed border-[var(--receipt-dashed)] my-2.5" />
 
           {/* Split Amount Breakdown Section */}
-          <div className="bg-[var(--receipt-card)] p-2.5 rounded border border-[var(--receipt-card-border)] my-2 space-y-1">
+          <div className="border-y border-dashed border-[var(--receipt-dashed)] py-2.5 my-2 space-y-1.5">
             <div className="font-bold text-[10px] uppercase text-[var(--receipt-muted)] tracking-wider">
               KẾT QUẢ CHIA TIỀN BUỔI CHƠI
             </div>
             <div className="flex justify-between items-center text-xs gap-1">
-              <span className="font-semibold text-[var(--receipt-male-label)] truncate">
-                👉 MỖI NAM ({namCount} bạn):
+              <span className="font-semibold text-[var(--receipt-text)] truncate">
+                MỖI NAM ({namCount} bạn):
               </span>
-              <span className="font-bold text-[var(--receipt-male-val)] text-sm shrink-0">
+              <span className="font-bold text-[var(--receipt-text)] text-sm shrink-0">
                 {finalNam.toLocaleString("vi-VN")} đ
               </span>
             </div>
             <div className="flex justify-between items-center text-xs gap-1">
-              <span className="font-semibold text-[var(--receipt-female-label)] truncate">
-                👉 MỖI NỮ ({nuCount} bạn{ratio !== 1 ? `, ${Math.round(ratio * 100)}%` : ""}):
+              <span className="font-semibold text-[var(--receipt-text)] truncate">
+                MỖI NỮ ({nuCount} bạn{ratio !== 1 ? `, ${Math.round(ratio * 100)}%` : ""}):
               </span>
-              <span className="font-bold text-[var(--receipt-female-val)] text-sm shrink-0">
+              <span className="font-bold text-[var(--receipt-text)] text-sm shrink-0">
                 {finalNu.toLocaleString("vi-VN")} đ
               </span>
             </div>
@@ -368,7 +368,7 @@ export function CostcoReceipt({
               <span className="shrink-0">Mã giao dịch</span>
               <span className="font-mono text-[var(--receipt-text)] truncate text-right">{refNum}</span>
             </div>
-            <div className="flex justify-between items-baseline gap-1 font-bold text-[var(--receipt-status)]">
+            <div className="flex justify-between items-baseline gap-1 font-bold text-[var(--receipt-text)]">
               <span className="shrink-0">Trạng thái</span>
               <span className="truncate text-right">ĐÃ CHIA XONG</span>
             </div>
