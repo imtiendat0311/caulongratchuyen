@@ -163,126 +163,135 @@ export function MemberManagerModal({
     : "";
 
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center p-3 sm:p-4 bg-black/60 backdrop-blur-xs animate-in fade-in duration-200">
-      <div className="relative w-full max-w-lg rounded-[16px] bg-[var(--card)] border border-[var(--border)] shadow-[var(--shadow)] p-4 sm:p-5 text-[var(--text)] max-h-[92vh] flex flex-col overflow-hidden">
-        {/* Close button */}
-        <button
-          onClick={onClose}
-          className="absolute top-4 right-4 p-1.5 rounded-lg text-[var(--muted)] hover:text-[var(--text)] hover:bg-[var(--bg)] transition-colors cursor-pointer"
-          aria-label="Đóng"
-        >
-          <X className="w-4 h-4" />
-        </button>
+    <div
+      onClick={(e) => {
+        if (e.target === e.currentTarget) onClose();
+      }}
+      className="fixed inset-0 z-50 flex items-center justify-center p-3 sm:p-4 bg-black/60 backdrop-blur-xs animate-in fade-in duration-200"
+    >
+      <div className="relative w-full max-w-lg rounded-[16px] bg-[var(--card)] border border-[var(--border)] shadow-[var(--shadow)] text-[var(--text)] max-h-[90vh] max-h-[90dvh] flex flex-col overflow-hidden">
+        {/* Fixed Header */}
+        <div className="p-4 sm:p-5 pb-3 border-b border-[var(--border)] shrink-0 flex items-center justify-between gap-2.5">
+          <div className="flex items-center gap-2.5 min-w-0 pr-2">
+            <div className="relative w-10 h-10 sm:w-11 sm:h-11 rounded-xl overflow-hidden border border-[var(--border)] shrink-0 bg-[var(--bg)] shadow-xs">
+              {/* eslint-disable-next-line @next/next/no-img-element */}
+              <img
+                src="/team-photo.jpg"
+                alt="FC Rất Chuyên"
+                className="w-full h-full object-cover"
+              />
+            </div>
+            <div className="min-w-0">
+              <h3 className="font-bold text-base text-[var(--text)] truncate">
+                Danh Sách Thành Viên Cố Định
+              </h3>
+              <p className="text-xs text-[var(--muted)] truncate">
+                FC Rất Chuyên • Quản lý thành viên cố định, STK &amp; Host
+              </p>
+            </div>
+          </div>
 
-        {/* Header */}
-        <div className="flex items-center gap-2.5 mb-3">
-          <div className="relative w-11 h-11 rounded-xl overflow-hidden border border-[var(--border)] shrink-0 bg-[var(--bg)] shadow-xs">
-            {/* eslint-disable-next-line @next/next/no-img-element */}
-            <img
-              src="/team-photo.jpg"
-              alt="FC Rất Chuyên"
-              className="w-full h-full object-cover"
-            />
-          </div>
-          <div>
-            <h3 className="font-bold text-base text-[var(--text)]">
-              Danh Sách Thành Viên Cố Định
-            </h3>
-            <p className="text-xs text-[var(--muted)]">
-              FC Rất Chuyên • Quản lý thành viên cố định, STK &amp; Host mỗi tháng
-            </p>
-          </div>
+          {/* Close button */}
+          <button
+            onClick={onClose}
+            className="p-1.5 rounded-lg text-[var(--muted)] hover:text-[var(--text)] hover:bg-[var(--bg)] transition-colors cursor-pointer shrink-0"
+            aria-label="Đóng"
+          >
+            <X className="w-4 h-4" />
+          </button>
         </div>
 
-        {/* Monthly Host Management Section */}
-        {onSetMonthlyHost && members.length > 0 && (
-          <div className="mb-3.5 p-3 rounded-[12px] bg-amber-500/10 border border-amber-500/30 space-y-2">
-            <div className="flex items-center justify-between flex-wrap gap-1">
-              <div className="flex items-center gap-1.5 text-xs font-bold text-amber-500">
-                <Crown className="w-4 h-4 fill-amber-500 text-amber-500 shrink-0" />
-                <span>Host mặc định theo tháng</span>
-              </div>
-              <span className="text-[10px] text-amber-600/80 dark:text-amber-400/80 font-medium">
-                (Chỉ lưu khi bấm &quot;Lưu Host&quot;)
-              </span>
-            </div>
-
-            <p className="text-[11px] text-[var(--muted)] leading-relaxed m-0">
-              Chọn Host đại diện thu tiền cho tháng này. Không tự động sync khi vừa chọn nhằm tránh xung đột khi nhiều người cùng mở app.
-            </p>
-
-            <div className="grid grid-cols-1 sm:grid-cols-12 gap-2.5 items-end pt-1">
-              <div className="sm:col-span-4">
-                <label className="block text-[10.5px] text-[var(--muted)] mb-1 font-medium">
-                  Tháng áp dụng
-                </label>
-                <input
-                  type="month"
-                  value={selectedMonth}
-                  onChange={(e) => setUserSelectedMonth(e.target.value)}
-                  className="w-full h-9 px-3 text-xs font-semibold rounded-[8px] border border-amber-500/30 bg-[var(--card)] text-[var(--text)] outline-none focus:border-amber-500 shadow-2xs"
-                />
+        {/* Unified Scrollable Body (Smooth scrolling across the entire screen on mobile) */}
+        <div className="flex-1 overflow-y-auto overscroll-contain p-4 sm:p-5 pt-3.5 space-y-3.5 min-h-0 touch-pan-y">
+          {/* Monthly Host Management Section */}
+          {onSetMonthlyHost && members.length > 0 && (
+            <div className="p-3 rounded-[12px] bg-amber-500/10 border border-amber-500/30 space-y-2 w-full max-w-full min-w-0 overflow-hidden box-border">
+              <div className="flex items-center justify-between flex-wrap gap-1">
+                <div className="flex items-center gap-1.5 text-xs font-bold text-amber-500">
+                  <Crown className="w-4 h-4 fill-amber-500 text-amber-500 shrink-0" />
+                  <span>Host mặc định theo tháng</span>
+                </div>
+                <span className="text-[10px] text-amber-600/80 dark:text-amber-400/80 font-medium">
+                  (Chỉ lưu khi bấm &quot;Lưu Host&quot;)
+                </span>
               </div>
 
-              <div className="sm:col-span-5">
-                <label className="block text-[10.5px] text-[var(--muted)] mb-1 font-medium">
-                  Thành viên Host
-                </label>
-                <div className="relative">
-                  <select
-                    value={stagedHostId}
-                    onChange={(e) => setUserSelectedHostId(e.target.value)}
-                    className="w-full h-9 appearance-none pl-3 pr-8 text-xs font-semibold rounded-[8px] border border-amber-500/40 bg-[var(--card)] text-[var(--text)] outline-none focus:border-amber-500 cursor-pointer shadow-2xs truncate"
+              <p className="text-[11px] text-[var(--muted)] leading-relaxed m-0">
+                Chọn Host đại diện thu tiền cho tháng này. Không tự động sync khi vừa chọn nhằm tránh xung đột khi nhiều người cùng mở app.
+              </p>
+
+              <div className="flex flex-col sm:grid sm:grid-cols-12 gap-2.5 sm:items-end pt-1 w-full max-w-full min-w-0">
+                <div className="w-full min-w-0 sm:col-span-4">
+                  <label className="block text-[10.5px] text-[var(--muted)] mb-1 font-medium">
+                    Tháng áp dụng
+                  </label>
+                  <input
+                    type="month"
+                    value={selectedMonth}
+                    onChange={(e) => setUserSelectedMonth(e.target.value)}
+                    className="w-full max-w-full min-w-0 block h-9 px-2.5 text-xs font-semibold rounded-[8px] border border-amber-500/30 bg-[var(--card)] text-[var(--text)] outline-none focus:border-amber-500 shadow-2xs box-border"
+                  />
+                </div>
+
+                <div className="w-full min-w-0 sm:col-span-5">
+                  <label className="block text-[10.5px] text-[var(--muted)] mb-1 font-medium">
+                    Thành viên Host
+                  </label>
+                  <div className="relative w-full min-w-0">
+                    <select
+                      value={stagedHostId}
+                      onChange={(e) => setUserSelectedHostId(e.target.value)}
+                      className="w-full max-w-full min-w-0 h-9 appearance-none pl-3 pr-8 text-xs font-semibold rounded-[8px] border border-amber-500/40 bg-[var(--card)] text-[var(--text)] outline-none focus:border-amber-500 cursor-pointer shadow-2xs truncate box-border"
+                    >
+                      <option value="">-- Chưa chỉ định (Để trống) --</option>
+                      {members.map((m) => (
+                        <option key={m.id} value={m.id}>
+                          {m.name} ({m.gender === "male" ? "Nam" : "Nữ"})
+                          {m.account_no ? ` - ${m.bank_id}` : ""}
+                        </option>
+                      ))}
+                    </select>
+                    <ChevronDown className="w-3.5 h-3.5 absolute right-2.5 top-1/2 -translate-y-1/2 pointer-events-none text-amber-500/80" />
+                  </div>
+                </div>
+
+                <div className="w-full min-w-0 sm:col-span-3">
+                  <button
+                    type="button"
+                    onClick={handleSaveMonthlyHost}
+                    disabled={isSavingHost || !selectedMonth}
+                    className={`w-full h-9 px-3 rounded-[8px] text-xs font-semibold flex items-center justify-center gap-1.5 transition-all cursor-pointer shadow-2xs ${
+                      hostSaveSuccess
+                        ? "bg-emerald-600 text-white"
+                        : isHostDirty
+                        ? "bg-amber-500 hover:bg-amber-600 text-white shadow-amber-500/25"
+                        : "bg-[var(--accent)] hover:bg-[var(--accent-hover)] text-white"
+                    }`}
                   >
-                    <option value="">-- Chưa chỉ định (Để trống) --</option>
-                    {members.map((m) => (
-                      <option key={m.id} value={m.id}>
-                        {m.name} ({m.gender === "male" ? "Nam" : "Nữ"})
-                        {m.account_no ? ` - ${m.bank_id}` : ""}
-                      </option>
-                    ))}
-                  </select>
-                  <ChevronDown className="w-3.5 h-3.5 absolute right-2.5 top-1/2 -translate-y-1/2 pointer-events-none text-amber-500/80" />
+                    {hostSaveSuccess ? (
+                      <>
+                        <Check className="w-3.5 h-3.5" />
+                        <span>Đã Lưu!</span>
+                      </>
+                    ) : isSavingHost ? (
+                      <span>Đang lưu...</span>
+                    ) : (
+                      <>
+                        <Save className="w-3.5 h-3.5" />
+                        <span>Lưu Host</span>
+                      </>
+                    )}
+                  </button>
                 </div>
               </div>
-
-              <div className="sm:col-span-3">
-                <button
-                  type="button"
-                  onClick={handleSaveMonthlyHost}
-                  disabled={isSavingHost || !selectedMonth}
-                  className={`w-full h-9 px-3 rounded-[8px] text-xs font-semibold flex items-center justify-center gap-1.5 transition-all cursor-pointer shadow-2xs ${
-                    hostSaveSuccess
-                      ? "bg-emerald-600 text-white"
-                      : isHostDirty
-                      ? "bg-amber-500 hover:bg-amber-600 text-white shadow-amber-500/25"
-                      : "bg-[var(--accent)] hover:bg-[var(--accent-hover)] text-white"
-                  }`}
-                >
-                  {hostSaveSuccess ? (
-                    <>
-                      <Check className="w-3.5 h-3.5" />
-                      <span>Đã Lưu!</span>
-                    </>
-                  ) : isSavingHost ? (
-                    <span>Đang lưu...</span>
-                  ) : (
-                    <>
-                      <Save className="w-3.5 h-3.5" />
-                      <span>Lưu Host</span>
-                    </>
-                  )}
-                </button>
-              </div>
             </div>
-          </div>
-        )}
+          )}
 
-        {/* Add Member Form */}
-        <form
-          onSubmit={handleSubmit}
-          className="mb-3 p-3 rounded-[12px] bg-[var(--bg)] border border-[var(--border)] space-y-2.5"
-        >
+          {/* Add Member Form */}
+          <form
+            onSubmit={handleSubmit}
+            className="p-3 rounded-[12px] bg-[var(--bg)] border border-[var(--border)] space-y-2.5"
+          >
           <div className="flex items-center gap-2">
             <input
               type="text"
@@ -392,8 +401,8 @@ export function MemberManagerModal({
           </button>
         </form>
 
-        {/* Members List Container */}
-        <div className="flex-1 overflow-y-auto space-y-3.5 pr-1">
+        {/* Members List Section */}
+        <div className="space-y-3.5 pt-1">
           {members.length === 0 ? (
             <div className="text-center py-6 px-4 bg-[var(--bg)] rounded-[12px] border border-dashed border-[var(--border)]">
               <Users className="w-8 h-8 text-[var(--muted)] mx-auto mb-2 opacity-50" />
@@ -771,5 +780,6 @@ export function MemberManagerModal({
         </div>
       </div>
     </div>
-  );
+  </div>
+);
 }
