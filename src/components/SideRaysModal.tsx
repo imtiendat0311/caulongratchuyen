@@ -54,8 +54,8 @@ export function SideRaysModal({ isOpen, onClose }: SideRaysModalProps) {
   const [selectedPreset, setSelectedPreset] = useState(0);
   const [origin, setOrigin] = useState<SideRaysOrigin>("top-right");
   const [speed, setSpeed] = useState(2.5);
-  const [intensity, setIntensity] = useState(2.2);
-  const [spread, setSpread] = useState(2.0);
+  const [intensity, setIntensity] = useState(3.0);
+  const [spread, setSpread] = useState(3.0);
   const [tilt, setTilt] = useState(0);
 
   if (!isOpen) return null;

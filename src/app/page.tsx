@@ -15,8 +15,8 @@ export default function Home() {
           rayColor1="#EAB308"
           rayColor2="#96c8ff"
           speed={2.2}
-          intensity={1.8}
-          spread={2.2}
+          intensity={3}
+          spread={3}
           tilt={-5}
           saturation={1.4}
           blend={0.7}
