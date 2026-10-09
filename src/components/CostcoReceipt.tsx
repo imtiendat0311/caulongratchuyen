@@ -20,6 +20,7 @@ import { toBlob, toPng } from "html-to-image";
 import { Member, BankConfig } from "@/types";
 import { parseCourtsList } from "./CourtPickerAndMap";
 import { SkeletonImage } from "./SkeletonImage";
+import { RECEIPT_TEXTURE_LIGHT, RECEIPT_TEXTURE_DARK } from "@/lib/receipt-textures";
 
 interface CostcoReceiptProps {
   date: string; // DD/MM/YYYY
@@ -137,146 +138,175 @@ export function CostcoReceipt({
 
   const hostDisplayName = hostMember ? hostMember.name : "Host nhóm";
 
-  const qrUrl =
+  const directVietQrUrl =
     bankId && bankAcc.trim()
       ? `https://img.vietqr.io/image/${bankId}-${bankAcc.trim()}-qr_only.png?addInfo=${encodeURIComponent(
           "Cau long FC Rat Chuyen"
         )}&accountName=${encodeURIComponent(accName.trim())}`
       : null;
 
+  const proxyVietQrUrl =
+    bankId && bankAcc.trim()
+      ? `/api/vietqr?bank=${encodeURIComponent(bankId)}&account=${encodeURIComponent(
+          bankAcc.trim()
+        )}&name=${encodeURIComponent(accName.trim())}&info=${encodeURIComponent(
+          "Cau long FC Rat Chuyen"
+        )}`
+      : null;
+
+  const qrUrl = proxyVietQrUrl || directVietQrUrl;
+
   const [qrDataUrl, setQrDataUrl] = useState<string | null>(null);
   const [processedQrs, setProcessedQrs] = useState<{
     light: string;
     dark: string;
   } | null>(null);
+  const [qrImageLoaded, setQrImageLoaded] = useState(false);
 
   useEffect(() => {
-    if (!qrUrl) return;
+    if (!directVietQrUrl) return;
     let isCurrent = true;
 
-    fetch(qrUrl)
-      .then((res) => res.blob())
-      .then((blob) => {
-        if (!isCurrent) return;
-        const blobUrl = URL.createObjectURL(blob);
-        const reader = new FileReader();
-        reader.onloadend = () => {
-          if (isCurrent && typeof reader.result === "string") {
-            setQrDataUrl(reader.result);
+    const loadQr = async () => {
+      let blob: Blob | null = null;
+      // 1. Try same-origin proxy first (avoids Safari CORS & tracking prevention)
+      if (proxyVietQrUrl) {
+        try {
+          const res = await fetch(proxyVietQrUrl);
+          if (res.ok) {
+            blob = await res.blob();
           }
-        };
-        reader.readAsDataURL(blob);
+        } catch {
+          // fallback
+        }
+      }
+      // 2. Fallback to direct VietQR URL
+      if (!blob && directVietQrUrl) {
+        try {
+          const res = await fetch(directVietQrUrl);
+          if (res.ok) {
+            blob = await res.blob();
+          }
+        } catch (e) {
+          console.warn("Direct VietQR fetch fallback error:", e);
+        }
+      }
 
-        const img = new Image();
-        img.onload = () => {
-          try {
-            const width = img.naturalWidth || img.width;
-            const height = img.naturalHeight || img.height;
-            if (width > 0 && height > 0) {
-              const canvas = document.createElement("canvas");
-              canvas.width = width;
-              canvas.height = height;
-              const ctx = canvas.getContext("2d", { willReadFrequently: true });
-              if (ctx) {
-                ctx.drawImage(img, 0, 0);
-                const imgData = ctx.getImageData(0, 0, width, height);
-                const pixels = imgData.data;
+      if (!blob || !isCurrent) return;
 
-                const lightData = ctx.createImageData(width, height);
-                const darkData = ctx.createImageData(width, height);
+      // 3. Convert blob to pure base64 Data URL (never tainted on canvas)
+      let base64 = "";
+      try {
+        base64 = await new Promise<string>((resolve, reject) => {
+          const reader = new FileReader();
+          reader.onloadend = () => {
+            if (typeof reader.result === "string") resolve(reader.result);
+            else reject(new Error("Failed base64 conversion"));
+          };
+          reader.onerror = reject;
+          reader.readAsDataURL(blob!);
+        });
+      } catch (err) {
+        console.warn("Base64 conversion error:", err);
+        return;
+      }
 
-                const lightBgR = 252, lightBgG = 252, lightBgB = 251;
-                const lightModR = 17, lightModG = 17, lightModB = 17;
+      if (!isCurrent) return;
+      setQrDataUrl(base64);
 
-                const darkBgR = 20, darkBgG = 23, darkBgB = 31;
-                const darkModR = 255, darkModG = 255, darkModB = 255;
+      // 4. Pixel-process transparent & dark-mode variants using safe base64 image
+      const img = new Image();
+      img.crossOrigin = "anonymous";
+      img.onload = () => {
+        if (!isCurrent) return;
+        try {
+          const width = img.naturalWidth || img.width;
+          const height = img.naturalHeight || img.height;
+          if (width > 0 && height > 0) {
+            const canvas = document.createElement("canvas");
+            canvas.width = width;
+            canvas.height = height;
+            const ctx = canvas.getContext("2d", { willReadFrequently: true });
+            if (ctx) {
+              ctx.drawImage(img, 0, 0);
+              const imgData = ctx.getImageData(0, 0, width, height);
+              const pixels = imgData.data;
 
-                for (let y = 0; y < height; y++) {
-                  for (let x = 0; x < width; x++) {
-                    const idx = (y * width + x) * 4;
-                    const r = pixels[idx];
-                    const g = pixels[idx + 1];
-                    const b = pixels[idx + 2];
-                    const a = pixels[idx + 3];
+              const lightData = ctx.createImageData(width, height);
+              const darkData = ctx.createImageData(width, height);
 
-                    // Check if pixel is part of the colored VietQR logo (red V)
-                    const diff = Math.max(r, g, b) - Math.min(r, g, b);
-                    const isColored = a > 50 && diff > 22 && r > g && r > b;
+              const lightModR = 17, lightModG = 17, lightModB = 17;
+              const darkModR = 255, darkModG = 255, darkModB = 255;
 
-                    if (isColored) {
-                      // Alpha de-fringing: un-premultiply white background to eliminate white halo
-                      const minVal = Math.min(g, b);
-                      const alpha = Math.max(0, Math.min(1, 1 - (minVal / 248)));
+              for (let y = 0; y < height; y++) {
+                for (let x = 0; x < width; x++) {
+                  const idx = (y * width + x) * 4;
+                  const r = pixels[idx];
+                  const g = pixels[idx + 1];
+                  const b = pixels[idx + 2];
+                  const a = pixels[idx + 3];
 
-                      // Light mode: transparent blend onto receipt paper
-                      lightData.data[idx] = r;
-                      lightData.data[idx + 1] = g;
-                      lightData.data[idx + 2] = b;
-                      lightData.data[idx + 3] = Math.round(alpha * 255);
+                  const diff = Math.max(r, g, b) - Math.min(r, g, b);
+                  const isColored = a > 50 && diff > 22 && r > g && r > b;
 
-                      // Dark mode: transparent blend onto dark receipt paper
-                      darkData.data[idx] = r;
-                      darkData.data[idx + 1] = g;
-                      darkData.data[idx + 2] = b;
-                      darkData.data[idx + 3] = Math.round(alpha * 255);
-                    } else {
-                      const brightness = 0.299 * r + 0.587 * g + 0.114 * b;
+                  if (isColored) {
+                    const minVal = Math.min(g, b);
+                    const alpha = Math.max(0, Math.min(1, 1 - (minVal / 248)));
 
-                      // Filter out JPEG compression noise while preserving smooth anti-aliased module edges
-                      let t = (brightness - 55) / (205 - 55);
-                      if (t < 0) t = 0;
-                      if (t > 1) t = 1;
-                      // Smoothstep curve for clean contrast without blocky staircasing
-                      t = t * t * (3 - 2 * t);
+                    lightData.data[idx] = r;
+                    lightData.data[idx + 1] = g;
+                    lightData.data[idx + 2] = b;
+                    lightData.data[idx + 3] = Math.round(alpha * 255);
 
-                      // Module alpha: 0 for background (t=1), 255 for solid modules (t=0)
-                      const modAlpha = Math.round(255 * (1 - t));
+                    darkData.data[idx] = r;
+                    darkData.data[idx + 1] = g;
+                    darkData.data[idx + 2] = b;
+                    darkData.data[idx + 3] = Math.round(alpha * 255);
+                  } else {
+                    const brightness = 0.299 * r + 0.587 * g + 0.114 * b;
+                    let t = (brightness - 55) / (205 - 55);
+                    if (t < 0) t = 0;
+                    if (t > 1) t = 1;
+                    t = t * t * (3 - 2 * t);
+                    const modAlpha = Math.round(255 * (1 - t));
 
-                      // Light mode: solid dark modules (#111111) with transparent paper background
-                      lightData.data[idx] = lightModR;
-                      lightData.data[idx + 1] = lightModG;
-                      lightData.data[idx + 2] = lightModB;
-                      lightData.data[idx + 3] = modAlpha;
+                    lightData.data[idx] = lightModR;
+                    lightData.data[idx + 1] = lightModG;
+                    lightData.data[idx + 2] = lightModB;
+                    lightData.data[idx + 3] = modAlpha;
 
-                      // Dark mode: solid white modules (#ffffff) with transparent paper background
-                      darkData.data[idx] = darkModR;
-                      darkData.data[idx + 1] = darkModG;
-                      darkData.data[idx + 2] = darkModB;
-                      darkData.data[idx + 3] = modAlpha;
-                    }
+                    darkData.data[idx] = darkModR;
+                    darkData.data[idx + 1] = darkModG;
+                    darkData.data[idx + 2] = darkModB;
+                    darkData.data[idx + 3] = modAlpha;
                   }
                 }
+              }
 
-                ctx.putImageData(lightData, 0, 0);
-                const lightUrl = canvas.toDataURL("image/png");
+              ctx.putImageData(lightData, 0, 0);
+              const lightUrl = canvas.toDataURL("image/png");
 
-                ctx.putImageData(darkData, 0, 0);
-                const darkUrl = canvas.toDataURL("image/png");
+              ctx.putImageData(darkData, 0, 0);
+              const darkUrl = canvas.toDataURL("image/png");
 
-                if (isCurrent) {
-                  setProcessedQrs({ light: lightUrl, dark: darkUrl });
-                }
+              if (isCurrent) {
+                setProcessedQrs({ light: lightUrl, dark: darkUrl });
               }
             }
-          } catch (procErr) {
-            console.warn("Lỗi xử lý canvas QR:", procErr);
-          } finally {
-            URL.revokeObjectURL(blobUrl);
           }
-        };
-        img.onerror = () => {
-          URL.revokeObjectURL(blobUrl);
-        };
-        img.src = blobUrl;
-      })
-      .catch((err) => {
-        console.warn("Lỗi tải VietQR data URL:", err);
-      });
+        } catch (procErr) {
+          console.warn("Lỗi xử lý canvas QR:", procErr);
+        }
+      };
+      img.src = base64;
+    };
+
+    loadQr();
 
     return () => {
       isCurrent = false;
     };
-  }, [qrUrl]);
+  }, [directVietQrUrl, proxyVietQrUrl]);
 
   const displayQrSrc = qrUrl
     ? isDarkReceipt
@@ -284,8 +314,9 @@ export function CostcoReceipt({
       : processedQrs?.light || null
     : null;
 
-  const fallbackQrSrc = qrDataUrl || qrUrl;
+  const fallbackQrSrc = qrDataUrl || directVietQrUrl || qrUrl;
   const activeQrDataUrl = displayQrSrc || fallbackQrSrc;
+  const isQrReady = Boolean(processedQrs || qrDataUrl || qrImageLoaded);
 
   const receiptRef = useRef<HTMLDivElement>(null);
   const [isDownloading, setIsDownloading] = useState(false);
@@ -329,6 +360,8 @@ export function CostcoReceipt({
       const width = node.offsetWidth;
       const height = Math.ceil(node.scrollHeight || node.offsetHeight);
 
+      const activeTexture = isDarkReceipt ? RECEIPT_TEXTURE_DARK : RECEIPT_TEXTURE_LIGHT;
+
       const exportOptions = {
         cacheBust: true,
         pixelRatio: 2.5,
@@ -346,8 +379,56 @@ export function CostcoReceipt({
           top: "0",
           width: `${width}px`,
           maxWidth: "none",
+          backgroundImage: `url("${activeTexture}")`,
+          backgroundColor: isDarkReceipt ? "#14171f" : "#fcfcfb",
+          backgroundSize: "cover",
+          backgroundPosition: "center top",
+          backgroundRepeat: "no-repeat",
         },
       };
+
+      // Ensure QR image is guaranteed to be a base64 Data URL before html-to-image runs
+      if (qrUrl && !qrDataUrl) {
+        try {
+          const fetchUrl = proxyVietQrUrl || directVietQrUrl || qrUrl;
+          const res = await fetch(fetchUrl);
+          const rawBlob = await res.blob();
+          const base64 = await new Promise<string>((resolve, reject) => {
+            const reader = new FileReader();
+            reader.onloadend = () => {
+              if (typeof reader.result === "string") resolve(reader.result);
+              else reject(new Error("Failed base64 conversion"));
+            };
+            reader.onerror = reject;
+            reader.readAsDataURL(rawBlob);
+          });
+          setQrDataUrl(base64);
+          await new Promise((r) => setTimeout(r, 60));
+        } catch (e) {
+          console.warn("Could not preload QR data URL before export:", e);
+        }
+      }
+
+      // Pre-decode all images in the receipt node to ensure raster readiness
+      const images = node.querySelectorAll("img");
+      await Promise.all(
+        Array.from(images).map(async (img) => {
+          if (img.complete) return;
+          try {
+            await (img.decode ? img.decode() : new Promise((r) => (img.onload = r)));
+          } catch {
+            // ignore decode failure
+          }
+        })
+      );
+
+      // Safari/WebKit warm-up pass: primes the raster cache so SVG foreignObject images aren't blank
+      try {
+        await toBlob(node, { ...exportOptions, pixelRatio: 1 });
+      } catch {
+        // ignore warm-up error
+      }
+      await new Promise((r) => setTimeout(r, 60));
 
       let blob: Blob | null = null;
       try {
@@ -534,8 +615,27 @@ export function CostcoReceipt({
         transition={{ type: "spring", stiffness: 360, damping: 28 }}
         ref={receiptRef}
         className={`receipt-paper ${themeClass} relative w-full max-w-full sm:max-w-[380px] shadow-2xl rounded-[16px] border font-mono text-[11px] leading-[1.35] tracking-tight selection:bg-neutral-500/20 overflow-hidden mx-auto`}
+        style={{
+          backgroundImage: `url("${isDarkReceipt ? RECEIPT_TEXTURE_DARK : RECEIPT_TEXTURE_LIGHT}")`,
+          backgroundSize: "cover",
+          backgroundPosition: "center top",
+          backgroundRepeat: "no-repeat",
+        }}
       >
-        <div className="p-4 sm:p-5 pb-6 sm:pb-7">
+        {/* Textured Paper Background Layer (Ensures visible paper grain in WebKit SVG export) */}
+        <div
+          aria-hidden="true"
+          className="pointer-events-none absolute inset-0 z-0 select-none overflow-hidden"
+        >
+          {/* eslint-disable-next-line @next/next/no-img-element */}
+          <img
+            src={isDarkReceipt ? RECEIPT_TEXTURE_DARK : RECEIPT_TEXTURE_LIGHT}
+            alt=""
+            className="h-full w-full object-cover mix-blend-multiply opacity-60 dark:mix-blend-screen dark:opacity-45"
+          />
+        </div>
+
+        <div className="relative z-10 p-4 sm:p-5 pb-6 sm:pb-7">
           {/* Logo Header */}
           <div className="text-center mb-3">
             <div className="inline-flex flex-col items-center">
@@ -769,9 +869,9 @@ export function CostcoReceipt({
                 Chuyển khoản trực tiếp cho {hostDisplayName}
               </div>
 
-              {/* QR Container - Blends seamlessly into receipt paper, transparent background, white QR in dark mode */}
+              {/* QR Container - Blends seamlessly into receipt paper */}
               <div className="relative p-2 inline-block bg-transparent w-32 h-32 sm:w-36 sm:h-36">
-                {!processedQrs && (
+                {!isQrReady && (
                   <div className="absolute inset-2 flex flex-col items-center justify-center rounded-lg border border-dashed border-[var(--receipt-dashed)] bg-[var(--receipt-card)] animate-pulse transition-opacity duration-300">
                     <QrCode className="w-8 h-8 text-[var(--receipt-muted)] opacity-50 mb-1" />
                     <span className="text-[8.5px] font-mono text-[var(--receipt-subtle)]">
@@ -782,10 +882,15 @@ export function CostcoReceipt({
                 {/* eslint-disable-next-line @next/next/no-img-element */}
                 <img
                   crossOrigin="anonymous"
-                  src={activeQrDataUrl || qrUrl}
+                  src={activeQrDataUrl || directVietQrUrl || qrUrl || ""}
+                  onLoad={() => setQrImageLoaded(true)}
                   alt="Mã VietQR thanh toán tiền sân"
                   className={`w-28 h-28 sm:w-32 sm:h-32 object-contain block mx-auto transition-all duration-300 ${
-                    !processedQrs ? "opacity-0 scale-95" : "opacity-100 scale-100"
+                    isDarkReceipt && !processedQrs
+                      ? "dark:brightness-95 dark:invert dark:hue-rotate-180"
+                      : "mix-blend-multiply dark:mix-blend-normal"
+                  } ${
+                    !isQrReady ? "opacity-0 scale-95" : "opacity-100 scale-100"
                   }`}
                 />
               </div>
