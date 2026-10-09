@@ -11,9 +11,6 @@ import {
   ChevronUp,
   SlidersHorizontal,
   ArrowUpRight,
-  Cloud,
-  CloudCheck,
-  RefreshCw,
   Calendar,
   UserCheck,
   UserPlus,
@@ -26,7 +23,6 @@ import {
   Trophy,
   Calculator,
   Settings,
-  Database,
 } from "lucide-react";
 import { PixelCat, PixelRacket } from "./PixelArt";
 import { ThemeToggle } from "./ThemeToggle";
@@ -58,10 +54,6 @@ import {
   setMonthlyHost,
   setDailyHost,
   updateMemberBank,
-  getSyncStatusSnapshot,
-  subscribeSyncStatus,
-  getLastSavedTimeSnapshot,
-  subscribeLastSavedTime,
   initSupabaseSync,
   saveSessionToCloud,
   addHistoryItem,
@@ -105,18 +97,6 @@ export function BadmintonCalculator() {
     subscribeMonthlyHosts,
     getMonthlyHostsSnapshot,
     (): Record<string, string> => ({})
-  );
-
-  const syncStatus = useSyncExternalStore(
-    subscribeSyncStatus,
-    getSyncStatusSnapshot,
-    () => "idle"
-  );
-
-  const lastSavedTime = useSyncExternalStore(
-    subscribeLastSavedTime,
-    getLastSavedTimeSnapshot,
-    () => null
   );
 
   const [copied, setCopied] = useState(false);
@@ -532,38 +512,8 @@ export function BadmintonCalculator() {
           </div>
         </div>
 
-        <div className="flex items-center justify-center gap-2 text-xs sm:text-sm text-[var(--muted)] mb-3.5 flex-wrap">
+        <div className="text-xs sm:text-sm text-[var(--muted)] mb-3.5">
           <span>Tính tiền chia sau mỗi buổi chơi</span>
-          <span>•</span>
-          {/* Cloud Sync Status Indicator */}
-          <span className="inline-flex items-center gap-1 text-[11px]">
-            {syncStatus === "syncing" && (
-              <>
-                <RefreshCw className="w-3 h-3 text-[var(--accent)] animate-spin" />
-                <span className="text-[var(--accent)]">Đang lưu lịch sử...</span>
-              </>
-            )}
-            {syncStatus === "synced" && (
-              <>
-                <CloudCheck className="w-3.5 h-3.5 text-[var(--accent2)]" />
-                <span className="text-[var(--accent2)]">
-                  {lastSavedTime ? `Đã lưu lịch sử (${lastSavedTime})` : "Đã lưu lịch sử"}
-                </span>
-              </>
-            )}
-            {syncStatus === "error" && (
-              <>
-                <Cloud className="w-3 h-3 text-amber-500" />
-                <span className="text-amber-500">Chưa lưu lịch sử</span>
-              </>
-            )}
-            {syncStatus === "idle" && (
-              <>
-                <Database className="w-3 h-3 text-[var(--muted)]" />
-                <span>Chế độ Local (chỉ lưu khi bấm &quot;Lưu lại lịch sử&quot;)</span>
-              </>
-            )}
-          </span>
         </div>
 
         {/* Compact action toolbar */}
@@ -1358,7 +1308,7 @@ export function BadmintonCalculator() {
 
       {/* Footer Info */}
       <footer className="mt-10 text-center text-xs text-[var(--muted)] space-y-1">
-        <p>Cầu Lông Rất Chuyên • Lưu lại lịch sử khi bấm &quot;Lưu lại lịch sử&quot;</p>
+        <p>Cầu Lông Rất Chuyên</p>
         <p className="text-[11px] opacity-80">
           Công thức: Tiền Nam = Tổng / (Nam + 0.75 * Nữ) • Tiền Nữ = 75% Nam
         </p>
