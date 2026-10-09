@@ -44,6 +44,20 @@
     --shadow: 0 4px 16px rgba(0, 0, 0, 0.3);
     --female: #f472b6;
     color-scheme: dark;
+    --background: #1c2030;
+    --foreground: #eef0f5;
+    --card-foreground: #eef0f5;
+    --popover: #1c2030;
+    --popover-foreground: #eef0f5;
+    --primary: #60a5fa;
+    --primary-foreground: #13161f;
+    --secondary: #2b3045;
+    --secondary-foreground: #eef0f5;
+    --muted-foreground: #9aa1b2;
+    --accent-foreground: #eef0f5;
+    --destructive: #f87171;
+    --input: #2b3045;
+    --ring: #60a5fa;
   }
 }
 
@@ -59,6 +73,20 @@
   --shadow: 0 4px 16px rgba(0, 0, 0, 0.3);
   --female: #f472b6;
   color-scheme: dark;
+  --background: #1c2030;
+  --foreground: #eef0f5;
+  --card-foreground: #eef0f5;
+  --popover: #1c2030;
+  --popover-foreground: #eef0f5;
+  --primary: #60a5fa;
+  --primary-foreground: #13161f;
+  --secondary: #2b3045;
+  --secondary-foreground: #eef0f5;
+  --muted-foreground: #9aa1b2;
+  --accent-foreground: #eef0f5;
+  --destructive: #f87171;
+  --input: #2b3045;
+  --ring: #60a5fa;
 }
 
 :root[data-theme="light"] {
@@ -266,13 +294,21 @@ body {
     @apply hidden!;
   }
   .maplibregl-ctrl-attrib {
-    @apply bg-background! text-muted-foreground! border-border! rounded-md! border! shadow-sm!;
+    background-color: var(--card) !important;
+    color: var(--muted) !important;
+    border: 1px solid var(--border) !important;
+    border-radius: 8px !important;
+    padding: 3px 8px !important;
+    font-size: 10px !important;
+    box-shadow: var(--shadow) !important;
   }
   .maplibregl-ctrl-attrib a {
-    @apply text-muted-foreground!;
+    color: var(--muted) !important;
+    text-decoration: none !important;
   }
   .maplibregl-ctrl-attrib a:hover {
-    @apply text-foreground!;
+    color: var(--accent) !important;
+    text-decoration: underline !important;
   }
   .maplibregl-ctrl-attrib-button {
     @apply bg-transparent! dark:invert;

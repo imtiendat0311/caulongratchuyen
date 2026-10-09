@@ -617,7 +617,7 @@ function PopupCloseButton({ onClick }: { onClick: () => void }) {
       type="button"
       onClick={onClick}
       aria-label="Close popup"
-      className="focus-visible:ring-ring hover:bg-muted text-foreground absolute top-1 right-1 z-10 inline-flex size-5 cursor-pointer items-center justify-center rounded-sm transition-colors focus:outline-none focus-visible:ring-2 focus-visible:ring-inset"
+      className="text-[var(--muted)] hover:text-[var(--text)] hover:bg-[var(--bg)] absolute top-2 right-2 z-10 inline-flex size-6 cursor-pointer items-center justify-center rounded-lg transition-colors focus:outline-none"
     >
       <X className="size-3.5" />
     </button>
@@ -681,7 +681,7 @@ function MarkerPopup({
   return createPortal(
     <div
       className={cn(
-        "bg-popover text-popover-foreground relative max-w-62 rounded-md border p-3 shadow-md",
+        "bg-[var(--card)] text-[var(--text)] border-[var(--border)] relative max-w-64 rounded-xl border p-3.5 shadow-xl backdrop-blur-md",
         "animate-in fade-in-0 zoom-in-95 duration-200 ease-out",
         className,
       )}
@@ -823,7 +823,7 @@ const positionClasses = {
 
 function ControlGroup({ children }: { children: React.ReactNode }) {
   return (
-    <div className="border-border bg-background [&>button:not(:last-child)]:border-border flex flex-col overflow-hidden rounded-md border shadow-sm [&>button:not(:last-child)]:border-b">
+    <div className="border border-[var(--border)] bg-[var(--card)]/90 backdrop-blur-md [&>button:not(:last-child)]:border-[var(--border)] flex flex-col overflow-hidden rounded-[10px] shadow-md [&>button:not(:last-child)]:border-b">
       {children}
     </div>
   );
@@ -846,10 +846,8 @@ function ControlButton({
       aria-label={label}
       type="button"
       className={cn(
-        "flex size-8 items-center justify-center transition-colors",
-        "first:rounded-t-md last:rounded-b-md",
-        "hover:bg-accent dark:hover:bg-accent/40",
-        "focus-visible:ring-ring focus-visible:ring-2 focus-visible:outline-none focus-visible:ring-inset",
+        "flex size-8 items-center justify-center transition-colors text-[var(--text)] hover:text-[var(--accent)] hover:bg-[var(--bg)] cursor-pointer",
+        "first:rounded-t-[10px] last:rounded-b-[10px]",
         "disabled:pointer-events-none disabled:opacity-50",
       )}
       disabled={disabled}
@@ -1003,9 +1001,9 @@ function CompassButton({ onClick }: { onClick: () => void }) {
         style={{ transformStyle: "preserve-3d" }}
       >
         <path d="M12 2L16 12H12V2Z" className="fill-red-500" />
-        <path d="M12 2L8 12H12V2Z" className="fill-red-300" />
-        <path d="M12 22L16 12H12V22Z" className="fill-muted-foreground/60" />
-        <path d="M12 22L8 12H12V22Z" className="fill-muted-foreground/30" />
+        <path d="M12 2L8 12H12V2Z" className="fill-red-400" />
+        <path d="M12 22L16 12H12V22Z" className="fill-slate-400 dark:fill-slate-500" />
+        <path d="M12 22L8 12H12V22Z" className="fill-slate-300 dark:fill-slate-600" />
       </svg>
     </ControlButton>
   );
@@ -1092,7 +1090,7 @@ function MapPopup({
   return createPortal(
     <div
       className={cn(
-        "bg-popover text-popover-foreground relative max-w-62 rounded-md border p-3 shadow-md",
+        "bg-[var(--card)] text-[var(--text)] border-[var(--border)] relative max-w-64 rounded-xl border p-3.5 shadow-xl backdrop-blur-md",
         "animate-in fade-in-0 zoom-in-95 duration-200 ease-out",
         className,
       )}
