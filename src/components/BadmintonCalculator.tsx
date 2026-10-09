@@ -24,7 +24,7 @@ import {
   Calculator,
   Settings,
   Loader2,
-  Sparkles,
+  Sun,
 } from "lucide-react";
 import { motion, AnimatePresence } from "framer-motion";
 import { PixelCat, PixelRacket } from "./PixelArt";
@@ -34,7 +34,7 @@ import { VietQRModal } from "./VietQRModal";
 import { HistoryDrawer } from "./HistoryDrawer";
 import { MemberManagerModal } from "./MemberManagerModal";
 import { TeamPhotoModal } from "./TeamPhotoModal";
-import { IridescenceModal } from "./IridescenceModal";
+import { SideRaysModal } from "./SideRaysModal";
 import { CostcoReceipt } from "./CostcoReceipt";
 import { CourtPickerAndMap, parseCourtsList } from "./CourtPickerAndMap";
 import { SkeletonImage } from "./SkeletonImage";
@@ -110,7 +110,7 @@ export function BadmintonCalculator() {
   const [isHistoryOpen, setIsHistoryOpen] = useState(false);
   const [isMemberModalOpen, setIsMemberModalOpen] = useState(false);
   const [isTeamPhotoOpen, setIsTeamPhotoOpen] = useState(false);
-  const [isIridescenceOpen, setIsIridescenceOpen] = useState(false);
+  const [isSideRaysOpen, setIsSideRaysOpen] = useState(false);
   const [showAdvanced, setShowAdvanced] = useState(false);
 
   // New guest state for single-day attendance
@@ -681,15 +681,15 @@ export function BadmintonCalculator() {
             <span>Ảnh CLB</span>
           </motion.button>
 
-          {/* Iridescence background button */}
+          {/* Side Rays button */}
           <motion.button
             whileTap={{ scale: 0.93 }}
-            onClick={() => setIsIridescenceOpen(true)}
+            onClick={() => setIsSideRaysOpen(true)}
             className="flex items-center gap-1.5 h-8 px-2.5 rounded-xl text-xs font-medium text-[var(--text)] hover:bg-[var(--bg)] transition-colors cursor-pointer"
-            title="Hiệu ứng ánh xà cừ Iridescence (React Bits)"
+            title="Hiệu ứng tia sáng Side Rays (React Bits)"
           >
-            <Sparkles className="w-3.5 h-3.5 text-cyan-500" />
-            <span className="hidden sm:inline">Ánh xà cừ</span>
+            <Sun className="w-3.5 h-3.5 text-amber-500" />
+            <span className="hidden sm:inline">Tia sáng</span>
           </motion.button>
 
           {/* Reset button */}
@@ -1560,10 +1560,10 @@ export function BadmintonCalculator() {
         onClose={() => setIsTeamPhotoOpen(false)}
       />
 
-      {/* Iridescence Background Modal */}
-      <IridescenceModal
-        isOpen={isIridescenceOpen}
-        onClose={() => setIsIridescenceOpen(false)}
+      {/* Side Rays Background Modal */}
+      <SideRaysModal
+        isOpen={isSideRaysOpen}
+        onClose={() => setIsSideRaysOpen(false)}
       />
 
       {/* Floating Toast Notification */}

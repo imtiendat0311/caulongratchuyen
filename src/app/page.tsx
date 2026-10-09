@@ -1,20 +1,27 @@
 import { Suspense } from "react";
 import { BadmintonCalculator } from "@/components/BadmintonCalculator";
-import Iridescence from "@/components/Iridescence";
+import SideRays from "@/components/SideRays";
 
 export default function Home() {
   return (
     <main className="min-h-screen flex flex-col justify-between relative overflow-hidden">
-      {/* Ambient animated Iridescence backdrop from React Bits */}
+      {/* Ambient animated SideRays backdrop from React Bits */}
       <div
         aria-hidden="true"
-        className="pointer-events-none absolute top-0 left-1/2 -translate-x-1/2 w-full max-w-7xl h-[420px] sm:h-[480px] -z-10 opacity-30 dark:opacity-20 [mask-image:radial-gradient(ellipse_at_top,black_45%,transparent_80%)]"
+        className="pointer-events-none absolute top-0 right-0 w-full max-w-6xl h-[460px] sm:h-[540px] -z-10 opacity-70 dark:opacity-50 [mask-image:radial-gradient(ellipse_at_top_right,black_45%,transparent_80%)]"
       >
-        <Iridescence
-          color={[1, 1, 1]}
-          speed={0.8}
-          amplitude={0.12}
-          mouseReact={true}
+        <SideRays
+          origin="top-right"
+          rayColor1="#EAB308"
+          rayColor2="#96c8ff"
+          speed={2.2}
+          intensity={1.8}
+          spread={2.2}
+          tilt={-5}
+          saturation={1.4}
+          blend={0.7}
+          falloff={1.6}
+          opacity={0.85}
         />
       </div>
 
