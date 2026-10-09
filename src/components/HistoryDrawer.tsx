@@ -1,7 +1,7 @@
 "use client";
 
 import React, { useState, useMemo } from "react";
-import { History, X, Trash2, ArrowUpRight, Search, CloudDownload, Loader2 } from "lucide-react";
+import { History, X, Trash2, ArrowUpRight, Search, CloudDownload, Loader2, TrendingUp } from "lucide-react";
 import { motion, AnimatePresence } from "framer-motion";
 import { HistoryItem } from "@/types";
 import { searchReceiptsFromCloud } from "@/lib/store";
@@ -13,6 +13,7 @@ interface HistoryDrawerProps {
   onDelete: (id: string) => void;
   onClear: () => void;
   onRestore: (item: HistoryItem) => void;
+  onOpenGraph?: () => void;
 }
 
 export function HistoryDrawer({
@@ -22,6 +23,7 @@ export function HistoryDrawer({
   onDelete,
   onClear,
   onRestore,
+  onOpenGraph,
 }: HistoryDrawerProps) {
   const [searchQuery, setSearchQuery] = useState("");
   const [cloudResults, setCloudResults] = useState<HistoryItem[] | null>(null);
@@ -106,6 +108,16 @@ export function HistoryDrawer({
               </div>
 
               <div className="flex items-center gap-1">
+                {onOpenGraph && (
+                  <motion.button
+                    whileTap={{ scale: 0.88 }}
+                    onClick={onOpenGraph}
+                    className="p-2 rounded-xl text-emerald-500 hover:bg-[var(--bg)] transition-colors cursor-pointer"
+                    title="Xem biểu đồ lịch sử chi phí"
+                  >
+                    <TrendingUp className="w-4 h-4" />
+                  </motion.button>
+                )}
                 {history.length > 0 && (
                   <motion.button
                     whileTap={{ scale: 0.88 }}

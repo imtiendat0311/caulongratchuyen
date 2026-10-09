@@ -25,6 +25,7 @@ import {
   Settings,
   Loader2,
   Sun,
+  TrendingUp,
 } from "lucide-react";
 import { motion, AnimatePresence } from "framer-motion";
 import { PixelCat, PixelRacket } from "./PixelArt";
@@ -37,6 +38,7 @@ import { TeamPhotoModal } from "./TeamPhotoModal";
 import { SideRaysModal } from "./SideRaysModal";
 import { TechText } from "./TechText";
 import { FlipCard } from "./FlipCard";
+import { HistoryGraphModal } from "./HistoryGraphModal";
 import { CostcoReceipt } from "./CostcoReceipt";
 import { CourtPickerAndMap, parseCourtsList } from "./CourtPickerAndMap";
 import { SkeletonImage } from "./SkeletonImage";
@@ -113,6 +115,7 @@ export function BadmintonCalculator() {
   const [isMemberModalOpen, setIsMemberModalOpen] = useState(false);
   const [isTeamPhotoOpen, setIsTeamPhotoOpen] = useState(false);
   const [isSideRaysOpen, setIsSideRaysOpen] = useState(false);
+  const [isGraphModalOpen, setIsGraphModalOpen] = useState(false);
   const [showAdvanced, setShowAdvanced] = useState(false);
 
   // New guest state for single-day attendance
@@ -710,6 +713,17 @@ export function BadmintonCalculator() {
                 {history.length}
               </span>
             )}
+          </motion.button>
+
+          {/* Graph button */}
+          <motion.button
+            whileTap={{ scale: 0.93 }}
+            onClick={() => setIsGraphModalOpen(true)}
+            className="flex items-center gap-1.5 h-8 px-2.5 rounded-xl text-xs font-medium text-[var(--text)] hover:bg-[var(--bg)] transition-colors cursor-pointer"
+            title="Xem biểu đồ lịch sử chi phí & số người chơi (React Bits)"
+          >
+            <TrendingUp className="w-3.5 h-3.5 text-emerald-500" />
+            <span>Biểu đồ</span>
           </motion.button>
 
           {/* QR button */}
@@ -1605,6 +1619,17 @@ export function BadmintonCalculator() {
         onDelete={handleDeleteHistory}
         onClear={handleClearHistory}
         onRestore={handleRestoreHistory}
+        onOpenGraph={() => {
+          setIsHistoryOpen(false);
+          setIsGraphModalOpen(true);
+        }}
+      />
+
+      {/* Historical Graph Modal (Simple Graph) */}
+      <HistoryGraphModal
+        isOpen={isGraphModalOpen}
+        onClose={() => setIsGraphModalOpen(false)}
+        history={history}
       />
 
       {/* Team Photo Lightbox Modal */}
