@@ -16,7 +16,7 @@ import {
   Download,
 } from "lucide-react";
 import { motion, AnimatePresence } from "framer-motion";
-import { toBlob, toPng } from "html-to-image";
+import { toCanvas, toPng } from "html-to-image";
 import { Member, BankConfig } from "@/types";
 import { parseCourtsList } from "./CourtPickerAndMap";
 import { SkeletonImage } from "./SkeletonImage";
@@ -51,6 +51,76 @@ interface CostcoReceiptProps {
   onShare: () => void;
   onOpenVietQR: () => void;
   onSaveToHistory: () => void | Promise<void>;
+}
+
+function processQrToTransparent(src: string, dark: boolean): Promise<string> {
+  return new Promise((resolve) => {
+    if (typeof window === "undefined") return resolve(src);
+    const img = new Image();
+    img.crossOrigin = "anonymous";
+    img.onload = () => {
+      try {
+        const w = img.naturalWidth || img.width;
+        const h = img.naturalHeight || img.height;
+        if (w === 0 || h === 0) return resolve(src);
+        const canvas = document.createElement("canvas");
+        canvas.width = w;
+        canvas.height = h;
+        const ctx = canvas.getContext("2d", { willReadFrequently: true });
+        if (!ctx) return resolve(src);
+
+        ctx.drawImage(img, 0, 0);
+        const imgData = ctx.getImageData(0, 0, w, h);
+        const pixels = imgData.data;
+        const outData = ctx.createImageData(w, h);
+
+        const modR = dark ? 255 : 17;
+        const modG = dark ? 255 : 17;
+        const modB = dark ? 255 : 17;
+
+        for (let y = 0; y < h; y++) {
+          for (let x = 0; x < w; x++) {
+            const idx = (y * w + x) * 4;
+            const r = pixels[idx];
+            const g = pixels[idx + 1];
+            const b = pixels[idx + 2];
+            const a = pixels[idx + 3];
+
+            // Preserve colored pixels (VietQR, Napas, Bank branding logos)
+            const diff = Math.max(r, g, b) - Math.min(r, g, b);
+            const isColored = a > 50 && diff > 22 && r > g && r > b;
+
+            if (isColored) {
+              const minVal = Math.min(g, b);
+              const alpha = Math.max(0, Math.min(1, 1 - minVal / 248));
+              outData.data[idx] = r;
+              outData.data[idx + 1] = g;
+              outData.data[idx + 2] = b;
+              outData.data[idx + 3] = Math.round(alpha * 255);
+            } else {
+              const brightness = 0.299 * r + 0.587 * g + 0.114 * b;
+              let t = (brightness - 55) / (205 - 55);
+              if (t < 0) t = 0;
+              if (t > 1) t = 1;
+              t = t * t * (3 - 2 * t);
+              const modAlpha = Math.round(255 * (1 - t));
+
+              outData.data[idx] = modR;
+              outData.data[idx + 1] = modG;
+              outData.data[idx + 2] = modB;
+              outData.data[idx + 3] = modAlpha;
+            }
+          }
+        }
+        ctx.putImageData(outData, 0, 0);
+        resolve(canvas.toDataURL("image/png"));
+      } catch {
+        resolve(src);
+      }
+    };
+    img.onerror = () => resolve(src);
+    img.src = src;
+  });
 }
 
 export function CostcoReceipt({
@@ -234,92 +304,18 @@ export function CostcoReceipt({
 
       if (!isCurrent) return;
       setQrDataUrl(base64);
-
       // 4. Pixel-process transparent & dark-mode variants using safe base64 image
-      const img = new Image();
-      img.crossOrigin = "anonymous";
-      img.onload = () => {
-        if (!isCurrent) return;
-        try {
-          const width = img.naturalWidth || img.width;
-          const height = img.naturalHeight || img.height;
-          if (width > 0 && height > 0) {
-            const canvas = document.createElement("canvas");
-            canvas.width = width;
-            canvas.height = height;
-            const ctx = canvas.getContext("2d", { willReadFrequently: true });
-            if (ctx) {
-              ctx.drawImage(img, 0, 0);
-              const imgData = ctx.getImageData(0, 0, width, height);
-              const pixels = imgData.data;
-
-              const lightData = ctx.createImageData(width, height);
-              const darkData = ctx.createImageData(width, height);
-
-              const lightModR = 17, lightModG = 17, lightModB = 17;
-              const darkModR = 255, darkModG = 255, darkModB = 255;
-
-              for (let y = 0; y < height; y++) {
-                for (let x = 0; x < width; x++) {
-                  const idx = (y * width + x) * 4;
-                  const r = pixels[idx];
-                  const g = pixels[idx + 1];
-                  const b = pixels[idx + 2];
-                  const a = pixels[idx + 3];
-
-                  const diff = Math.max(r, g, b) - Math.min(r, g, b);
-                  const isColored = a > 50 && diff > 22 && r > g && r > b;
-
-                  if (isColored) {
-                    const minVal = Math.min(g, b);
-                    const alpha = Math.max(0, Math.min(1, 1 - (minVal / 248)));
-
-                    lightData.data[idx] = r;
-                    lightData.data[idx + 1] = g;
-                    lightData.data[idx + 2] = b;
-                    lightData.data[idx + 3] = Math.round(alpha * 255);
-
-                    darkData.data[idx] = r;
-                    darkData.data[idx + 1] = g;
-                    darkData.data[idx + 2] = b;
-                    darkData.data[idx + 3] = Math.round(alpha * 255);
-                  } else {
-                    const brightness = 0.299 * r + 0.587 * g + 0.114 * b;
-                    let t = (brightness - 55) / (205 - 55);
-                    if (t < 0) t = 0;
-                    if (t > 1) t = 1;
-                    t = t * t * (3 - 2 * t);
-                    const modAlpha = Math.round(255 * (1 - t));
-
-                    lightData.data[idx] = lightModR;
-                    lightData.data[idx + 1] = lightModG;
-                    lightData.data[idx + 2] = lightModB;
-                    lightData.data[idx + 3] = modAlpha;
-
-                    darkData.data[idx] = darkModR;
-                    darkData.data[idx + 1] = darkModG;
-                    darkData.data[idx + 2] = darkModB;
-                    darkData.data[idx + 3] = modAlpha;
-                  }
-                }
-              }
-
-              ctx.putImageData(lightData, 0, 0);
-              const lightUrl = canvas.toDataURL("image/png");
-
-              ctx.putImageData(darkData, 0, 0);
-              const darkUrl = canvas.toDataURL("image/png");
-
-              if (isCurrent) {
-                setProcessedQrs({ light: lightUrl, dark: darkUrl });
-              }
-            }
-          }
-        } catch (procErr) {
-          console.warn("Lỗi xử lý canvas QR:", procErr);
+      try {
+        const [lightUrl, darkUrl] = await Promise.all([
+          processQrToTransparent(base64, false),
+          processQrToTransparent(base64, true),
+        ]);
+        if (isCurrent) {
+          setProcessedQrs({ light: lightUrl, dark: darkUrl });
         }
-      };
-      img.src = base64;
+      } catch (procErr) {
+        console.warn("Lỗi xử lý canvas QR:", procErr);
+      }
     };
 
     loadQr();
@@ -340,7 +336,12 @@ export function CostcoReceipt({
   const isQrReady = Boolean(processedQrs || qrDataUrl || qrImageLoaded);
 
   const receiptRef = useRef<HTMLDivElement>(null);
+  const qrContainerRef = useRef<HTMLDivElement>(null);
+  const qrImgRef = useRef<HTMLImageElement>(null);
+
   const [isDownloading, setIsDownloading] = useState(false);
+  const [isCopyingImage, setIsCopyingImage] = useState(false);
+  const [copiedImageToast, setCopiedImageToast] = useState(false);
   const [previewData, setPreviewData] = useState<{
     url: string;
     file: File;
@@ -367,116 +368,272 @@ export function CostcoReceipt({
     }
   };
 
-  const handleDownloadReceiptImage = async () => {
-    if (!receiptRef.current || isDownloading) return;
+  const handleCopyPreviewImage = async () => {
+    if (!previewData?.file) return;
     try {
-      setIsDownloading(true);
-      if (typeof document !== "undefined" && document.fonts) {
-        await document.fonts.ready;
+      if (
+        typeof navigator !== "undefined" &&
+        navigator.clipboard &&
+        typeof window !== "undefined" &&
+        window.ClipboardItem
+      ) {
+        await navigator.clipboard.write([
+          new ClipboardItem({ [previewData.file.type]: previewData.file }),
+        ]);
+        setCopiedImageToast(true);
+        setTimeout(() => setCopiedImageToast(false), 2500);
       }
+    } catch (err) {
+      console.warn("Không thể sao chép ảnh preview:", err);
+    }
+  };
 
-      const fileName = `bien-lai-cau-long-${date ? date.replace(/\//g, "-") : "session"}.png`;
+  /**
+   * Master Canvas Compositor for 100% bulletproof iOS WebKit / Safari export:
+   * WebKit's SVG foreignObject notoriously drops CSS background-image and <img> elements.
+   * This compositor directly layers:
+   * 1. Receipt base background color
+   * 2. Authentic crumpled paper texture (drawn natively via Canvas 2D ctx.drawImage)
+   * 3. Crisp receipt DOM text, dashed borders, and UPC-A barcode SVG (captured on transparent background)
+   * 4. VietQR code drawn directly via Canvas 2D at exact DOM coordinates (100% immune to WebKit foreignObject image bugs)
+   */
+  const composeReceiptBlob = async (): Promise<Blob> => {
+    const node = receiptRef.current;
+    if (!node) throw new Error("Không tìm thấy phần tử biên lai");
 
-      const node = receiptRef.current;
-      const width = node.offsetWidth;
-      const height = Math.ceil(node.scrollHeight || node.offsetHeight);
+    if (typeof document !== "undefined" && document.fonts) {
+      await document.fonts.ready;
+    }
 
-      const activeTexture = isDarkReceipt ? RECEIPT_TEXTURE_DARK : RECEIPT_TEXTURE_LIGHT;
+    const nodeRect = node.getBoundingClientRect();
+    const width = Math.round(node.offsetWidth || nodeRect.width);
+    const height = Math.round(node.scrollHeight || node.offsetHeight || nodeRect.height);
 
-      const exportOptions = {
-        cacheBust: true,
-        pixelRatio: 2.5,
-        width,
-        height,
-        style: {
-          margin: "0",
-          marginLeft: "0",
-          marginRight: "0",
-          marginTop: "0",
-          marginBottom: "0",
-          transform: "none",
-          boxShadow: "none",
-          borderRadius: "0",
-          borderTopLeftRadius: "0",
-          borderTopRightRadius: "0",
-          borderBottomLeftRadius: "0",
-          borderBottomRightRadius: "0",
-          left: "0",
-          top: "0",
-          width: `${width}px`,
-          maxWidth: "none",
-          backgroundImage: `url("${activeTexture}")`,
-          backgroundColor: isDarkReceipt ? "#14171f" : "#fcfcfb",
-          backgroundSize: "cover",
-          backgroundPosition: "center top",
-          backgroundRepeat: "no-repeat",
-        },
-      };
+    const pixelRatio = 2.5;
+    const canvasWidth = Math.round(width * pixelRatio);
+    const canvasHeight = Math.round(height * pixelRatio);
 
-      // Ensure QR image is guaranteed to be a base64 Data URL before html-to-image runs
-      if (qrUrl && !qrDataUrl) {
+    const masterCanvas = document.createElement("canvas");
+    masterCanvas.width = canvasWidth;
+    masterCanvas.height = canvasHeight;
+    const ctx = masterCanvas.getContext("2d", { willReadFrequently: true });
+    if (!ctx) throw new Error("Không thể khởi tạo Canvas 2D context");
+
+    // 1. Layer 0: Flat receipt base color
+    ctx.fillStyle = isDarkReceipt ? "#14171f" : "#fcfcfb";
+    ctx.fillRect(0, 0, canvasWidth, canvasHeight);
+
+    // 2. Layer 1: Crumpled paper texture drawn directly via native Canvas 2D
+    const activeTexture = isDarkReceipt ? RECEIPT_TEXTURE_DARK : RECEIPT_TEXTURE_LIGHT;
+    try {
+      const textureImg = new Image();
+      textureImg.src = activeTexture;
+      await new Promise<void>((resolve, reject) => {
+        if (textureImg.complete) return resolve();
+        textureImg.onload = () => resolve();
+        textureImg.onerror = reject;
+      });
+      ctx.drawImage(textureImg, 0, 0, canvasWidth, canvasHeight);
+    } catch (texErr) {
+      console.warn("Lỗi vẽ texture lên master canvas:", texErr);
+    }
+
+    // 3. Layer 2: Prepare transparent QR source
+    let activeQrSource: string | null = null;
+    if (qrUrl) {
+      if (isDarkReceipt && processedQrs?.dark) {
+        activeQrSource = processedQrs.dark;
+      } else if (!isDarkReceipt && processedQrs?.light) {
+        activeQrSource = processedQrs.light;
+      } else if (qrDataUrl) {
+        activeQrSource = await processQrToTransparent(qrDataUrl, isDarkReceipt);
+      } else {
         try {
           const fetchUrl = proxyVietQrUrl || directVietQrUrl || qrUrl;
           const res = await fetch(fetchUrl);
-          const rawBlob = await res.blob();
-          const base64 = await new Promise<string>((resolve, reject) => {
-            const reader = new FileReader();
-            reader.onloadend = () => {
-              if (typeof reader.result === "string") resolve(reader.result);
-              else reject(new Error("Failed base64 conversion"));
-            };
-            reader.onerror = reject;
-            reader.readAsDataURL(rawBlob);
+          if (res.ok) {
+            const rawBlob = await res.blob();
+            const base64 = await new Promise<string>((resolve, reject) => {
+              const reader = new FileReader();
+              reader.onloadend = () => {
+                if (typeof reader.result === "string") resolve(reader.result);
+                else reject(new Error("Lỗi chuyển đổi base64"));
+              };
+              reader.onerror = reject;
+              reader.readAsDataURL(rawBlob);
+            });
+            setQrDataUrl(base64);
+            activeQrSource = await processQrToTransparent(base64, isDarkReceipt);
+          }
+        } catch (fetchErr) {
+          console.warn("Lỗi nạp ảnh VietQR khi xuất biên lai:", fetchErr);
+        }
+      }
+    }
+
+    // 4. Layer 3: Capture DOM content (text, lines, UPC-A barcode SVG) on transparent background
+    const exportOptions = {
+      cacheBust: true,
+      pixelRatio,
+      width,
+      height,
+      filter: (domNode: Node) => {
+        if (domNode instanceof HTMLElement) {
+          if (domNode.dataset.receiptExportSkip === "true") {
+            return false;
+          }
+        }
+        return true;
+      },
+      style: {
+        margin: "0",
+        marginLeft: "0",
+        marginRight: "0",
+        marginTop: "0",
+        marginBottom: "0",
+        transform: "none",
+        boxShadow: "none",
+        borderRadius: "0",
+        borderTopLeftRadius: "0",
+        borderTopRightRadius: "0",
+        borderBottomLeftRadius: "0",
+        borderBottomRightRadius: "0",
+        left: "0",
+        top: "0",
+        width: `${width}px`,
+        maxWidth: "none",
+        backgroundImage: "none",
+        backgroundColor: "transparent",
+      },
+    };
+
+    let domCanvas: HTMLCanvasElement | null = null;
+    try {
+      domCanvas = await toCanvas(node, exportOptions);
+    } catch {
+      try {
+        const dataUrl = await toPng(node, { ...exportOptions, skipFonts: true });
+        const img = new Image();
+        img.src = dataUrl;
+        await new Promise<void>((resolve, reject) => {
+          img.onload = () => resolve();
+          img.onerror = reject;
+        });
+        const fallbackCanvas = document.createElement("canvas");
+        fallbackCanvas.width = canvasWidth;
+        fallbackCanvas.height = canvasHeight;
+        const fCtx = fallbackCanvas.getContext("2d");
+        if (fCtx) {
+          fCtx.drawImage(img, 0, 0, canvasWidth, canvasHeight);
+          domCanvas = fallbackCanvas;
+        }
+      } catch (domErr) {
+        console.warn("Lỗi toCanvas/toPng DOM:", domErr);
+      }
+    }
+
+    if (domCanvas) {
+      ctx.drawImage(domCanvas, 0, 0, canvasWidth, canvasHeight);
+    }
+
+    // 5. Layer 4: Draw VietQR code directly onto master canvas at exact DOM coordinates
+    if (qrUrl && activeQrSource) {
+      try {
+        let targetRect = qrImgRef.current?.getBoundingClientRect();
+        if (!targetRect || targetRect.width === 0 || targetRect.height === 0) {
+          targetRect = qrContainerRef.current?.getBoundingClientRect();
+        }
+
+        if (targetRect && targetRect.width > 0 && targetRect.height > 0) {
+          const qrX = Math.round((targetRect.left - nodeRect.left) * (canvasWidth / nodeRect.width));
+          const qrY = Math.round((targetRect.top - nodeRect.top) * (canvasHeight / nodeRect.height));
+          const qrW = Math.round(targetRect.width * (canvasWidth / nodeRect.width));
+          const qrH = Math.round(targetRect.height * (canvasHeight / nodeRect.height));
+
+          const qrImg = new Image();
+          qrImg.crossOrigin = "anonymous";
+          qrImg.src = activeQrSource;
+          await new Promise<void>((resolve, reject) => {
+            if (qrImg.complete) return resolve();
+            qrImg.onload = () => resolve();
+            qrImg.onerror = reject;
           });
-          setQrDataUrl(base64);
-          await new Promise((r) => setTimeout(r, 60));
-        } catch (e) {
-          console.warn("Could not preload QR data URL before export:", e);
+
+          // Keep QR code square & centered within target bounds
+          const size = Math.min(qrW, qrH);
+          const drawX = Math.round(qrX + (qrW - size) / 2);
+          const drawY = Math.round(qrY + (qrH - size) / 2);
+
+          ctx.drawImage(qrImg, drawX, drawY, size, size);
+        }
+      } catch (qrDrawErr) {
+        console.warn("Lỗi vẽ QR lên master canvas:", qrDrawErr);
+      }
+    }
+
+    return new Promise<Blob>((resolve, reject) => {
+      masterCanvas.toBlob((blob) => {
+        if (blob) resolve(blob);
+        else reject(new Error("masterCanvas.toBlob trả về null"));
+      }, "image/png", 1.0);
+    });
+  };
+
+  const handleCopyReceiptImage = async () => {
+    if (!receiptRef.current || isCopyingImage || isDownloading) return;
+    try {
+      setIsCopyingImage(true);
+      const blob = await composeReceiptBlob();
+      const fileName = `bien-lai-cau-long-${date ? date.replace(/\//g, "-") : "session"}.png`;
+      const file = new File([blob], fileName, { type: "image/png" });
+      const objectUrl = URL.createObjectURL(blob);
+
+      if (
+        typeof navigator !== "undefined" &&
+        navigator.clipboard &&
+        typeof window !== "undefined" &&
+        window.ClipboardItem
+      ) {
+        try {
+          await navigator.clipboard.write([
+            new ClipboardItem({ "image/png": blob }),
+          ]);
+          setCopiedImageToast(true);
+          setTimeout(() => setCopiedImageToast(false), 2500);
+          return;
+        } catch (clipErr) {
+          console.warn("ClipboardItem write failed, mở modal preview:", clipErr);
         }
       }
 
-      // Pre-decode all images in the receipt node to ensure raster readiness
-      const images = node.querySelectorAll("img");
-      await Promise.all(
-        Array.from(images).map(async (img) => {
-          if (img.complete) return;
-          try {
-            await (img.decode ? img.decode() : new Promise((r) => (img.onload = r)));
-          } catch {
-            // ignore decode failure
-          }
-        })
-      );
+      // Fallback: mở modal preview
+      const isIOS =
+        typeof navigator !== "undefined" &&
+        (/iPad|iPhone|iPod/.test(navigator.userAgent) ||
+          (navigator.platform === "MacIntel" && navigator.maxTouchPoints > 1));
+      const isAndroid =
+        typeof navigator !== "undefined" &&
+        /Android/i.test(navigator.userAgent);
+      const platform: "ios" | "android" | "desktop" = isIOS
+        ? "ios"
+        : isAndroid
+        ? "android"
+        : "desktop";
 
-      // Safari/WebKit warm-up pass: primes the raster cache so SVG foreignObject images aren't blank
-      try {
-        await toBlob(node, { ...exportOptions, pixelRatio: 1 });
-      } catch {
-        // ignore warm-up error
-      }
-      await new Promise((r) => setTimeout(r, 60));
+      setPreviewData({ url: objectUrl, file, platform });
+    } catch (err) {
+      console.error("Lỗi khi sao chép ảnh biên lai:", err);
+    } finally {
+      setIsCopyingImage(false);
+    }
+  };
 
-      let blob: Blob | null = null;
-      try {
-        blob = await toBlob(node, exportOptions);
-      } catch {
-        blob = await toBlob(node, {
-          ...exportOptions,
-          skipFonts: true,
-        });
-      }
-
-      if (!blob) {
-        const dataUrl = await toPng(node, {
-          ...exportOptions,
-          skipFonts: true,
-        });
-        const res = await fetch(dataUrl);
-        blob = await res.blob();
-      }
-
-      if (!blob) return;
-
+  const handleDownloadReceiptImage = async () => {
+    if (!receiptRef.current || isDownloading || isCopyingImage) return;
+    try {
+      setIsDownloading(true);
+      const blob = await composeReceiptBlob();
+      const fileName = `bien-lai-cau-long-${date ? date.replace(/\//g, "-") : "session"}.png`;
       const file = new File([blob], fileName, { type: "image/png" });
       const objectUrl = URL.createObjectURL(blob);
 
@@ -527,8 +684,6 @@ export function CostcoReceipt({
       }
 
       // 2. In-App Browsers on iOS or Android (Messenger, Zalo, Facebook, etc.):
-      // In-app webviews block direct file downloads and blob navigations.
-      // Show in-app preview modal so user can long-press to save image directly to Gallery / Photos.
       if (isInAppBrowser) {
         if (
           typeof navigator !== "undefined" &&
@@ -552,8 +707,7 @@ export function CostcoReceipt({
         return;
       }
 
-      // 3. Android (Chrome, Samsung Internet, Edge, etc.) & Desktop:
-      // Trigger native download. On Android, this saves to /Download and automatically registers in Samsung Gallery / Google Photos!
+      // 3. Android & Desktop: trigger native download
       const link = document.createElement("a");
       link.download = fileName;
       link.href = objectUrl;
@@ -648,8 +802,9 @@ export function CostcoReceipt({
           backgroundRepeat: "no-repeat",
         }}
       >
-        {/* Textured Paper Background Layer (Ensures visible paper grain in WebKit SVG export) */}
+        {/* Textured Paper Background Layer (Ensures visible paper grain on screen; skipped on DOM export so Canvas 2D draws texture natively) */}
         <div
+          data-receipt-export-skip="true"
           aria-hidden="true"
           className="pointer-events-none absolute inset-0 z-0 select-none overflow-hidden"
         >
@@ -858,9 +1013,15 @@ export function CostcoReceipt({
               </div>
 
               {/* QR Container - Blends seamlessly into receipt paper */}
-              <div className="relative p-2 inline-block bg-transparent w-32 h-32 sm:w-36 sm:h-36">
+              <div
+                ref={qrContainerRef}
+                className="relative p-2 inline-block bg-transparent w-32 h-32 sm:w-36 sm:h-36"
+              >
                 {!isQrReady && (
-                  <div className="absolute inset-2 flex flex-col items-center justify-center rounded-lg border border-dashed border-[var(--receipt-dashed)] bg-[var(--receipt-card)] animate-pulse transition-opacity duration-300">
+                  <div
+                    data-receipt-export-skip="true"
+                    className="absolute inset-2 flex flex-col items-center justify-center rounded-lg border border-dashed border-[var(--receipt-dashed)] bg-[var(--receipt-card)] animate-pulse transition-opacity duration-300"
+                  >
                     <QrCode className="w-8 h-8 text-[var(--receipt-muted)] opacity-50 mb-1" />
                     <span className="text-[8.5px] font-mono text-[var(--receipt-subtle)]">
                       Đang nạp mã QR...
@@ -869,6 +1030,8 @@ export function CostcoReceipt({
                 )}
                 {/* eslint-disable-next-line @next/next/no-img-element */}
                 <img
+                  ref={qrImgRef}
+                  data-receipt-export-skip="true"
                   crossOrigin="anonymous"
                   src={activeQrDataUrl || directVietQrUrl || qrUrl || ""}
                   onLoad={() => setQrImageLoaded(true)}
@@ -972,21 +1135,40 @@ export function CostcoReceipt({
           </motion.button>
         </div>
 
-        {/* Download receipt as image helper button */}
-        <motion.button
-          whileTap={{ scale: 0.96 }}
-          type="button"
-          onClick={handleDownloadReceiptImage}
-          disabled={isDownloading}
-          className="w-full flex items-center justify-center gap-1.5 py-1.5 px-2.5 rounded-[8px] text-[var(--muted)] hover:text-[var(--text)] hover:bg-[var(--card)] text-[11px] font-medium transition-colors cursor-pointer disabled:opacity-60"
-        >
-          {isDownloading ? (
-            <Loader2 className="w-3.5 h-3.5 animate-spin text-[var(--accent)]" />
-          ) : (
-            <Printer className="w-3.5 h-3.5" />
-          )}
-          <span>In / Lưu biên lai</span>
-        </motion.button>
+        {/* Download & Copy receipt image buttons */}
+        <div className="grid grid-cols-2 gap-2">
+          <motion.button
+            whileTap={{ scale: 0.95 }}
+            type="button"
+            onClick={handleCopyReceiptImage}
+            disabled={isDownloading || isCopyingImage}
+            className="flex items-center justify-center gap-1.5 py-2 px-2.5 rounded-[10px] bg-[var(--card)] border border-[var(--border)] hover:border-[var(--accent)] text-[var(--text)] font-semibold text-xs transition-all cursor-pointer disabled:opacity-60"
+          >
+            {isCopyingImage ? (
+              <Loader2 className="w-3.5 h-3.5 animate-spin text-[var(--accent)]" />
+            ) : copiedImageToast ? (
+              <Check className="w-3.5 h-3.5 text-emerald-500" />
+            ) : (
+              <Copy className="w-3.5 h-3.5 text-[var(--accent)]" />
+            )}
+            <span>{copiedImageToast ? "Đã chép ảnh!" : "Sao chép ảnh"}</span>
+          </motion.button>
+
+          <motion.button
+            whileTap={{ scale: 0.95 }}
+            type="button"
+            onClick={handleDownloadReceiptImage}
+            disabled={isDownloading || isCopyingImage}
+            className="flex items-center justify-center gap-1.5 py-2 px-2.5 rounded-[10px] bg-[var(--card)] border border-[var(--border)] hover:border-[var(--accent)] text-[var(--text)] font-semibold text-xs transition-all cursor-pointer disabled:opacity-60"
+          >
+            {isDownloading ? (
+              <Loader2 className="w-3.5 h-3.5 animate-spin text-[var(--accent)]" />
+            ) : (
+              <Printer className="w-3.5 h-3.5 text-[var(--accent)]" />
+            )}
+            <span>In / Lưu biên lai</span>
+          </motion.button>
+        </div>
       </div>
 
       {/* Mobile Save-to-Photos Preview Modal (iOS & Android) */}
@@ -1058,6 +1240,20 @@ export function CostcoReceipt({
                   <span>Tải về máy</span>
                 </motion.a>
 
+                <motion.button
+                  whileTap={{ scale: 0.95 }}
+                  type="button"
+                  onClick={handleCopyPreviewImage}
+                  className="flex-1 py-2 px-3 rounded-[8px] bg-[var(--card)] border border-[var(--border)] hover:border-[var(--accent)] text-[var(--text)] font-semibold text-xs flex items-center justify-center gap-1.5 cursor-pointer"
+                >
+                  {copiedImageToast ? (
+                    <Check className="w-3.5 h-3.5 text-emerald-500" />
+                  ) : (
+                    <Copy className="w-3.5 h-3.5 text-[var(--accent)]" />
+                  )}
+                  <span>{copiedImageToast ? "Đã chép!" : "Sao chép"}</span>
+                </motion.button>
+
                 {typeof navigator !== "undefined" && typeof navigator.canShare === "function" && (
                   <motion.button
                     whileTap={{ scale: 0.95 }}
@@ -1084,9 +1280,9 @@ export function CostcoReceipt({
         )}
       </AnimatePresence>
 
-      {/* Toast Notification (e.g. Android direct download confirmation) */}
+      {/* Toast Notification (e.g. Android direct download confirmation or copy image) */}
       <AnimatePresence>
-        {downloadToast && (
+        {(downloadToast || copiedImageToast) && (
           <motion.div
             initial={{ opacity: 0, y: 20, scale: 0.95 }}
             animate={{ opacity: 1, y: 0, scale: 1 }}
@@ -1095,7 +1291,7 @@ export function CostcoReceipt({
             className="fixed bottom-6 left-1/2 -translate-x-1/2 z-50 px-4 py-2.5 rounded-full bg-emerald-600 text-white text-xs font-semibold shadow-lg flex items-center gap-2"
           >
             <Check className="w-4 h-4 stroke-[3]" />
-            <span>{downloadToast}</span>
+            <span>{downloadToast || "✓ Đã sao chép ảnh biên lai vào bộ nhớ tạm!"}</span>
           </motion.div>
         )}
       </AnimatePresence>
