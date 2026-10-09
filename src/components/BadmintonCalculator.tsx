@@ -24,6 +24,7 @@ import {
   Calculator,
   Settings,
   Loader2,
+  Waves,
 } from "lucide-react";
 import { motion, AnimatePresence } from "framer-motion";
 import { PixelCat, PixelRacket } from "./PixelArt";
@@ -33,6 +34,7 @@ import { VietQRModal } from "./VietQRModal";
 import { HistoryDrawer } from "./HistoryDrawer";
 import { MemberManagerModal } from "./MemberManagerModal";
 import { TeamPhotoModal } from "./TeamPhotoModal";
+import { GradientWavesModal } from "./GradientWavesModal";
 import { CostcoReceipt } from "./CostcoReceipt";
 import { CourtPickerAndMap, parseCourtsList } from "./CourtPickerAndMap";
 import { SkeletonImage } from "./SkeletonImage";
@@ -108,6 +110,7 @@ export function BadmintonCalculator() {
   const [isHistoryOpen, setIsHistoryOpen] = useState(false);
   const [isMemberModalOpen, setIsMemberModalOpen] = useState(false);
   const [isTeamPhotoOpen, setIsTeamPhotoOpen] = useState(false);
+  const [isGradientWavesOpen, setIsGradientWavesOpen] = useState(false);
   const [showAdvanced, setShowAdvanced] = useState(false);
 
   // New guest state for single-day attendance
@@ -676,6 +679,17 @@ export function BadmintonCalculator() {
           >
             <Camera className="w-3.5 h-3.5 text-amber-500" />
             <span>Ảnh CLB</span>
+          </motion.button>
+
+          {/* Gradient Waves 3D button */}
+          <motion.button
+            whileTap={{ scale: 0.93 }}
+            onClick={() => setIsGradientWavesOpen(true)}
+            className="flex items-center gap-1.5 h-8 px-2.5 rounded-xl text-xs font-medium text-[var(--text)] hover:bg-[var(--bg)] transition-colors cursor-pointer"
+            title="Hiệu ứng sóng 3D Gradient Waves (React Bits)"
+          >
+            <Waves className="w-3.5 h-3.5 text-indigo-500" />
+            <span className="hidden sm:inline">Sóng 3D</span>
           </motion.button>
 
           {/* Reset button */}
@@ -1544,6 +1558,12 @@ export function BadmintonCalculator() {
       <TeamPhotoModal
         isOpen={isTeamPhotoOpen}
         onClose={() => setIsTeamPhotoOpen(false)}
+      />
+
+      {/* Gradient Waves 3D Modal */}
+      <GradientWavesModal
+        isOpen={isGradientWavesOpen}
+        onClose={() => setIsGradientWavesOpen(false)}
       />
 
       {/* Floating Toast Notification */}
