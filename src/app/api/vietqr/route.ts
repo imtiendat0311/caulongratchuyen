@@ -11,10 +11,14 @@ export async function GET(request: NextRequest) {
     return new NextResponse("Missing bank or account", { status: 400 });
   }
 
+  const amount = searchParams.get("amount");
+  const template = searchParams.get("template") || "qr_only";
+  const amountParam = amount ? `&amount=${encodeURIComponent(amount)}` : "";
+
   const cleanAccount = account.trim();
-  const remoteUrl = `https://img.vietqr.io/image/${bank}-${cleanAccount}-qr_only.png?addInfo=${encodeURIComponent(
+  const remoteUrl = `https://img.vietqr.io/image/${bank}-${cleanAccount}-${template}.png?addInfo=${encodeURIComponent(
     info
-  )}&accountName=${encodeURIComponent(name.trim())}`;
+  )}&accountName=${encodeURIComponent(name.trim())}${amountParam}`;
 
   try {
     const res = await fetch(remoteUrl, {

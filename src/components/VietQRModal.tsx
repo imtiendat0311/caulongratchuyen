@@ -12,6 +12,8 @@ import {
   Sparkles,
   Sun,
   Moon,
+  Download,
+  Loader2,
 } from "lucide-react";
 import { motion, AnimatePresence } from "framer-motion";
 import { BankConfig, Member, POPULAR_BANKS } from "@/types";
@@ -88,6 +90,10 @@ function VietQRContent({
   const [accountName, setAccountName] = useState(initialAccountName);
   const [selectedGender, setSelectedGender] = useState<"nam" | "nu">("nam");
   const [copied, setCopied] = useState(false);
+  const [isCopyingImage, setIsCopyingImage] = useState(false);
+  const [copiedImage, setCopiedImage] = useState(false);
+  const [isSavingImage, setIsSavingImage] = useState(false);
+  const [savedImage, setSavedImage] = useState(false);
 
   // QR Theme mode
   const [qrTheme, setQrTheme] = useState<"auto" | "light" | "dark">("auto");
@@ -275,6 +281,151 @@ function VietQRContent({
     navigator.clipboard.writeText(`${accountNo} - ${bankId} (${accountName})`);
     setCopied(true);
     setTimeout(() => setCopied(false), 2000);
+  };
+
+  const getQrBlob = async (): Promise<Blob | null> => {
+    const targetSrc = activeQrSrc || qrUrl;
+    if (!targetSrc) return null;
+
+    if (targetSrc.startsWith("data:")) {
+      const res = await fetch(targetSrc);
+      return await res.blob();
+    }
+
+    const proxyUrl = `/api/vietqr?bank=${encodeURIComponent(bankId)}&account=${encodeURIComponent(
+      accountNo.trim()
+    )}&name=${encodeURIComponent(accountName.trim())}&info=${encodeURIComponent(
+      description
+    )}&amount=${encodeURIComponent(Math.round(currentAmount))}&template=compact2`;
+
+    try {
+      const res = await fetch(proxyUrl);
+      if (res.ok) return await res.blob();
+    } catch {
+      // fallback
+    }
+
+    try {
+      const res = await fetch(targetSrc);
+      if (res.ok) return await res.blob();
+    } catch (e) {
+      console.warn("Lỗi tải blob QR:", e);
+    }
+    return null;
+  };
+
+  const handleCopyImage = async () => {
+    if ((!activeQrSrc && !qrUrl) || isCopyingImage) return;
+    try {
+      setIsCopyingImage(true);
+      const blob = await getQrBlob();
+      if (!blob) throw new Error("Không thể tải ảnh QR");
+
+      let pngBlob = blob;
+      if (blob.type !== "image/png") {
+        const img = new Image();
+        const url = URL.createObjectURL(blob);
+        await new Promise((resolve, reject) => {
+          img.onload = resolve;
+          img.onerror = reject;
+          img.src = url;
+        });
+        const canvas = document.createElement("canvas");
+        canvas.width = img.naturalWidth || img.width;
+        canvas.height = img.naturalHeight || img.height;
+        const ctx = canvas.getContext("2d");
+        ctx?.drawImage(img, 0, 0);
+        pngBlob = await new Promise<Blob>((resolve) =>
+          canvas.toBlob((b) => resolve(b || blob), "image/png")
+        );
+        URL.revokeObjectURL(url);
+      }
+
+      if (
+        typeof navigator !== "undefined" &&
+        navigator.clipboard &&
+        typeof navigator.clipboard.write === "function" &&
+        typeof ClipboardItem !== "undefined"
+      ) {
+        await navigator.clipboard.write([
+          new ClipboardItem({
+            "image/png": pngBlob,
+          }),
+        ]);
+        setCopiedImage(true);
+        setTimeout(() => setCopiedImage(false), 2000);
+      } else {
+        await handleSaveImage();
+      }
+    } catch (err) {
+      console.warn("Lỗi sao chép ảnh QR:", err);
+      await handleSaveImage();
+    } finally {
+      setIsCopyingImage(false);
+    }
+  };
+
+  const handleSaveImage = async () => {
+    if ((!activeQrSrc && !qrUrl) || isSavingImage) return;
+    try {
+      setIsSavingImage(true);
+      const blob = await getQrBlob();
+      if (!blob) throw new Error("Không thể tải ảnh QR");
+
+      const fileName = `ma-vietqr-${bankId}-${accountNo || "code"}.png`;
+      const file = new File([blob], fileName, { type: "image/png" });
+      const objectUrl = URL.createObjectURL(blob);
+
+      const isIOS =
+        typeof navigator !== "undefined" &&
+        (/iPad|iPhone|iPod/.test(navigator.userAgent) ||
+          (navigator.platform === "MacIntel" && navigator.maxTouchPoints > 1));
+
+      const isInAppBrowser =
+        typeof navigator !== "undefined" &&
+        /FBAN|FBAV|Instagram|Messenger|Zalo|Line|Twitter|MicroMessenger/i.test(
+          navigator.userAgent
+        );
+
+      if (
+        (isIOS || isInAppBrowser) &&
+        typeof navigator !== "undefined" &&
+        typeof navigator.canShare === "function" &&
+        navigator.canShare({ files: [file] })
+      ) {
+        try {
+          await navigator.share({
+            files: [file],
+            title: `Mã VietQR ${bankId} - ${accountNo}`,
+            text: `Mã QR chuyển khoản ${bankId} ${accountNo} (${accountName})`,
+          });
+          setSavedImage(true);
+          setTimeout(() => setSavedImage(false), 2000);
+          return;
+        } catch (shareErr: unknown) {
+          if (shareErr instanceof Error && shareErr.name === "AbortError") {
+            return;
+          }
+        }
+      }
+
+      const link = document.createElement("a");
+      link.href = objectUrl;
+      link.download = fileName;
+      document.body.appendChild(link);
+      link.click();
+      document.body.removeChild(link);
+
+      setSavedImage(true);
+      setTimeout(() => {
+        setSavedImage(false);
+        URL.revokeObjectURL(objectUrl);
+      }, 2000);
+    } catch (err) {
+      console.warn("Lỗi lưu ảnh QR:", err);
+    } finally {
+      setIsSavingImage(false);
+    }
   };
 
   const handleOpenLargeImage = () => {
@@ -595,29 +746,90 @@ function VietQRContent({
               </div>
 
               {/* Action buttons */}
-              <div className="flex items-center gap-2 mt-3">
-                <motion.button
-                  whileTap={{ scale: 0.94 }}
-                  type="button"
-                  onClick={handleCopyAcc}
-                  className="flex items-center gap-1.5 text-[11px] font-medium text-[var(--text)] hover:text-[var(--accent)] bg-[var(--card)] hover:bg-[var(--bg)] border border-[var(--border)] px-3 py-1.5 rounded-lg shadow-2xs transition-colors cursor-pointer"
-                >
-                  {copied ? (
-                    <Check className="w-3.5 h-3.5 text-emerald-500" />
-                  ) : (
-                    <Copy className="w-3.5 h-3.5" />
-                  )}
-                  {copied ? "Đã chép STK" : "Sao chép STK"}
-                </motion.button>
-                <motion.button
-                  whileTap={{ scale: 0.94 }}
-                  type="button"
-                  onClick={handleOpenLargeImage}
-                  className="flex items-center gap-1.5 text-[11px] font-medium text-[var(--text)] hover:text-[var(--accent)] bg-[var(--card)] hover:bg-[var(--bg)] border border-[var(--border)] px-3 py-1.5 rounded-lg shadow-2xs transition-colors cursor-pointer"
-                >
-                  <ExternalLink className="w-3.5 h-3.5" />
-                  Mở ảnh lớn
-                </motion.button>
+              <div className="w-full mt-3 space-y-2">
+                {/* Primary Image Actions: Lưu ảnh QR & Chép ảnh QR */}
+                <div className="grid grid-cols-2 gap-2">
+                  <motion.button
+                    whileTap={{ scale: 0.94 }}
+                    type="button"
+                    onClick={handleSaveImage}
+                    disabled={isSavingImage}
+                    className="flex items-center justify-center gap-1.5 text-xs font-semibold text-white bg-[var(--accent)] hover:opacity-90 px-3 py-2 rounded-[10px] shadow-xs transition-all cursor-pointer disabled:opacity-60"
+                  >
+                    {isSavingImage ? (
+                      <>
+                        <Loader2 className="w-3.5 h-3.5 animate-spin" />
+                        <span>Đang lưu...</span>
+                      </>
+                    ) : savedImage ? (
+                      <>
+                        <Check className="w-3.5 h-3.5 text-white" />
+                        <span>Đã lưu ảnh!</span>
+                      </>
+                    ) : (
+                      <>
+                        <Download className="w-3.5 h-3.5" />
+                        <span>Lưu ảnh QR</span>
+                      </>
+                    )}
+                  </motion.button>
+
+                  <motion.button
+                    whileTap={{ scale: 0.94 }}
+                    type="button"
+                    onClick={handleCopyImage}
+                    disabled={isCopyingImage}
+                    className={`flex items-center justify-center gap-1.5 text-xs font-semibold px-3 py-2 rounded-[10px] border shadow-2xs transition-all cursor-pointer disabled:opacity-60 ${
+                      copiedImage
+                        ? "border-emerald-500/50 text-emerald-600 dark:text-emerald-400 bg-emerald-500/10"
+                        : "text-[var(--text)] bg-[var(--card)] hover:bg-[var(--bg)] border-[var(--border)] hover:border-[var(--accent)]"
+                    }`}
+                  >
+                    {isCopyingImage ? (
+                      <>
+                        <Loader2 className="w-3.5 h-3.5 animate-spin text-[var(--accent)]" />
+                        <span>Đang chép...</span>
+                      </>
+                    ) : copiedImage ? (
+                      <>
+                        <Check className="w-3.5 h-3.5 text-emerald-500" />
+                        <span>Đã chép ảnh!</span>
+                      </>
+                    ) : (
+                      <>
+                        <Copy className="w-3.5 h-3.5 text-[var(--accent)]" />
+                        <span>Chép ảnh QR</span>
+                      </>
+                    )}
+                  </motion.button>
+                </div>
+
+                {/* Secondary Actions: Sao chép STK & Mở ảnh lớn */}
+                <div className="grid grid-cols-2 gap-2">
+                  <motion.button
+                    whileTap={{ scale: 0.94 }}
+                    type="button"
+                    onClick={handleCopyAcc}
+                    className="flex items-center justify-center gap-1.5 text-[11px] font-medium text-[var(--text)] hover:text-[var(--accent)] bg-[var(--card)] hover:bg-[var(--bg)] border border-[var(--border)] px-3 py-1.5 rounded-[10px] shadow-2xs transition-colors cursor-pointer"
+                  >
+                    {copied ? (
+                      <Check className="w-3.5 h-3.5 text-emerald-500" />
+                    ) : (
+                      <Copy className="w-3.5 h-3.5" />
+                    )}
+                    <span>{copied ? "Đã chép STK" : "Sao chép STK"}</span>
+                  </motion.button>
+
+                  <motion.button
+                    whileTap={{ scale: 0.94 }}
+                    type="button"
+                    onClick={handleOpenLargeImage}
+                    className="flex items-center justify-center gap-1.5 text-[11px] font-medium text-[var(--text)] hover:text-[var(--accent)] bg-[var(--card)] hover:bg-[var(--bg)] border border-[var(--border)] px-3 py-1.5 rounded-[10px] shadow-2xs transition-colors cursor-pointer"
+                  >
+                    <ExternalLink className="w-3.5 h-3.5" />
+                    <span>Mở ảnh lớn</span>
+                  </motion.button>
+                </div>
               </div>
             </div>
           ) : (
