@@ -12,7 +12,6 @@ import {
   MapMarker,
   MarkerContent,
   MarkerPopup,
-  MapControls,
   type MapRef,
 } from "@/components/ui/map";
 
@@ -116,14 +115,6 @@ export default function ElegantCourtMap({
           zoom={16}
           className="h-full w-full"
         >
-          {/* Controls: Zoom, Compass, Geolocate, Fullscreen */}
-          <MapControls
-            position="top-right"
-            showZoom
-            showCompass
-            showLocate
-            showFullscreen
-          />
 
           {/* Badminton Court Marker */}
           <MapMarker longitude={lng} latitude={lat}>
