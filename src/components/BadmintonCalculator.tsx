@@ -19,12 +19,10 @@ import {
   User,
   Crown,
   CreditCard,
-  Camera,
   Trophy,
   Calculator,
   Settings,
   Loader2,
-  Sun,
   TrendingUp,
 } from "lucide-react";
 import { motion, AnimatePresence } from "framer-motion";
@@ -737,28 +735,6 @@ export function BadmintonCalculator() {
           >
             <QrCode className="w-3.5 h-3.5 text-[var(--accent)]" />
             <span>Mã QR</span>
-          </motion.button>
-
-          {/* Team Photo button */}
-          <motion.button
-            whileTap={{ scale: 0.93 }}
-            onClick={() => setIsTeamPhotoOpen(true)}
-            className="flex items-center gap-1.5 h-8 px-2.5 rounded-xl text-xs font-medium text-[var(--text)] hover:bg-[var(--bg)] transition-colors cursor-pointer"
-            title="Xem ảnh kỷ niệm giải đấu FC Rất Chuyên"
-          >
-            <Camera className="w-3.5 h-3.5 text-amber-500" />
-            <span>Ảnh CLB</span>
-          </motion.button>
-
-          {/* Side Rays button */}
-          <motion.button
-            whileTap={{ scale: 0.93 }}
-            onClick={() => setIsSideRaysOpen(true)}
-            className="flex items-center gap-1.5 h-8 px-2.5 rounded-xl text-xs font-medium text-[var(--text)] hover:bg-[var(--bg)] transition-colors cursor-pointer"
-            title="Hiệu ứng tia sáng Side Rays (React Bits)"
-          >
-            <Sun className="w-3.5 h-3.5 text-amber-500" />
-            <span className="hidden sm:inline">Tia sáng</span>
           </motion.button>
 
           {/* Reset button */}
