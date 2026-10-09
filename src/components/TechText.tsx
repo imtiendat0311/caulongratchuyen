@@ -10,6 +10,8 @@ export interface TechTextProps {
   fontSize?: number;
   letterSpacing?: number;
   color?: string;
+  gradientColors?: string[];
+  dashColor?: string;
   accentColor?: string;
   reach?: number;
   softness?: number;
@@ -56,7 +58,8 @@ const resolveColorRgb = (
 ): [number, number, number] => {
   if (!c) return fallback;
   if (c.startsWith('var(')) {
-    const varName = c.replace(/var\(|\)/g, '').trim();
+    const match = c.match(/var\(\s*([^,\s)]+)/);
+    const varName = match ? match[1] : c.replace(/var\(|\)/g, '').trim();
     const val = getComputedStyle(el).getPropertyValue(varName).trim();
     if (val) return hexToRgb(val);
   }
@@ -128,6 +131,8 @@ interface Settings {
   fontSize: number;
   letterSpacing: number;
   color: string;
+  gradientColors?: string[];
+  dashColor?: string;
   accentColor: string;
   reach: number;
   softness: number;
@@ -151,6 +156,8 @@ export const TechText: React.FC<TechTextProps> = ({
   fontSize = 150,
   letterSpacing = -0.02,
   color = 'var(--text)',
+  gradientColors,
+  dashColor,
   accentColor = 'var(--accent)',
   reach = 140,
   softness = 0.7,
@@ -181,6 +188,8 @@ export const TechText: React.FC<TechTextProps> = ({
       fontSize,
       letterSpacing,
       color,
+      gradientColors,
+      dashColor,
       accentColor,
       reach,
       softness,
@@ -254,7 +263,9 @@ export const TechText: React.FC<TechTextProps> = ({
 
     const sprite = (
       s: Settings,
-      resolvedColor: string,
+      gradientColorsHex: string[] | null,
+      fillColorHex: string,
+      dashColorHex: string,
       view: WordLayout,
       glyph: { char: string; x: number; box: GlyphBox },
       stroke: boolean
@@ -275,7 +286,7 @@ export const TechText: React.FC<TechTextProps> = ({
         c.lineJoin = 'round';
         c.lineWidth = s.strokeWidth * 2;
         c.lineCap = 'butt';
-        c.strokeStyle = resolvedColor;
+        c.strokeStyle = dashColorHex;
         if (s.lineStyle !== 'solid') {
           c.setLineDash([Math.max(1, s.dashLength), Math.max(1, s.dashGap)]);
         }
@@ -286,7 +297,17 @@ export const TechText: React.FC<TechTextProps> = ({
         c.fillText(glyph.char, glyph.x, view.baseline);
         c.globalCompositeOperation = 'source-over';
       } else {
-        c.fillStyle = resolvedColor;
+        if (gradientColorsHex && gradientColorsHex.length >= 2) {
+          const span = Math.max(1, view.right - view.left);
+          const grad = c.createLinearGradient(view.left, 0, view.left + span, 0);
+          const step = 1 / (gradientColorsHex.length - 1);
+          gradientColorsHex.forEach((col, idx) => {
+            grad.addColorStop(Math.min(1, Math.max(0, idx * step)), col);
+          });
+          c.fillStyle = grad;
+        } else {
+          c.fillStyle = fillColorHex;
+        }
         c.fillText(glyph.char, glyph.x, view.baseline);
       }
       return { image, left, top };
@@ -295,8 +316,23 @@ export const TechText: React.FC<TechTextProps> = ({
     const ensureLayout = (s: Settings) => {
       const activeColorRgb = resolveColorRgb(s.color, container, [255, 255, 255]);
       const activeColorHex = rgbToHex(activeColorRgb);
+      const activeDashColorRgb = resolveColorRgb(
+        s.dashColor || (s.gradientColors && s.gradientColors.length >= 2 ? 'var(--text)' : s.color),
+        container,
+        [255, 255, 255]
+      );
+      const activeDashColorHex = rgbToHex(activeDashColorRgb);
       const activeAccentRgb = resolveColorRgb(s.accentColor, container, [37, 99, 235]);
       const activeAccentHex = rgbToHex(activeAccentRgb);
+
+      const resolvedGradientHex =
+        s.gradientColors && s.gradientColors.length >= 2
+          ? s.gradientColors.map((c, i) => {
+              const fallback: [number, number, number] =
+                i === 0 ? [96, 165, 250] : [74, 222, 128];
+              return rgbToHex(resolveColorRgb(c, container, fallback));
+            })
+          : null;
 
       const key = [
         s.text,
@@ -305,6 +341,8 @@ export const TechText: React.FC<TechTextProps> = ({
         s.fontSize,
         s.letterSpacing,
         activeColorHex,
+        activeDashColorHex,
+        resolvedGradientHex ? resolvedGradientHex.join(',') : '',
         activeAccentHex,
         s.dashLength,
         s.dashGap,
@@ -376,8 +414,8 @@ export const TechText: React.FC<TechTextProps> = ({
           velocity: { x: 0, y: 0 },
           outline: 0,
           index: i,
-          fill: sprite(s, activeColorHex, next, base, false),
-          dashes: sprite(s, activeColorHex, next, base, true)
+          fill: sprite(s, resolvedGradientHex, activeColorHex, activeDashColorHex, next, base, false),
+          dashes: sprite(s, resolvedGradientHex, activeColorHex, activeDashColorHex, next, base, true)
         });
       });
       dragging = -1;

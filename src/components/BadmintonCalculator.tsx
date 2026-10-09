@@ -655,7 +655,9 @@ export function BadmintonCalculator() {
               text="Cầu Lông Rất Chuyên"
               fontWeight={800}
               fontSize={44}
+              gradientColors={["var(--accent)", "var(--accent2)"]}
               color="var(--text)"
+              dashColor="var(--text)"
               accentColor="var(--accent)"
               reach={110}
               softness={0.7}
