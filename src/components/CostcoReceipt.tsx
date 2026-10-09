@@ -166,47 +166,6 @@ export function CostcoReceipt({
                 const imgData = ctx.getImageData(0, 0, width, height);
                 const pixels = imgData.data;
 
-                // Detect colored logo if present in center 50%
-                let logoMinX = width;
-                let logoMaxX = 0;
-                let logoMinY = height;
-                let logoMaxY = 0;
-                let hasLogo = false;
-
-                const sMinX = Math.floor(width * 0.25);
-                const sMaxX = Math.floor(width * 0.75);
-                const sMinY = Math.floor(height * 0.25);
-                const sMaxY = Math.floor(height * 0.75);
-
-                for (let y = sMinY; y < sMaxY; y++) {
-                  for (let x = sMinX; x < sMaxX; x++) {
-                    const idx = (y * width + x) * 4;
-                    const r = pixels[idx];
-                    const g = pixels[idx + 1];
-                    const b = pixels[idx + 2];
-                    const a = pixels[idx + 3];
-
-                    if (a > 100) {
-                      const maxC = Math.max(r, g, b);
-                      const minC = Math.min(r, g, b);
-                      if (maxC - minC > 30) {
-                        hasLogo = true;
-                        if (x < logoMinX) logoMinX = x;
-                        if (x > logoMaxX) logoMaxX = x;
-                        if (y < logoMinY) logoMinY = y;
-                        if (y > logoMaxY) logoMaxY = y;
-                      }
-                    }
-                  }
-                }
-
-                if (hasLogo) {
-                  logoMinX = Math.max(0, logoMinX - 3);
-                  logoMaxX = Math.min(width - 1, logoMaxX + 3);
-                  logoMinY = Math.max(0, logoMinY - 3);
-                  logoMaxY = Math.min(height - 1, logoMaxY + 3);
-                }
-
                 const lightData = ctx.createImageData(width, height);
                 const darkData = ctx.createImageData(width, height);
 
@@ -218,15 +177,12 @@ export function CostcoReceipt({
                     const b = pixels[idx + 2];
                     const a = pixels[idx + 3];
 
-                    const inLogo =
-                      hasLogo &&
-                      x >= logoMinX &&
-                      x <= logoMaxX &&
-                      y >= logoMinY &&
-                      y <= logoMaxY;
+                    // Check if pixel is part of the colored VietQR logo (red/accent colors)
+                    const diff = Math.max(r, g, b) - Math.min(r, g, b);
+                    const isColored = a > 50 && diff > 25;
 
-                    if (inLogo) {
-                      // Preserve authentic center logo badge (VietQR / bank logo)
+                    if (isColored) {
+                      // Preserve authentic colored logo (red 'V') with smooth original colors
                       lightData.data[idx] = r;
                       lightData.data[idx + 1] = g;
                       lightData.data[idx + 2] = b;
@@ -239,8 +195,8 @@ export function CostcoReceipt({
                     } else {
                       const brightness = 0.299 * r + 0.587 * g + 0.114 * b;
 
-                      if (brightness > 190 || a < 50) {
-                        // White background -> 100% transparent so it blends into receipt paper
+                      if (brightness > 160 || a < 50) {
+                        // Background -> 100% transparent so it blends directly into receipt paper
                         lightData.data[idx] = 0;
                         lightData.data[idx + 1] = 0;
                         lightData.data[idx + 2] = 0;
@@ -301,11 +257,12 @@ export function CostcoReceipt({
 
   const displayQrSrc = qrUrl
     ? isDarkReceipt
-      ? processedQrs?.dark || qrDataUrl || qrUrl
-      : processedQrs?.light || qrDataUrl || qrUrl
+      ? processedQrs?.dark || null
+      : processedQrs?.light || null
     : null;
 
-  const activeQrDataUrl = displayQrSrc || qrDataUrl;
+  const fallbackQrSrc = qrDataUrl || qrUrl;
+  const activeQrDataUrl = displayQrSrc || fallbackQrSrc;
 
   const receiptRef = useRef<HTMLDivElement>(null);
   const [isDownloading, setIsDownloading] = useState(false);
@@ -776,14 +733,14 @@ export function CostcoReceipt({
               </div>
 
               {/* QR Container - Blends seamlessly into receipt paper, transparent background, white QR in dark mode */}
-              <div className="p-2 inline-block bg-transparent">
+              <div className="p-2 inline-block bg-transparent min-h-[112px] sm:min-h-[128px]">
                 {/* eslint-disable-next-line @next/next/no-img-element */}
                 <img
                   crossOrigin="anonymous"
                   src={activeQrDataUrl || qrUrl}
                   alt="Mã VietQR thanh toán tiền sân"
-                  className={`w-28 h-28 sm:w-32 sm:h-32 object-contain block mx-auto transition-opacity duration-150 ${
-                    isDarkReceipt && !processedQrs ? "invert mix-blend-screen" : ""
+                  className={`w-28 h-28 sm:w-32 sm:h-32 object-contain block mx-auto transition-opacity duration-200 ${
+                    !processedQrs ? "opacity-0" : "opacity-100"
                   }`}
                 />
               </div>
