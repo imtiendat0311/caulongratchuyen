@@ -25,7 +25,6 @@ import {
   Camera,
   Trophy,
   Calculator,
-  CloudDownload,
   Settings,
   Database,
 } from "lucide-react";
@@ -65,7 +64,6 @@ import {
   subscribeLastSavedTime,
   initSupabaseSync,
   saveSessionToCloud,
-  loadSessionFromCloud,
   addHistoryItem,
   deleteHistoryItem,
   clearAllHistory,
@@ -442,15 +440,6 @@ export function BadmintonCalculator() {
     }
   };
 
-  const handleLoadFromCloud = async () => {
-    const res = await loadSessionFromCloud();
-    if (res.success) {
-      showToast("✓ Đã tải buổi chơi mới nhất từ DB Supabase!");
-    } else {
-      showToast(res.message || "Chưa có buổi chơi nào trên DB Supabase", "info");
-    }
-  };
-
   const handleDeleteHistory = async (id: string) => {
     await deleteHistoryItem(id);
   };
@@ -671,29 +660,6 @@ export function BadmintonCalculator() {
               className="text-xs py-1 px-2 rounded-[8px] border border-[var(--border)] bg-[var(--bg)] text-[var(--muted)] hover:text-[var(--text)] hover:border-[var(--accent)] transition-colors cursor-pointer"
             >
               Hôm nay
-            </button>
-          </div>
-
-          {/* Cloud Action Buttons: Explicit Save & Load only when clicked */}
-          <div className="flex items-center gap-2 flex-wrap">
-            <button
-              type="button"
-              onClick={handleSaveToDB}
-              className="flex items-center gap-1.5 py-1 px-3 rounded-[8px] bg-[var(--accent)] hover:opacity-90 active:scale-98 text-white text-xs font-semibold transition-all cursor-pointer shadow-xs"
-              title="Lưu dữ liệu buổi chơi hiện tại vào cơ sở dữ liệu Supabase"
-            >
-              <Database className="w-3.5 h-3.5" />
-              <span>Lưu DB Supabase</span>
-            </button>
-
-            <button
-              type="button"
-              onClick={handleLoadFromCloud}
-              className="flex items-center gap-1.5 py-1 px-2.5 rounded-[8px] bg-[var(--card)] border border-[var(--border)] hover:border-[var(--accent)] text-xs font-medium text-[var(--text)] hover:text-[var(--accent)] transition-colors cursor-pointer shadow-xs"
-              title="Tải lại buổi chơi đã lưu từ DB Supabase"
-            >
-              <CloudDownload className="w-3.5 h-3.5" />
-              <span>Tải từ DB</span>
             </button>
           </div>
         </div>

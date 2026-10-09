@@ -54,8 +54,8 @@ export const PRESET_COURTS: BadmintonCourt[] = [
     name: "Nhà Thi Đấu Quán Thánh",
     address: "115 Quán Thánh, Ba Đình, Hà Nội",
     courtNumber: "Sân 1, Sân 2",
-    lat: 21.0427,
-    lng: 105.8415,
+    lat: 21.042588,
+    lng: 105.837391,
   },
   {
     id: "cau-giay",
