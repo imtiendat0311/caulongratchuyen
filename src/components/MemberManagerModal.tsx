@@ -14,6 +14,7 @@ import {
   Edit2,
   Save,
   ChevronDown,
+  Loader2,
 } from "lucide-react";
 import { motion, AnimatePresence } from "framer-motion";
 import { Member, POPULAR_BANKS } from "@/types";
@@ -141,24 +142,40 @@ export function MemberManagerModal({
   const [editBankId, setEditBankId] = useState("MB");
   const [editAccountNo, setEditAccountNo] = useState("");
   const [editAccountName, setEditAccountName] = useState("");
+  const [savingBankMemberId, setSavingBankMemberId] = useState<string | null>(null);
+  const [justSavedBankMemberId, setJustSavedBankMemberId] = useState<string | null>(null);
+  const [addMemberSuccess, setAddMemberSuccess] = useState(false);
+  const [lastAddedMemberName, setLastAddedMemberName] = useState<string | null>(null);
+  const [deletingMemberId, setDeletingMemberId] = useState<string | null>(null);
+  const [addingSampleName, setAddingSampleName] = useState<string | null>(null);
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (!name.trim()) return;
+    const trimmedName = name.trim();
+    if (!trimmedName || isSubmitting) return;
 
     setIsSubmitting(true);
     try {
       await onAddMember(
-        name.trim(),
+        trimmedName,
         gender,
         showBankForm ? bankId : "MB",
         showBankForm ? accountNo.trim() : "",
         showBankForm ? accountName.trim().toUpperCase() : ""
       );
+      setAddMemberSuccess(true);
+      setLastAddedMemberName(trimmedName);
+      // Wait 500ms so the user sees the confirmation before fields reset
+      await new Promise((resolve) => setTimeout(resolve, 500));
       setName("");
       setAccountNo("");
       setAccountName("");
       setShowBankForm(false);
+      setAddMemberSuccess(false);
+
+      setTimeout(() => {
+        setLastAddedMemberName((prev) => (prev === trimmedName ? null : prev));
+      }, 2500);
     } finally {
       setIsSubmitting(false);
     }
@@ -172,15 +189,37 @@ export function MemberManagerModal({
   };
 
   const handleSaveEditBank = async (memberId: string) => {
-    if (onUpdateMemberBank) {
-      await onUpdateMemberBank(
-        memberId,
-        editBankId,
-        editAccountNo.trim(),
-        editAccountName.trim().toUpperCase()
-      );
+    if (savingBankMemberId) return;
+    setSavingBankMemberId(memberId);
+    try {
+      if (onUpdateMemberBank) {
+        await onUpdateMemberBank(
+          memberId,
+          editBankId,
+          editAccountNo.trim(),
+          editAccountName.trim().toUpperCase()
+        );
+      }
+      setJustSavedBankMemberId(memberId);
+      // Keep "Đã lưu!" visible for 600ms before closing inline editor
+      await new Promise((resolve) => setTimeout(resolve, 600));
+      setEditingMemberId(null);
+      setTimeout(() => {
+        setJustSavedBankMemberId((prev) => (prev === memberId ? null : prev));
+      }, 2000);
+    } finally {
+      setSavingBankMemberId(null);
     }
-    setEditingMemberId(null);
+  };
+
+  const handleDeleteMember = async (id: string) => {
+    if (deletingMemberId) return;
+    setDeletingMemberId(id);
+    try {
+      await onDeleteMember(id);
+    } finally {
+      setDeletingMemberId(null);
+    }
   };
 
   const maleMembers = members.filter((m) => m.gender === "male");
@@ -199,13 +238,245 @@ export function MemberManagerModal({
     name: string;
     gender: "male" | "female";
   }) => {
-    await onAddMember(sample.name, sample.gender);
+    if (addingSampleName) return;
+    setAddingSampleName(sample.name);
+    try {
+      await onAddMember(sample.name, sample.gender);
+      setLastAddedMemberName(sample.name);
+      setTimeout(() => {
+        setLastAddedMemberName((prev) => (prev === sample.name ? null : prev));
+      }, 2500);
+    } finally {
+      setAddingSampleName(null);
+    }
   };
 
   // Format month MM/YYYY
   const displayMonth = currentMonth
     ? `${currentMonth.split("-")[1]}/${currentMonth.split("-")[0]}`
     : "";
+
+  const renderMemberRow = (m: Member) => {
+    const isMonthlyHost = m.id === monthlyHostId;
+    const isEditingThis = editingMemberId === m.id;
+    const isSavingThisBank = savingBankMemberId === m.id;
+    const isJustSavedThisBank = justSavedBankMemberId === m.id;
+    const isDeletingThis = deletingMemberId === m.id;
+    const isRecentlyAdded = lastAddedMemberName === m.name;
+    const isMale = m.gender === "male";
+    const accentClass = isMale ? "text-[var(--accent)]" : "text-[var(--female)]";
+
+    return (
+      <motion.div
+        layout
+        initial={{ opacity: 0, y: -8 }}
+        animate={{ opacity: 1, y: 0 }}
+        exit={{ opacity: 0, scale: 0.95 }}
+        transition={{ duration: 0.2 }}
+        key={m.id}
+        className={`p-2 rounded-[10px] bg-[var(--bg)] border transition-all ${
+          isRecentlyAdded
+            ? "border-emerald-500/60 ring-2 ring-emerald-500/30 bg-emerald-500/5 shadow-xs"
+            : isMonthlyHost
+            ? "border-amber-500/50 bg-amber-500/5"
+            : "border-[var(--border)]"
+        }`}
+      >
+        <div className="flex items-center justify-between gap-2 flex-wrap text-xs">
+          <div className="flex items-center gap-1.5 flex-wrap">
+            <span className="font-semibold text-[var(--text)]">
+              {isMale ? "👨" : "👩"} {m.name}
+            </span>
+
+            {isRecentlyAdded && (
+              <span className="inline-flex items-center gap-0.5 px-1.5 py-0.2 rounded-full text-[9px] font-bold bg-emerald-500 text-white animate-pulse">
+                Mới thêm
+              </span>
+            )}
+
+            {isMonthlyHost && (
+              <span className="inline-flex items-center gap-0.5 px-1.5 py-0.2 rounded-full text-[10px] font-bold bg-amber-500 text-white shadow-2xs">
+                <Crown className="w-2.5 h-2.5 fill-current" />
+                <span>Host T{displayMonth}</span>
+              </span>
+            )}
+
+            {m.account_no ? (
+              <motion.button
+                whileTap={{ scale: 0.94 }}
+                type="button"
+                onClick={() => handleStartEditBank(m)}
+                className={`inline-flex items-center gap-1 px-1.5 py-0.5 rounded-[6px] text-[10px] border transition-all cursor-pointer ${
+                  isJustSavedThisBank
+                    ? "bg-emerald-500/20 border-emerald-500 text-emerald-600 dark:text-emerald-400 ring-2 ring-emerald-500/30"
+                    : `bg-[var(--card)] border-[var(--border)] text-[var(--muted)] hover:text-[var(--text)] ${
+                        isMale ? "hover:border-[var(--accent)]" : "hover:border-[var(--female)]"
+                      }`
+                }`}
+                title="Bấm để chỉnh sửa STK"
+              >
+                <CreditCard
+                  className={`w-2.5 h-2.5 ${
+                    isJustSavedThisBank ? "text-emerald-500" : accentClass
+                  }`}
+                />
+                <span className="font-medium">
+                  {m.bank_id}: {m.account_no}
+                </span>
+                {isJustSavedThisBank ? (
+                  <Check className="w-2.5 h-2.5 text-emerald-500" />
+                ) : (
+                  <Edit2 className="w-2.5 h-2.5 opacity-60" />
+                )}
+              </motion.button>
+            ) : (
+              <motion.button
+                whileTap={{ scale: 0.94 }}
+                type="button"
+                onClick={() => handleStartEditBank(m)}
+                className={`text-[10px] hover:underline cursor-pointer font-medium ${accentClass}`}
+              >
+                + Thêm STK
+              </motion.button>
+            )}
+          </div>
+
+          <div className="flex items-center gap-1">
+            {onSetMonthlyHost && !isMonthlyHost && (
+              <motion.button
+                whileTap={{ scale: 0.92 }}
+                type="button"
+                onClick={() => setUserSelectedHostId(m.id)}
+                className="text-[11px] py-0.5 px-1.5 rounded-[6px] text-amber-500 hover:bg-amber-500/10 cursor-pointer flex items-center gap-1 font-medium"
+                title="Chọn làm Host mặc định tháng"
+              >
+                <Crown className="w-3 h-3" />
+                <span className="hidden sm:inline">Làm Host</span>
+              </motion.button>
+            )}
+
+            <motion.button
+              whileTap={{ scale: 0.88 }}
+              type="button"
+              disabled={isDeletingThis}
+              onClick={() => handleDeleteMember(m.id)}
+              className="text-[var(--muted)] hover:text-red-500 p-1 transition-colors cursor-pointer disabled:opacity-40"
+              title="Xóa thành viên"
+            >
+              {isDeletingThis ? (
+                <Loader2 className="w-3.5 h-3.5 animate-spin text-red-500" />
+              ) : (
+                <Trash2 className="w-3.5 h-3.5" />
+              )}
+            </motion.button>
+          </div>
+        </div>
+
+        {/* Inline Bank Editor with smooth animated expanding/collapsing */}
+        <AnimatePresence>
+          {isEditingThis && (
+            <motion.div
+              initial={{ opacity: 0, height: 0 }}
+              animate={{ opacity: 1, height: "auto" }}
+              exit={{ opacity: 0, height: 0 }}
+              transition={{ duration: 0.24, ease: "easeInOut" }}
+              className="overflow-hidden"
+            >
+              <div className="mt-2 pt-2 border-t border-[var(--border)] space-y-2">
+                <div className="grid grid-cols-1 sm:grid-cols-3 gap-2">
+                  <div>
+                    <label className="block text-[10px] text-[var(--muted)] mb-0.5">
+                      Ngân hàng
+                    </label>
+                    <div className="relative">
+                      <select
+                        disabled={isSavingThisBank}
+                        value={editBankId}
+                        onChange={(e) => setEditBankId(e.target.value)}
+                        className="w-full appearance-none py-1 pl-2.5 pr-7 text-xs rounded-[8px] border border-[var(--border)] bg-[var(--card)] text-[var(--text)] outline-none cursor-pointer disabled:opacity-60"
+                      >
+                        {POPULAR_BANKS.map((b) => (
+                          <option key={b.id} value={b.id}>
+                            {b.id} - {b.name}
+                          </option>
+                        ))}
+                      </select>
+                      <ChevronDown className="w-3.5 h-3.5 absolute right-2 top-1/2 -translate-y-1/2 pointer-events-none text-[var(--muted)]" />
+                    </div>
+                  </div>
+                  <div>
+                    <label className="block text-[10px] text-[var(--muted)] mb-0.5">
+                      Số tài khoản
+                    </label>
+                    <input
+                      type="text"
+                      disabled={isSavingThisBank}
+                      value={editAccountNo}
+                      placeholder="Số tài khoản..."
+                      onChange={(e) => setEditAccountNo(e.target.value)}
+                      className="w-full py-1 px-2 text-xs rounded-[8px] border border-[var(--border)] bg-[var(--card)] text-[var(--text)] outline-none disabled:opacity-60"
+                    />
+                  </div>
+                  <div>
+                    <label className="block text-[10px] text-[var(--muted)] mb-0.5">
+                      Tên chủ thẻ
+                    </label>
+                    <input
+                      type="text"
+                      disabled={isSavingThisBank}
+                      value={editAccountName}
+                      placeholder="Tên không dấu..."
+                      onChange={(e) => setEditAccountName(e.target.value)}
+                      className="w-full py-1 px-2 text-xs rounded-[8px] border border-[var(--border)] bg-[var(--card)] text-[var(--text)] outline-none uppercase disabled:opacity-60"
+                    />
+                  </div>
+                </div>
+                <div className="flex justify-end gap-1.5">
+                  <motion.button
+                    whileTap={{ scale: 0.94 }}
+                    type="button"
+                    disabled={isSavingThisBank}
+                    onClick={() => setEditingMemberId(null)}
+                    className="py-1 px-2.5 text-[11px] rounded-[6px] border border-[var(--border)] text-[var(--muted)] hover:text-[var(--text)] cursor-pointer disabled:opacity-50"
+                  >
+                    Hủy
+                  </motion.button>
+                  <motion.button
+                    whileTap={{ scale: 0.94 }}
+                    type="button"
+                    disabled={isSavingThisBank}
+                    onClick={() => handleSaveEditBank(m.id)}
+                    className={`py-1 px-3 text-[11px] font-semibold rounded-[6px] transition-all cursor-pointer flex items-center gap-1.5 ${
+                      isJustSavedThisBank
+                        ? "bg-emerald-600 text-white shadow-xs"
+                        : "bg-[var(--accent)] text-white hover:opacity-90"
+                    } disabled:opacity-75`}
+                  >
+                    {isJustSavedThisBank ? (
+                      <>
+                        <Check className="w-3 h-3" />
+                        <span>Đã lưu!</span>
+                      </>
+                    ) : isSavingThisBank ? (
+                      <>
+                        <Loader2 className="w-3 h-3 animate-spin" />
+                        <span>Đang lưu...</span>
+                      </>
+                    ) : (
+                      <>
+                        <Check className="w-3 h-3" />
+                        <span>Lưu STK</span>
+                      </>
+                    )}
+                  </motion.button>
+                </div>
+              </div>
+            </motion.div>
+          )}
+        </AnimatePresence>
+      </motion.div>
+    );
+  };
 
   return (
     <AnimatePresence>
@@ -344,7 +615,10 @@ export function MemberManagerModal({
                         <span>Đã Lưu!</span>
                       </>
                     ) : isSavingHost ? (
-                      <span>Đang lưu...</span>
+                      <>
+                        <Loader2 className="w-3.5 h-3.5 animate-spin" />
+                        <span>Đang lưu...</span>
+                      </>
                     ) : (
                       <>
                         <Save className="w-3.5 h-3.5" />
@@ -365,18 +639,20 @@ export function MemberManagerModal({
           <div className="flex items-center gap-2">
             <input
               type="text"
+              disabled={isSubmitting}
               value={name}
               placeholder="Nhập tên thành viên..."
               onChange={(e) => setName(e.target.value)}
-              className="flex-1 min-w-0 py-1.5 px-3 text-xs rounded-[10px] border border-[var(--border)] bg-[var(--card)] text-[var(--text)] outline-none focus:border-[var(--accent)]"
+              className="flex-1 min-w-0 py-1.5 px-3 text-xs rounded-[10px] border border-[var(--border)] bg-[var(--card)] text-[var(--text)] outline-none focus:border-[var(--accent)] disabled:opacity-60"
             />
             {/* Gender Toggle */}
             <div className="flex rounded-[10px] border border-[var(--border)] p-0.5 bg-[var(--card)]">
               <motion.button
                 whileTap={{ scale: 0.92 }}
                 type="button"
+                disabled={isSubmitting}
                 onClick={() => setGender("male")}
-                className={`py-1 px-2 text-xs font-semibold rounded-[8px] transition-all cursor-pointer ${
+                className={`py-1 px-2 text-xs font-semibold rounded-[8px] transition-all cursor-pointer disabled:opacity-60 ${
                   gender === "male"
                     ? "bg-[var(--accent)] text-white shadow-xs"
                     : "text-[var(--muted)] hover:text-[var(--text)]"
@@ -387,8 +663,9 @@ export function MemberManagerModal({
               <motion.button
                 whileTap={{ scale: 0.92 }}
                 type="button"
+                disabled={isSubmitting}
                 onClick={() => setGender("female")}
-                className={`py-1 px-2 text-xs font-semibold rounded-[8px] transition-all cursor-pointer ${
+                className={`py-1 px-2 text-xs font-semibold rounded-[8px] transition-all cursor-pointer disabled:opacity-60 ${
                   gender === "female"
                     ? "bg-[var(--female)] text-white shadow-xs"
                     : "text-[var(--muted)] hover:text-[var(--text)]"
@@ -403,8 +680,9 @@ export function MemberManagerModal({
           <div>
             <button
               type="button"
+              disabled={isSubmitting}
               onClick={() => setShowBankForm(!showBankForm)}
-              className="text-[11px] text-[var(--accent)] hover:underline flex items-center gap-1 cursor-pointer font-medium"
+              className="text-[11px] text-[var(--accent)] hover:underline flex items-center gap-1 cursor-pointer font-medium disabled:opacity-60"
             >
               <CreditCard className="w-3 h-3" />
               <span>
@@ -414,63 +692,94 @@ export function MemberManagerModal({
               </span>
             </button>
 
-            {showBankForm && (
-              <div className="mt-2 pt-2 border-t border-[var(--border)] grid grid-cols-1 sm:grid-cols-3 gap-2">
-                <div>
-                  <label className="block text-[10px] text-[var(--muted)] mb-0.5">
-                    Ngân hàng
-                  </label>
-                  <div className="relative">
-                    <select
-                      value={bankId}
-                      onChange={(e) => setBankId(e.target.value)}
-                      className="w-full appearance-none py-1 pl-2.5 pr-7 text-xs rounded-[8px] border border-[var(--border)] bg-[var(--card)] text-[var(--text)] outline-none cursor-pointer"
-                    >
-                      {POPULAR_BANKS.map((b) => (
-                        <option key={b.id} value={b.id}>
-                          {b.id} - {b.name}
-                        </option>
-                      ))}
-                    </select>
-                    <ChevronDown className="w-3.5 h-3.5 absolute right-2 top-1/2 -translate-y-1/2 pointer-events-none text-[var(--muted)]" />
+            <AnimatePresence>
+              {showBankForm && (
+                <motion.div
+                  initial={{ opacity: 0, height: 0 }}
+                  animate={{ opacity: 1, height: "auto" }}
+                  exit={{ opacity: 0, height: 0 }}
+                  transition={{ duration: 0.22, ease: "easeInOut" }}
+                  className="overflow-hidden"
+                >
+                  <div className="mt-2 pt-2 border-t border-[var(--border)] grid grid-cols-1 sm:grid-cols-3 gap-2">
+                    <div>
+                      <label className="block text-[10px] text-[var(--muted)] mb-0.5">
+                        Ngân hàng
+                      </label>
+                      <div className="relative">
+                        <select
+                          disabled={isSubmitting}
+                          value={bankId}
+                          onChange={(e) => setBankId(e.target.value)}
+                          className="w-full appearance-none py-1 pl-2.5 pr-7 text-xs rounded-[8px] border border-[var(--border)] bg-[var(--card)] text-[var(--text)] outline-none cursor-pointer disabled:opacity-60"
+                        >
+                          {POPULAR_BANKS.map((b) => (
+                            <option key={b.id} value={b.id}>
+                              {b.id} - {b.name}
+                            </option>
+                          ))}
+                        </select>
+                        <ChevronDown className="w-3.5 h-3.5 absolute right-2 top-1/2 -translate-y-1/2 pointer-events-none text-[var(--muted)]" />
+                      </div>
+                    </div>
+                    <div>
+                      <label className="block text-[10px] text-[var(--muted)] mb-0.5">
+                        Số tài khoản
+                      </label>
+                      <input
+                        type="text"
+                        disabled={isSubmitting}
+                        value={accountNo}
+                        placeholder="VD: 0988..."
+                        onChange={(e) => setAccountNo(e.target.value)}
+                        className="w-full py-1 px-2 text-xs rounded-[8px] border border-[var(--border)] bg-[var(--card)] text-[var(--text)] outline-none disabled:opacity-60"
+                      />
+                    </div>
+                    <div>
+                      <label className="block text-[10px] text-[var(--muted)] mb-0.5">
+                        Tên chủ thẻ
+                      </label>
+                      <input
+                        type="text"
+                        disabled={isSubmitting}
+                        value={accountName}
+                        placeholder="VD: NGUYEN VAN A"
+                        onChange={(e) => setAccountName(e.target.value)}
+                        className="w-full py-1 px-2 text-xs rounded-[8px] border border-[var(--border)] bg-[var(--card)] text-[var(--text)] outline-none uppercase disabled:opacity-60"
+                      />
+                    </div>
                   </div>
-                </div>
-                <div>
-                  <label className="block text-[10px] text-[var(--muted)] mb-0.5">
-                    Số tài khoản
-                  </label>
-                  <input
-                    type="text"
-                    value={accountNo}
-                    placeholder="VD: 0988..."
-                    onChange={(e) => setAccountNo(e.target.value)}
-                    className="w-full py-1 px-2 text-xs rounded-[8px] border border-[var(--border)] bg-[var(--card)] text-[var(--text)] outline-none"
-                  />
-                </div>
-                <div>
-                  <label className="block text-[10px] text-[var(--muted)] mb-0.5">
-                    Tên chủ thẻ
-                  </label>
-                  <input
-                    type="text"
-                    value={accountName}
-                    placeholder="VD: NGUYEN VAN A"
-                    onChange={(e) => setAccountName(e.target.value)}
-                    className="w-full py-1 px-2 text-xs rounded-[8px] border border-[var(--border)] bg-[var(--card)] text-[var(--text)] outline-none uppercase"
-                  />
-                </div>
-              </div>
-            )}
+                </motion.div>
+              )}
+            </AnimatePresence>
           </div>
 
           <motion.button
             whileTap={{ scale: 0.96 }}
             type="submit"
             disabled={!name.trim() || isSubmitting}
-            className="w-full flex items-center justify-center gap-1.5 py-1.5 px-3 rounded-[10px] bg-[var(--accent)] hover:opacity-90 text-white font-semibold text-xs transition-all cursor-pointer disabled:opacity-50"
+            className={`w-full flex items-center justify-center gap-1.5 py-2 px-3 rounded-[10px] font-semibold text-xs transition-all cursor-pointer disabled:opacity-50 ${
+              addMemberSuccess
+                ? "bg-emerald-600 text-white shadow-xs"
+                : "bg-[var(--accent)] hover:opacity-90 text-white"
+            }`}
           >
-            <UserPlus className="w-3.5 h-3.5" />
-            <span>Thêm thành viên vào danh sách</span>
+            {addMemberSuccess ? (
+              <>
+                <Check className="w-3.5 h-3.5" />
+                <span>Đã thêm thành viên!</span>
+              </>
+            ) : isSubmitting ? (
+              <>
+                <Loader2 className="w-3.5 h-3.5 animate-spin" />
+                <span>Đang thêm thành viên...</span>
+              </>
+            ) : (
+              <>
+                <UserPlus className="w-3.5 h-3.5" />
+                <span>Thêm thành viên vào danh sách</span>
+              </>
+            )}
           </motion.button>
         </form>
 
@@ -498,14 +807,19 @@ export function MemberManagerModal({
                       whileTap={{ scale: 0.92 }}
                       key={s.name}
                       type="button"
+                      disabled={addingSampleName !== null}
                       onClick={() => handleAddSample(s)}
-                      className={`text-[11px] py-1 px-2 rounded-full border border-[var(--border)] bg-[var(--card)] hover:border-[var(--accent)] flex items-center gap-1 transition-colors cursor-pointer ${
+                      className={`text-[11px] py-1 px-2 rounded-full border border-[var(--border)] bg-[var(--card)] hover:border-[var(--accent)] flex items-center gap-1 transition-colors cursor-pointer disabled:opacity-50 ${
                         s.gender === "male"
                           ? "text-[var(--accent)]"
                           : "text-[var(--female)]"
                       }`}
                     >
-                      <Plus className="w-3 h-3" />
+                      {addingSampleName === s.name ? (
+                        <Loader2 className="w-3 h-3 animate-spin text-current" />
+                      ) : (
+                        <Plus className="w-3 h-3" />
+                      )}
                       <span>
                         {s.name} ({s.gender === "male" ? "Nam" : "Nữ"})
                       </span>
@@ -529,162 +843,7 @@ export function MemberManagerModal({
                   </p>
                 ) : (
                   <div className="space-y-1.5">
-                    {maleMembers.map((m) => {
-                      const isMonthlyHost = m.id === monthlyHostId;
-                      const isEditingThis = editingMemberId === m.id;
-
-                      return (
-                        <div
-                          key={m.id}
-                          className={`p-2 rounded-[10px] bg-[var(--bg)] border transition-colors ${
-                            isMonthlyHost
-                              ? "border-amber-500/50 bg-amber-500/5"
-                              : "border-[var(--border)]"
-                          }`}
-                        >
-                          <div className="flex items-center justify-between gap-2 flex-wrap text-xs">
-                            <div className="flex items-center gap-1.5 flex-wrap">
-                              <span className="font-semibold text-[var(--text)]">
-                                👨 {m.name}
-                              </span>
-
-                              {isMonthlyHost && (
-                                <span className="inline-flex items-center gap-0.5 px-1.5 py-0.2 rounded-full text-[10px] font-bold bg-amber-500 text-white shadow-2xs">
-                                  <Crown className="w-2.5 h-2.5 fill-current" />
-                                  <span>Host T{displayMonth}</span>
-                                </span>
-                              )}
-
-                              {m.account_no ? (
-                                <motion.button
-                                  whileTap={{ scale: 0.94 }}
-                                  type="button"
-                                  onClick={() => handleStartEditBank(m)}
-                                  className="inline-flex items-center gap-1 px-1.5 py-0.5 rounded-[6px] text-[10px] bg-[var(--card)] border border-[var(--border)] text-[var(--muted)] hover:text-[var(--text)] hover:border-[var(--accent)] cursor-pointer"
-                                  title="Bấm để chỉnh sửa STK"
-                                >
-                                  <CreditCard className="w-2.5 h-2.5 text-[var(--accent)]" />
-                                  <span>
-                                    {m.bank_id}: {m.account_no}
-                                  </span>
-                                  <Edit2 className="w-2.5 h-2.5 opacity-60" />
-                                </motion.button>
-                              ) : (
-                                <motion.button
-                                  whileTap={{ scale: 0.94 }}
-                                  type="button"
-                                  onClick={() => handleStartEditBank(m)}
-                                  className="text-[10px] text-[var(--accent)] hover:underline cursor-pointer"
-                                >
-                                  + Thêm STK
-                                </motion.button>
-                              )}
-                            </div>
-
-                            <div className="flex items-center gap-1">
-                              {onSetMonthlyHost && !isMonthlyHost && (
-                                <motion.button
-                                  whileTap={{ scale: 0.92 }}
-                                  type="button"
-                                  onClick={() => setUserSelectedHostId(m.id)}
-                                  className="text-[11px] py-0.5 px-1.5 rounded-[6px] text-amber-500 hover:bg-amber-500/10 cursor-pointer flex items-center gap-1 font-medium"
-                                  title="Chọn làm Host mặc định tháng"
-                                >
-                                  <Crown className="w-3 h-3" />
-                                  <span className="hidden sm:inline">Làm Host</span>
-                                </motion.button>
-                              )}
-
-                              <motion.button
-                                whileTap={{ scale: 0.88 }}
-                                type="button"
-                                onClick={() => onDeleteMember(m.id)}
-                                className="text-[var(--muted)] hover:text-red-500 p-1 transition-colors cursor-pointer"
-                                title="Xóa thành viên"
-                              >
-                                <Trash2 className="w-3.5 h-3.5" />
-                              </motion.button>
-                            </div>
-                          </div>
-
-                          {/* Inline Bank Editor */}
-                          {isEditingThis && (
-                            <div className="mt-2 pt-2 border-t border-[var(--border)] space-y-2">
-                              <div className="grid grid-cols-1 sm:grid-cols-3 gap-2">
-                                <div>
-                                  <label className="block text-[10px] text-[var(--muted)] mb-0.5">
-                                    Ngân hàng
-                                  </label>
-                                  <div className="relative">
-                                    <select
-                                      value={editBankId}
-                                      onChange={(e) =>
-                                        setEditBankId(e.target.value)
-                                      }
-                                      className="w-full appearance-none py-1 pl-2.5 pr-7 text-xs rounded-[8px] border border-[var(--border)] bg-[var(--card)] text-[var(--text)] outline-none cursor-pointer"
-                                    >
-                                      {POPULAR_BANKS.map((b) => (
-                                        <option key={b.id} value={b.id}>
-                                          {b.id} - {b.name}
-                                        </option>
-                                      ))}
-                                    </select>
-                                    <ChevronDown className="w-3.5 h-3.5 absolute right-2 top-1/2 -translate-y-1/2 pointer-events-none text-[var(--muted)]" />
-                                  </div>
-                                </div>
-                                <div>
-                                  <label className="block text-[10px] text-[var(--muted)] mb-0.5">
-                                    Số tài khoản
-                                  </label>
-                                  <input
-                                    type="text"
-                                    value={editAccountNo}
-                                    placeholder="Số tài khoản..."
-                                    onChange={(e) =>
-                                      setEditAccountNo(e.target.value)
-                                    }
-                                    className="w-full py-1 px-2 text-xs rounded-[8px] border border-[var(--border)] bg-[var(--card)] text-[var(--text)] outline-none"
-                                  />
-                                </div>
-                                <div>
-                                  <label className="block text-[10px] text-[var(--muted)] mb-0.5">
-                                    Tên chủ thẻ
-                                  </label>
-                                  <input
-                                    type="text"
-                                    value={editAccountName}
-                                    placeholder="Tên không dấu..."
-                                    onChange={(e) =>
-                                      setEditAccountName(e.target.value)
-                                    }
-                                    className="w-full py-1 px-2 text-xs rounded-[8px] border border-[var(--border)] bg-[var(--card)] text-[var(--text)] outline-none uppercase"
-                                  />
-                                </div>
-                              </div>
-                              <div className="flex justify-end gap-1.5">
-                                <motion.button
-                                  whileTap={{ scale: 0.94 }}
-                                  type="button"
-                                  onClick={() => setEditingMemberId(null)}
-                                  className="py-1 px-2.5 text-[11px] rounded-[6px] border border-[var(--border)] text-[var(--muted)] hover:text-[var(--text)] cursor-pointer"
-                                >
-                                  Hủy
-                                </motion.button>
-                                <motion.button
-                                  whileTap={{ scale: 0.94 }}
-                                  type="button"
-                                  onClick={() => handleSaveEditBank(m.id)}
-                                  className="py-1 px-2.5 text-[11px] font-semibold rounded-[6px] bg-[var(--accent)] text-white hover:opacity-90 cursor-pointer flex items-center gap-1"
-                                >
-                                  <Check className="w-3 h-3" />
-                                  <span>Lưu STK</span>
-                                </motion.button>
-                              </div>
-                            </div>
-                          )}
-                        </div>
-                      );
-                    })}
+                    {maleMembers.map(renderMemberRow)}
                   </div>
                 )}
               </div>
@@ -702,162 +861,7 @@ export function MemberManagerModal({
                   </p>
                 ) : (
                   <div className="space-y-1.5">
-                    {femaleMembers.map((m) => {
-                      const isMonthlyHost = m.id === monthlyHostId;
-                      const isEditingThis = editingMemberId === m.id;
-
-                      return (
-                        <div
-                          key={m.id}
-                          className={`p-2 rounded-[10px] bg-[var(--bg)] border transition-colors ${
-                            isMonthlyHost
-                              ? "border-amber-500/50 bg-amber-500/5"
-                              : "border-[var(--border)]"
-                          }`}
-                        >
-                          <div className="flex items-center justify-between gap-2 flex-wrap text-xs">
-                            <div className="flex items-center gap-1.5 flex-wrap">
-                              <span className="font-semibold text-[var(--text)]">
-                                👩 {m.name}
-                              </span>
-
-                              {isMonthlyHost && (
-                                <span className="inline-flex items-center gap-0.5 px-1.5 py-0.2 rounded-full text-[10px] font-bold bg-amber-500 text-white shadow-2xs">
-                                  <Crown className="w-2.5 h-2.5 fill-current" />
-                                  <span>Host T{displayMonth}</span>
-                                </span>
-                              )}
-
-                              {m.account_no ? (
-                                <motion.button
-                                  whileTap={{ scale: 0.94 }}
-                                  type="button"
-                                  onClick={() => handleStartEditBank(m)}
-                                  className="inline-flex items-center gap-1 px-1.5 py-0.5 rounded-[6px] text-[10px] bg-[var(--card)] border border-[var(--border)] text-[var(--muted)] hover:text-[var(--text)] hover:border-[var(--female)] cursor-pointer"
-                                  title="Bấm để chỉnh sửa STK"
-                                >
-                                  <CreditCard className="w-2.5 h-2.5 text-[var(--female)]" />
-                                  <span>
-                                    {m.bank_id}: {m.account_no}
-                                  </span>
-                                  <Edit2 className="w-2.5 h-2.5 opacity-60" />
-                                </motion.button>
-                              ) : (
-                                <motion.button
-                                  whileTap={{ scale: 0.94 }}
-                                  type="button"
-                                  onClick={() => handleStartEditBank(m)}
-                                  className="text-[10px] text-[var(--female)] hover:underline cursor-pointer"
-                                >
-                                  + Thêm STK
-                                </motion.button>
-                              )}
-                            </div>
-
-                            <div className="flex items-center gap-1">
-                              {onSetMonthlyHost && !isMonthlyHost && (
-                                <motion.button
-                                  whileTap={{ scale: 0.92 }}
-                                  type="button"
-                                  onClick={() => setUserSelectedHostId(m.id)}
-                                  className="text-[11px] py-0.5 px-1.5 rounded-[6px] text-amber-500 hover:bg-amber-500/10 cursor-pointer flex items-center gap-1 font-medium"
-                                  title="Chọn làm Host mặc định tháng"
-                                >
-                                  <Crown className="w-3 h-3" />
-                                  <span className="hidden sm:inline">Làm Host</span>
-                                </motion.button>
-                              )}
-
-                              <motion.button
-                                whileTap={{ scale: 0.88 }}
-                                type="button"
-                                onClick={() => onDeleteMember(m.id)}
-                                className="text-[var(--muted)] hover:text-red-500 p-1 transition-colors cursor-pointer"
-                                title="Xóa thành viên"
-                              >
-                                <Trash2 className="w-3.5 h-3.5" />
-                              </motion.button>
-                            </div>
-                          </div>
-
-                          {/* Inline Bank Editor */}
-                          {isEditingThis && (
-                            <div className="mt-2 pt-2 border-t border-[var(--border)] space-y-2">
-                              <div className="grid grid-cols-1 sm:grid-cols-3 gap-2">
-                                <div>
-                                  <label className="block text-[10px] text-[var(--muted)] mb-0.5">
-                                    Ngân hàng
-                                  </label>
-                                  <div className="relative">
-                                    <select
-                                      value={editBankId}
-                                      onChange={(e) =>
-                                        setEditBankId(e.target.value)
-                                      }
-                                      className="w-full appearance-none py-1 pl-2.5 pr-7 text-xs rounded-[8px] border border-[var(--border)] bg-[var(--card)] text-[var(--text)] outline-none cursor-pointer"
-                                    >
-                                      {POPULAR_BANKS.map((b) => (
-                                        <option key={b.id} value={b.id}>
-                                          {b.id} - {b.name}
-                                        </option>
-                                      ))}
-                                    </select>
-                                    <ChevronDown className="w-3.5 h-3.5 absolute right-2 top-1/2 -translate-y-1/2 pointer-events-none text-[var(--muted)]" />
-                                  </div>
-                                </div>
-                                <div>
-                                  <label className="block text-[10px] text-[var(--muted)] mb-0.5">
-                                    Số tài khoản
-                                  </label>
-                                  <input
-                                    type="text"
-                                    value={editAccountNo}
-                                    placeholder="Số tài khoản..."
-                                    onChange={(e) =>
-                                      setEditAccountNo(e.target.value)
-                                    }
-                                    className="w-full py-1 px-2 text-xs rounded-[8px] border border-[var(--border)] bg-[var(--card)] text-[var(--text)] outline-none"
-                                  />
-                                </div>
-                                <div>
-                                  <label className="block text-[10px] text-[var(--muted)] mb-0.5">
-                                    Tên chủ thẻ
-                                  </label>
-                                  <input
-                                    type="text"
-                                    value={editAccountName}
-                                    placeholder="Tên không dấu..."
-                                    onChange={(e) =>
-                                      setEditAccountName(e.target.value)
-                                    }
-                                    className="w-full py-1 px-2 text-xs rounded-[8px] border border-[var(--border)] bg-[var(--card)] text-[var(--text)] outline-none uppercase"
-                                  />
-                                </div>
-                              </div>
-                              <div className="flex justify-end gap-1.5">
-                                <motion.button
-                                  whileTap={{ scale: 0.94 }}
-                                  type="button"
-                                  onClick={() => setEditingMemberId(null)}
-                                  className="py-1 px-2.5 text-[11px] rounded-[6px] border border-[var(--border)] text-[var(--muted)] hover:text-[var(--text)] cursor-pointer"
-                                >
-                                  Hủy
-                                </motion.button>
-                                <motion.button
-                                  whileTap={{ scale: 0.94 }}
-                                  type="button"
-                                  onClick={() => handleSaveEditBank(m.id)}
-                                  className="py-1 px-2.5 text-[11px] font-semibold rounded-[6px] bg-[var(--accent)] text-white hover:opacity-90 cursor-pointer flex items-center gap-1"
-                                >
-                                  <Check className="w-3 h-3" />
-                                  <span>Lưu STK</span>
-                                </motion.button>
-                              </div>
-                            </div>
-                          )}
-                        </div>
-                      );
-                    })}
+                    {femaleMembers.map(renderMemberRow)}
                   </div>
                 )}
               </div>

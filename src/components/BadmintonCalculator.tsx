@@ -23,6 +23,7 @@ import {
   Trophy,
   Calculator,
   Settings,
+  Loader2,
 } from "lucide-react";
 import { motion, AnimatePresence } from "framer-motion";
 import { PixelCat, PixelRacket } from "./PixelArt";
@@ -111,6 +112,7 @@ export function BadmintonCalculator() {
   // New guest state for single-day attendance
   const [guestName, setGuestName] = useState("");
   const [guestGender, setGuestGender] = useState<"male" | "female">("male");
+  const [isAddingGuest, setIsAddingGuest] = useState(false);
 
   // Initialize Supabase sync on client mount
   useEffect(() => {
@@ -303,11 +305,18 @@ export function BadmintonCalculator() {
     }
   };
 
-  const handleAddGuest = (e: React.FormEvent) => {
+  const handleAddGuest = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (!guestName.trim()) return;
-    addGuestAttendee(guestName, guestGender);
-    setGuestName("");
+    const trimmed = guestName.trim();
+    if (!trimmed || isAddingGuest) return;
+    setIsAddingGuest(true);
+    try {
+      addGuestAttendee(trimmed, guestGender);
+      setGuestName("");
+      await new Promise((r) => setTimeout(r, 250));
+    } finally {
+      setIsAddingGuest(false);
+    }
   };
 
   const maleMembers = useMemo(
@@ -991,11 +1000,20 @@ export function BadmintonCalculator() {
                   <motion.button
                     whileTap={{ scale: 0.94 }}
                     type="submit"
-                    disabled={!guestName.trim()}
+                    disabled={!guestName.trim() || isAddingGuest}
                     className="py-1.5 px-3 text-xs font-semibold rounded-[8px] bg-[var(--accent2)] hover:opacity-90 text-white transition-all cursor-pointer disabled:opacity-40 flex items-center justify-center gap-1 shadow-xs shrink-0 flex-1 sm:flex-initial"
                   >
-                    <Plus className="w-3.5 h-3.5" />
-                    <span>Thêm</span>
+                    {isAddingGuest ? (
+                      <>
+                        <Loader2 className="w-3.5 h-3.5 animate-spin" />
+                        <span>Đang thêm...</span>
+                      </>
+                    ) : (
+                      <>
+                        <Plus className="w-3.5 h-3.5" />
+                        <span>Thêm</span>
+                      </>
+                    )}
                   </motion.button>
                 </div>
               </form>
@@ -1003,41 +1021,53 @@ export function BadmintonCalculator() {
               {/* Guests pills list */}
               {(data.guests || []).length > 0 && (
                 <div className="flex flex-wrap gap-1.5 pt-1 overflow-hidden">
-                  {maleGuests.map((g) => (
-                    <span
-                      key={g.id}
-                      className="inline-flex items-center gap-1.5 py-1 px-2.5 rounded-full text-xs font-medium border border-blue-400/50 bg-blue-50/20 dark:bg-blue-950/40 text-[var(--accent)] max-w-full"
-                    >
-                      <span className="truncate max-w-[200px]">👨 {g.name} (Khách)</span>
-                      <motion.button
-                        whileTap={{ scale: 0.88 }}
-                        type="button"
-                        onClick={() => removeGuestAttendee(g.id)}
-                        className="p-0.5 rounded-full hover:bg-[var(--border)] text-[var(--muted)] hover:text-red-500 cursor-pointer transition-colors shrink-0"
-                        title="Xóa khách này"
+                  <AnimatePresence>
+                    {maleGuests.map((g) => (
+                      <motion.span
+                        layout
+                        initial={{ opacity: 0, scale: 0.8 }}
+                        animate={{ opacity: 1, scale: 1 }}
+                        exit={{ opacity: 0, scale: 0.8 }}
+                        transition={{ duration: 0.18 }}
+                        key={g.id}
+                        className="inline-flex items-center gap-1.5 py-1 px-2.5 rounded-full text-xs font-medium border border-blue-400/50 bg-blue-50/20 dark:bg-blue-950/40 text-[var(--accent)] max-w-full"
                       >
-                        <X className="w-3 h-3" />
-                      </motion.button>
-                    </span>
-                  ))}
+                        <span className="truncate max-w-[200px]">👨 {g.name} (Khách)</span>
+                        <motion.button
+                          whileTap={{ scale: 0.88 }}
+                          type="button"
+                          onClick={() => removeGuestAttendee(g.id)}
+                          className="p-0.5 rounded-full hover:bg-[var(--border)] text-[var(--muted)] hover:text-red-500 cursor-pointer transition-colors shrink-0"
+                          title="Xóa khách này"
+                        >
+                          <X className="w-3 h-3" />
+                        </motion.button>
+                      </motion.span>
+                    ))}
 
-                  {femaleGuests.map((g) => (
-                    <span
-                      key={g.id}
-                      className="inline-flex items-center gap-1.5 py-1 px-2.5 rounded-full text-xs font-medium border border-pink-400/50 bg-pink-50/20 dark:bg-pink-950/40 text-[var(--female)] max-w-full"
-                    >
-                      <span className="truncate max-w-[200px]">👩 {g.name} (Khách)</span>
-                      <motion.button
-                        whileTap={{ scale: 0.88 }}
-                        type="button"
-                        onClick={() => removeGuestAttendee(g.id)}
-                        className="p-0.5 rounded-full hover:bg-[var(--border)] text-[var(--muted)] hover:text-red-500 cursor-pointer transition-colors shrink-0"
-                        title="Xóa khách này"
+                    {femaleGuests.map((g) => (
+                      <motion.span
+                        layout
+                        initial={{ opacity: 0, scale: 0.8 }}
+                        animate={{ opacity: 1, scale: 1 }}
+                        exit={{ opacity: 0, scale: 0.8 }}
+                        transition={{ duration: 0.18 }}
+                        key={g.id}
+                        className="inline-flex items-center gap-1.5 py-1 px-2.5 rounded-full text-xs font-medium border border-pink-400/50 bg-pink-50/20 dark:bg-pink-950/40 text-[var(--female)] max-w-full"
                       >
-                        <X className="w-3 h-3" />
-                      </motion.button>
-                    </span>
-                  ))}
+                        <span className="truncate max-w-[200px]">👩 {g.name} (Khách)</span>
+                        <motion.button
+                          whileTap={{ scale: 0.88 }}
+                          type="button"
+                          onClick={() => removeGuestAttendee(g.id)}
+                          className="p-0.5 rounded-full hover:bg-[var(--border)] text-[var(--muted)] hover:text-red-500 cursor-pointer transition-colors shrink-0"
+                          title="Xóa khách này"
+                        >
+                          <X className="w-3 h-3" />
+                        </motion.button>
+                      </motion.span>
+                    ))}
+                  </AnimatePresence>
                 </div>
               )}
             </div>

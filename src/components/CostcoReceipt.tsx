@@ -42,7 +42,7 @@ interface CostcoReceiptProps {
   copied: boolean;
   onShare: () => void;
   onOpenVietQR: () => void;
-  onSaveToHistory: () => void;
+  onSaveToHistory: () => void | Promise<void>;
 }
 
 export function CostcoReceipt({
@@ -70,6 +70,20 @@ export function CostcoReceipt({
 }: CostcoReceiptProps) {
   const [receiptTheme, setReceiptTheme] = useState<"auto" | "light" | "dark">("auto");
   const [isSystemDark, setIsSystemDark] = useState(false);
+  const [isSavingHistory, setIsSavingHistory] = useState(false);
+  const [historySaved, setHistorySaved] = useState(false);
+
+  const handleSaveToHistoryClick = async () => {
+    if (isSavingHistory) return;
+    setIsSavingHistory(true);
+    try {
+      await Promise.resolve(onSaveToHistory());
+      setHistorySaved(true);
+      setTimeout(() => setHistorySaved(false), 2200);
+    } finally {
+      setIsSavingHistory(false);
+    }
+  };
 
   useEffect(() => {
     const checkDark = () => {
@@ -816,11 +830,30 @@ export function CostcoReceipt({
           <motion.button
             whileTap={{ scale: 0.95 }}
             type="button"
-            onClick={onSaveToHistory}
-            className="flex items-center justify-center gap-1.5 py-2 px-2.5 rounded-[10px] bg-[var(--card)] border border-[var(--border)] hover:border-[var(--accent2)] text-[var(--text)] font-medium text-[11px] transition-colors cursor-pointer"
+            disabled={isSavingHistory}
+            onClick={handleSaveToHistoryClick}
+            className={`flex items-center justify-center gap-1.5 py-2 px-2.5 rounded-[10px] bg-[var(--card)] border text-[11px] font-medium transition-colors cursor-pointer disabled:opacity-60 ${
+              historySaved
+                ? "border-emerald-500/50 text-emerald-600 dark:text-emerald-400 bg-emerald-500/10"
+                : "border-[var(--border)] hover:border-[var(--accent2)] text-[var(--text)]"
+            }`}
           >
-            <BookmarkPlus className="w-3.5 h-3.5 text-[var(--accent2)]" />
-            <span>Lưu lại lịch sử</span>
+            {historySaved ? (
+              <>
+                <Check className="w-3.5 h-3.5 text-emerald-500" />
+                <span className="font-semibold text-emerald-600 dark:text-emerald-400">Đã lưu lịch sử!</span>
+              </>
+            ) : isSavingHistory ? (
+              <>
+                <Loader2 className="w-3.5 h-3.5 animate-spin text-[var(--accent2)]" />
+                <span>Đang lưu...</span>
+              </>
+            ) : (
+              <>
+                <BookmarkPlus className="w-3.5 h-3.5 text-[var(--accent2)]" />
+                <span>Lưu lại lịch sử</span>
+              </>
+            )}
           </motion.button>
         </div>
 
