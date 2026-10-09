@@ -494,20 +494,9 @@ export function CostcoReceipt({
         animate={{ opacity: 1, y: 0 }}
         transition={{ type: "spring", stiffness: 360, damping: 28 }}
         ref={receiptRef}
-        className={`receipt-paper ${themeClass} relative w-full max-w-full sm:max-w-[380px] shadow-2xl rounded-sm border font-mono text-[11px] leading-[1.35] tracking-tight selection:bg-neutral-500/20 overflow-hidden mx-auto`}
+        className={`receipt-paper ${themeClass} relative w-full max-w-full sm:max-w-[380px] shadow-2xl rounded-[16px] border font-mono text-[11px] leading-[1.35] tracking-tight selection:bg-neutral-500/20 overflow-hidden mx-auto`}
       >
-        {/* Top Serrated Edge (Jagged cut paper effect) */}
-        <div className="w-full h-2.5 bg-[var(--receipt-bg)] relative flex overflow-hidden">
-          <svg
-            className="w-full h-2 text-[var(--bg)] fill-current scale-y-[-1]"
-            preserveAspectRatio="none"
-            viewBox="0 0 100 10"
-          >
-            <polygon points="0,0 2.5,10 5,0 7.5,10 10,0 12.5,10 15,0 17.5,10 20,0 22.5,10 25,0 27.5,10 30,0 32.5,10 35,0 37.5,10 40,0 42.5,10 45,0 47.5,10 50,0 52.5,10 55,0 57.5,10 60,0 62.5,10 65,0 67.5,10 70,0 72.5,10 75,0 77.5,10 80,0 82.5,10 85,0 87.5,10 90,0 92.5,10 95,0 97.5,10 100,0" />
-          </svg>
-        </div>
-
-        <div className="p-3.5 sm:p-5 pt-2">
+        <div className="p-4 sm:p-5">
           {/* Logo Header */}
           <div className="text-center mb-3">
             <div className="inline-flex flex-col items-center">
@@ -775,17 +764,6 @@ export function CostcoReceipt({
               {date} • caulongratchuyen.vercel.app
             </div>
           </div>
-        </div>
-
-        {/* Bottom Serrated Edge (Jagged cut paper effect) */}
-        <div className="w-full h-2.5 bg-[var(--receipt-bg)] relative flex overflow-hidden">
-          <svg
-            className="w-full h-2 text-[var(--bg)] fill-current"
-            preserveAspectRatio="none"
-            viewBox="0 0 100 10"
-          >
-            <polygon points="0,0 2.5,10 5,0 7.5,10 10,0 12.5,10 15,0 17.5,10 20,0 22.5,10 25,0 27.5,10 30,0 32.5,10 35,0 37.5,10 40,0 42.5,10 45,0 47.5,10 50,0 52.5,10 55,0 57.5,10 60,0 62.5,10 65,0 67.5,10 70,0 72.5,10 75,0 77.5,10 80,0 82.5,10 85,0 87.5,10 90,0 92.5,10 95,0 97.5,10 100,0" />
-          </svg>
         </div>
       </motion.div>
 
