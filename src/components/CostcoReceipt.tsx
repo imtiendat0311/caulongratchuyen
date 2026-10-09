@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useState } from "react";
+import React, { useState, useRef } from "react";
 import {
   Share2,
   Copy,
@@ -11,7 +11,9 @@ import {
   Sun,
   Moon,
   Sparkles,
+  Loader2,
 } from "lucide-react";
+import { toBlob, toPng } from "html-to-image";
 import { Member, BankConfig } from "@/types";
 import { parseCourtsList } from "./CourtPickerAndMap";
 
@@ -84,8 +86,60 @@ export function CostcoReceipt({
 
   const hostDisplayName = hostMember ? hostMember.name : "Host nhóm";
 
-  const handlePrint = () => {
-    window.print();
+  const receiptRef = useRef<HTMLDivElement>(null);
+  const [isDownloading, setIsDownloading] = useState(false);
+
+  const handleDownloadReceiptImage = async () => {
+    if (!receiptRef.current || isDownloading) return;
+    try {
+      setIsDownloading(true);
+      if (typeof document !== "undefined" && document.fonts) {
+        await document.fonts.ready;
+      }
+
+      const fileName = `bien-lai-cau-long-${date ? date.replace(/\//g, "-") : "session"}.png`;
+
+      let blob: Blob | null = null;
+      try {
+        blob = await toBlob(receiptRef.current, {
+          cacheBust: true,
+          pixelRatio: 2.5,
+        });
+      } catch {
+        blob = await toBlob(receiptRef.current, {
+          cacheBust: true,
+          pixelRatio: 2.5,
+          skipFonts: true,
+        });
+      }
+
+      if (blob) {
+        const url = URL.createObjectURL(blob);
+        const link = document.createElement("a");
+        link.download = fileName;
+        link.href = url;
+        document.body.appendChild(link);
+        link.click();
+        document.body.removeChild(link);
+        setTimeout(() => URL.revokeObjectURL(url), 10000);
+      } else {
+        const dataUrl = await toPng(receiptRef.current, {
+          cacheBust: true,
+          pixelRatio: 2.5,
+          skipFonts: true,
+        });
+        const link = document.createElement("a");
+        link.download = fileName;
+        link.href = dataUrl;
+        document.body.appendChild(link);
+        link.click();
+        document.body.removeChild(link);
+      }
+    } catch (err) {
+      console.error("Lỗi khi tải ảnh biên lai:", err);
+    } finally {
+      setIsDownloading(false);
+    }
   };
 
   const themeClass =
@@ -147,6 +201,7 @@ export function CostcoReceipt({
 
       {/* Receipt Paper Card */}
       <div
+        ref={receiptRef}
         className={`receipt-paper ${themeClass} relative w-full max-w-full sm:max-w-[380px] shadow-2xl rounded-sm border font-mono text-[11px] leading-[1.35] tracking-tight selection:bg-neutral-500/20 overflow-hidden mx-auto`}
       >
         {/* Top Serrated Edge (Jagged cut paper effect) */}
@@ -449,13 +504,18 @@ export function CostcoReceipt({
           </button>
         </div>
 
-        {/* Print / Save receipt helper button */}
+        {/* Download receipt as image helper button */}
         <button
           type="button"
-          onClick={handlePrint}
-          className="w-full flex items-center justify-center gap-1.5 py-1.5 px-2.5 rounded-[8px] text-[var(--muted)] hover:text-[var(--text)] hover:bg-[var(--card)] text-[11px] font-medium transition-colors cursor-pointer"
+          onClick={handleDownloadReceiptImage}
+          disabled={isDownloading}
+          className="w-full flex items-center justify-center gap-1.5 py-1.5 px-2.5 rounded-[8px] text-[var(--muted)] hover:text-[var(--text)] hover:bg-[var(--card)] text-[11px] font-medium transition-colors cursor-pointer disabled:opacity-60"
         >
-          <Printer className="w-3.5 h-3.5" />
+          {isDownloading ? (
+            <Loader2 className="w-3.5 h-3.5 animate-spin text-[var(--accent)]" />
+          ) : (
+            <Printer className="w-3.5 h-3.5" />
+          )}
           <span>In / Lưu biên lai</span>
         </button>
       </div>
