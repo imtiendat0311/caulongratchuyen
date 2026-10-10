@@ -264,7 +264,7 @@ export const DEFAULT_MEMBERS: Member[] = [
   // Nam (14)
   { id: "mem-bong", name: "Bông", gender: "male" },
   { id: "mem-dat", name: "Đạt", gender: "male" },
-  { id: "mem-dat-99", name: "Đạt 99", gender: "male" },
+  { id: "mem-dat-99", name: "Đạt 99", gender: "male", avatar_url: "/profile_pic/dat99.jpg" },
   { id: "mem-hiep", name: "Hiệp", gender: "male" },
   { id: "mem-hieu", name: "Hiếu", gender: "male" },
   { id: "mem-hung", name: "Hùng", gender: "male" },
@@ -272,16 +272,16 @@ export const DEFAULT_MEMBERS: Member[] = [
   { id: "mem-shin", name: "Shin", gender: "male" },
   { id: "mem-thien", name: "Thiện", gender: "male" },
   { id: "mem-tien", name: "Tiến", gender: "male" },
-  { id: "mem-tran", name: "Trần", gender: "male" },
+  { id: "mem-tran", name: "Trần", gender: "male", avatar_url: "/profile_pic/tran.jpg" },
   { id: "mem-tu", name: "Tú", gender: "male" },
   { id: "mem-tuyen", name: "Tuyến", gender: "male" },
-  { id: "mem-xuan-anh", name: "Xuân Anh", gender: "male" },
+  { id: "mem-xuan-anh", name: "Xuân Anh", gender: "male", avatar_url: "/profile_pic/xuananh.jpg" },
   // Nữ (5)
-  { id: "mem-ha-linh", name: "Hà Linh", gender: "female" },
-  { id: "mem-meo", name: "Meo", gender: "female" },
+  { id: "mem-ha-linh", name: "Hà Linh", gender: "female", avatar_url: "/profile_pic/halinh.jpg" },
+  { id: "mem-meo", name: "Meo", gender: "female", avatar_url: "/profile_pic/meo.jpg" },
   { id: "mem-ngan-le", name: "Ngân Lê", gender: "female" },
   { id: "mem-nguyen", name: "Nguyên", gender: "female" },
-  { id: "mem-thao-linh", name: "Thảo Linh", gender: "female" },
+  { id: "mem-thao-linh", name: "Thảo Linh", gender: "female", avatar_url: "/profile_pic/thaolinh.jpg" },
 ];
 
 let membersState: Member[] | null = null;
@@ -294,6 +294,25 @@ export function getMembersSnapshot(): Member[] {
       const raw = localStorage.getItem(MEMBERS_STORAGE_KEY);
       if (raw) {
         membersState = JSON.parse(raw);
+        // Backfill avatar_url if missing for members with newly added avatars
+        if (Array.isArray(membersState)) {
+          let hasChange = false;
+          membersState = membersState.map((m) => {
+            if (!m.avatar_url) {
+              const def = DEFAULT_MEMBERS.find(
+                (d) => d.id === m.id || d.name.toLowerCase() === m.name.toLowerCase()
+              );
+              if (def?.avatar_url) {
+                hasChange = true;
+                return { ...m, avatar_url: def.avatar_url };
+              }
+            }
+            return m;
+          });
+          if (hasChange) {
+            localStorage.setItem(MEMBERS_STORAGE_KEY, JSON.stringify(membersState));
+          }
+        }
       } else {
         membersState = DEFAULT_MEMBERS;
       }

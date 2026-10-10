@@ -42,7 +42,7 @@ import { CostcoReceipt } from "./CostcoReceipt";
 import { CourtPickerAndMap, parseCourtsList } from "./CourtPickerAndMap";
 import { SkeletonImage } from "./SkeletonImage";
 import { HoverPreview, HoverPreviewTrigger } from "./HoverPreview";
-import { getMemberAvatarUrl } from "@/lib/avatar";
+import { getMemberAvatarUrl, getMemberAvatarPosition } from "@/lib/avatar";
 import { BadmintonData, BankConfig, HistoryItem } from "@/types";
 import { generateBillIdentifiers } from "@/lib/bill-utils";
 import {
@@ -1024,6 +1024,7 @@ export function BadmintonCalculator() {
                                 id: m.id,
                                 text: m.name,
                                 imageUrl: getMemberAvatarUrl(m),
+                                objectPosition: getMemberAvatarPosition(m),
                                 subtitle: "Nam • FC Rất Chuyên",
                                 badge: m.id === monthlyHostId ? `👑 Host T${displayMonth}` : undefined,
                                 bankInfo: m.account_no ? `${m.bank_id || "MB"} • ${m.account_no}` : undefined,
@@ -1058,14 +1059,16 @@ export function BadmintonCalculator() {
                       <div className="flex flex-wrap gap-1.5">
                         {femaleMembers.map((m) => {
                           const isSelected = data.attendeeIds?.includes(m.id);
+                          const isThaoLinh = /^th[aả]o\s*linh$/i.test(m.name.trim());
                           return (
                             <HoverPreviewTrigger
                               key={m.id}
                               target={{
                                 id: m.id,
-                                text: m.name,
+                                text: isThaoLinh ? "tlinh" : m.name,
                                 imageUrl: getMemberAvatarUrl(m),
-                                subtitle: "Nữ • FC Rất Chuyên",
+                                objectPosition: getMemberAvatarPosition(m),
+                                subtitle: isThaoLinh ? "Thảo Linh • FC Rất Chuyên" : "Nữ • FC Rất Chuyên",
                                 badge: m.id === monthlyHostId ? `👑 Host T${displayMonth}` : undefined,
                                 bankInfo: m.account_no ? `${m.bank_id || "MB"} • ${m.account_no}` : undefined,
                               }}

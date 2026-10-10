@@ -5,6 +5,7 @@ import React, {
   useRef,
   useCallback,
   useEffect,
+  useMemo,
   createContext,
   useContext,
   ReactNode,
@@ -27,6 +28,7 @@ export interface HoverTarget {
   subtitle?: string;
   badge?: string;
   bankInfo?: string;
+  objectPosition?: string;
 }
 
 export type HoverImagePosition = "above" | "below" | "left" | "right";
@@ -72,8 +74,8 @@ export function HoverPreview({
   exitSpeed = 0.15,
   maxRotation = 12,
   maxOffset = 15,
-  imageWidth = 170,
-  imageHeight = 190,
+  imageWidth = 180,
+  imageHeight = 200,
   className = "",
   targetClassName = "",
   targetPadding = 4,
@@ -328,57 +330,68 @@ export function HoverPreview({
           }}
         >
           <AnimatePresence mode="popLayout" initial={false}>
-            {activeTarget && (
-              <motion.div
-                key={`preview-${activeTarget.id || activeTarget.text}`}
-                initial={{ opacity: 0, scale: 0.95 }}
-                animate={{ opacity: 1, scale: 1 }}
-                exit={{ opacity: 0, scale: 0.95 }}
-                transition={{ duration: 0.2, ease: "easeInOut" }}
-                className={cn(
-                  "w-full h-full relative overflow-hidden bg-[var(--card)] border border-[var(--border)] flex flex-col p-1.5 backdrop-blur-md",
-                  showImageShadow && "shadow-2xl shadow-black/25 dark:shadow-black/60"
-                )}
-                style={{ borderRadius: imageBorderRadius }}
-              >
-                {/* Profile Picture */}
-                <div className="w-full flex-1 relative overflow-hidden rounded-xl bg-gradient-to-b from-emerald-500/10 via-[var(--bg)] to-transparent flex items-center justify-center">
-                  <img
-                    src={activeTarget.imageUrl}
-                    alt={activeTarget.altText || activeTarget.text}
-                    className="w-full h-full object-cover select-none"
-                    loading="eager"
-                  />
-                  {activeTarget.badge && (
-                    <div className="absolute top-1.5 right-1.5 px-2 py-0.5 rounded-full bg-amber-500 text-white text-[9px] font-bold shadow-xs flex items-center gap-1">
-                      <span>{activeTarget.badge}</span>
-                    </div>
-                  )}
-                </div>
+            {activeTarget && (() => {
+              const displayName = /^th[aả]o\s*linh$/i.test(activeTarget.text.trim())
+                ? "tlinh"
+                : activeTarget.text;
 
-                {/* Profile Info Footer */}
-                <div className="px-1.5 pt-1.5 pb-0.5 flex flex-col">
-                  <div className="flex items-center justify-between gap-1">
-                    <span className="font-bold text-xs text-[var(--text)] truncate">
-                      {activeTarget.text}
-                    </span>
-                    <span className="text-[9px] font-semibold text-emerald-600 dark:text-emerald-400 shrink-0">
-                      🏸 FC Rất Chuyên
-                    </span>
+              return (
+                <motion.div
+                  key={`preview-${activeTarget.id || activeTarget.text}`}
+                  initial={{ opacity: 0, scale: 0.95 }}
+                  animate={{ opacity: 1, scale: 1 }}
+                  exit={{ opacity: 0, scale: 0.95 }}
+                  transition={{ duration: 0.2, ease: "easeInOut" }}
+                  className={cn(
+                    "w-full h-full relative overflow-hidden bg-[var(--card)] border border-[var(--border)] flex flex-col p-1.5 backdrop-blur-md",
+                    showImageShadow && "shadow-2xl shadow-black/25 dark:shadow-black/60"
+                  )}
+                  style={{ borderRadius: imageBorderRadius }}
+                >
+                  {/* Profile Picture */}
+                  <div className="w-full flex-1 relative overflow-hidden rounded-xl bg-gradient-to-b from-emerald-500/10 via-[var(--bg)] to-transparent flex items-center justify-center">
+                    <img
+                      src={activeTarget.imageUrl}
+                      alt={activeTarget.altText || activeTarget.text}
+                      className="w-full h-full object-cover select-none"
+                      style={
+                        activeTarget.objectPosition
+                          ? { objectPosition: activeTarget.objectPosition }
+                          : undefined
+                      }
+                      loading="eager"
+                    />
+                    {activeTarget.badge && (
+                      <div className="absolute top-1.5 right-1.5 px-2 py-0.5 rounded-full bg-amber-500 text-white text-[9px] font-bold shadow-xs flex items-center gap-1">
+                        <span>{activeTarget.badge}</span>
+                      </div>
+                    )}
                   </div>
-                  {activeTarget.subtitle && (
-                    <span className="text-[10px] text-[var(--muted)] truncate">
-                      {activeTarget.subtitle}
-                    </span>
-                  )}
-                  {activeTarget.bankInfo && (
-                    <span className="text-[9px] font-mono text-[var(--accent)] truncate mt-0.5">
-                      {activeTarget.bankInfo}
-                    </span>
-                  )}
-                </div>
-              </motion.div>
-            )}
+
+                  {/* Profile Info Footer */}
+                  <div className="px-1.5 pt-1.5 pb-0.5 flex flex-col">
+                    <div className="flex items-center justify-between gap-1">
+                      <span className="font-bold text-xs text-[var(--text)] truncate">
+                        {displayName}
+                      </span>
+                      <span className="text-[9px] font-semibold text-emerald-600 dark:text-emerald-400 shrink-0">
+                        🏸 FC Rất Chuyên
+                      </span>
+                    </div>
+                    {activeTarget.subtitle && (
+                      <span className="text-[10px] text-[var(--muted)] truncate">
+                        {activeTarget.subtitle}
+                      </span>
+                    )}
+                    {activeTarget.bankInfo && (
+                      <span className="text-[9px] font-mono text-[var(--accent)] truncate mt-0.5">
+                        {activeTarget.bankInfo}
+                      </span>
+                    )}
+                  </div>
+                </motion.div>
+              );
+            })()}
           </AnimatePresence>
         </motion.div>
       </div>

@@ -20,7 +20,7 @@ import { motion, AnimatePresence } from "framer-motion";
 import { Member, POPULAR_BANKS } from "@/types";
 import { SkeletonImage } from "./SkeletonImage";
 import { MonthYearPicker } from "./MonthYearPicker";
-import { getMemberAvatarUrl } from "@/lib/avatar";
+import { getMemberAvatarUrl, getMemberAvatarPosition } from "@/lib/avatar";
 
 interface MemberManagerModalProps {
   isOpen: boolean;
@@ -247,6 +247,7 @@ export function MemberManagerModal({
             <img
               src={getMemberAvatarUrl(m)}
               alt={m.name}
+              style={{ objectPosition: getMemberAvatarPosition(m) }}
               className="w-6 h-6 rounded-full object-cover border border-[var(--border)] shrink-0 bg-[var(--bg)]"
               loading="lazy"
             />
