@@ -38,6 +38,37 @@ function updateDomTheme(mode: ThemeMode) {
   }
 }
 
+export function useIsDark(): boolean {
+  return useSyncExternalStore(
+    (callback) => {
+      window.addEventListener("storage", callback);
+      const mediaQuery = window.matchMedia("(prefers-color-scheme: dark)");
+      mediaQuery.addEventListener("change", callback);
+      let observer: MutationObserver | null = null;
+      if (typeof document !== "undefined") {
+        observer = new MutationObserver(callback);
+        observer.observe(document.documentElement, {
+          attributes: true,
+          attributeFilter: ["class", "data-theme"],
+        });
+      }
+      return () => {
+        window.removeEventListener("storage", callback);
+        mediaQuery.removeEventListener("change", callback);
+        observer?.disconnect();
+      };
+    },
+    () => {
+      if (typeof document === "undefined") return false;
+      return (
+        document.documentElement.classList.contains("dark") ||
+        document.documentElement.getAttribute("data-theme") === "dark"
+      );
+    },
+    () => false
+  );
+}
+
 export function ThemeToggle() {
   const theme = useSyncExternalStore(subscribe, getSnapshot, getServerSnapshot);
 

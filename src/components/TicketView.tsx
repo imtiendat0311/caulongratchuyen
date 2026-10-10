@@ -28,6 +28,7 @@ import {
 } from "@/lib/store";
 import { generateUpcBarcodeBars } from "@/lib/bill-utils";
 import SideRays from "./SideRays";
+import { ThemeToggle, useIsDark } from "./ThemeToggle";
 
 // Synthesize pleasant paper tear / snap click using Web Audio API
 function playPaperTearSound() {
@@ -84,6 +85,8 @@ function playPaperTearSound() {
 }
 
 export function TicketView() {
+  const isDark = useIsDark();
+
   // Sync with main app's court data or default
   const sessionData = useSyncExternalStore(
     subscribeBadminton,
@@ -200,7 +203,7 @@ export function TicketView() {
       {/* Background Ambient Rays */}
       <div
         aria-hidden="true"
-        className="pointer-events-none absolute top-0 right-0 w-full max-w-5xl h-[420px] sm:h-[500px] -z-10 opacity-70 dark:opacity-40 [mask-image:radial-gradient(ellipse_at_top_right,black_40%,transparent_75%)]"
+        className="pointer-events-none absolute top-0 right-0 w-full max-w-5xl h-[420px] sm:h-[500px] -z-10 opacity-30 dark:opacity-40 [mask-image:radial-gradient(ellipse_at_top_right,black_40%,transparent_75%)]"
       >
         <SideRays
           origin="top-right"
@@ -272,6 +275,11 @@ export function TicketView() {
           >
             <Share2 className="w-4 h-4" />
           </button>
+
+          <div className="w-[1px] h-4 bg-[var(--border)] mx-0.5" />
+
+          {/* Theme switcher */}
+          <ThemeToggle />
         </div>
       </header>
 
@@ -315,43 +323,43 @@ export function TicketView() {
             tiltMax={9}
             tiltReach={280}
             parallax={8}
-            background="#18181b"
-            stubBackground="#1f1f23"
-            color="#f4f4f5"
+            background={isDark ? "#18181b" : "#ffffff"}
+            stubBackground={isDark ? "#1f1f23" : "#f8fafc"}
+            color={isDark ? "#f4f4f5" : "#0f172a"}
             border={true}
-            borderColor="rgba(255, 255, 255, 0.15)"
+            borderColor={isDark ? "rgba(255, 255, 255, 0.16)" : "rgba(15, 23, 42, 0.12)"}
             borderWidth={1}
             recenter={true}
             onTear={handleTear}
             stub={
               /* Ticket Stub Content (Tearable part) */
-              <div className="h-full w-full p-3.5 flex flex-col justify-between text-white font-mono select-none relative">
+              <div className="h-full w-full p-3.5 flex flex-col justify-between text-slate-900 dark:text-white font-mono select-none relative transition-colors duration-200">
                 {/* Perforation guide indicator */}
-                <div className="flex items-center justify-between text-[10px] text-amber-400 font-bold uppercase tracking-widest border-b border-dashed border-white/20 pb-1.5">
+                <div className="flex items-center justify-between text-[10px] text-amber-700 dark:text-amber-400 font-bold uppercase tracking-widest border-b border-dashed border-slate-300 dark:border-white/20 pb-1.5">
                   <span className="flex items-center gap-1">
-                    <Scissors className="w-3 h-3 text-amber-400 rotate-90" />
+                    <Scissors className="w-3 h-3 text-amber-700 dark:text-amber-400 rotate-90" />
                     <span>CUỐNG VÉ</span>
                   </span>
-                  <span className="px-1.5 py-0.2 rounded bg-amber-400/20 text-amber-300 text-[9px]">
+                  <span className="px-1.5 py-0.5 rounded bg-amber-500/15 border border-amber-500/30 text-amber-800 dark:bg-amber-400/20 dark:text-amber-300 dark:border-transparent text-[9px] font-bold">
                     ADMIT ONE
                   </span>
                 </div>
 
                 {/* Match Court & Date details on Stub */}
                 <div className="my-auto space-y-1 text-center py-2">
-                  <div className="text-[10px] text-white/60 uppercase">SÂN THI ĐẤU</div>
-                  <div className="text-xs font-bold text-emerald-400 truncate">
+                  <div className="text-[10px] text-slate-500 dark:text-white/60 uppercase font-semibold">SÂN THI ĐẤU</div>
+                  <div className="text-xs font-bold text-emerald-700 dark:text-emerald-400 truncate">
                     {activeCourt.name.replace("Nhà Thi Đấu ", "NTĐ ")}
                   </div>
-                  <div className="text-[11px] font-semibold text-white/90">
+                  <div className="text-[11px] font-semibold text-slate-900 dark:text-white/90">
                     {sessionData.courtNumber || "Sân 1, Sân 2"}
                   </div>
-                  <div className="text-[10px] text-white/50">{displayDate}</div>
+                  <div className="text-[10px] text-slate-500 dark:text-white/50">{displayDate}</div>
                 </div>
 
                 {/* Barcode Strip & Drag Indicator on Stub */}
-                <div className="border-t border-dashed border-white/20 pt-2 flex flex-col items-center">
-                  <svg viewBox="0 0 200 35" className="h-5 w-24 text-white opacity-80 mb-1">
+                <div className="border-t border-dashed border-slate-300 dark:border-white/20 pt-2 flex flex-col items-center">
+                  <svg viewBox="0 0 200 35" className="h-5 w-24 text-slate-900 dark:text-white opacity-90 dark:opacity-80 mb-1">
                     {barcodeBars.map((bar, idx) => (
                       <rect
                         key={idx}
@@ -363,10 +371,10 @@ export function TicketView() {
                       />
                     ))}
                   </svg>
-                  <span className="text-[8.5px] tracking-widest text-white/60 uppercase font-mono">
+                  <span className="text-[8.5px] tracking-widest text-slate-500 dark:text-white/60 uppercase font-mono">
                     {orderCode}
                   </span>
-                  <div className="mt-1 text-[8.5px] text-amber-300/90 font-sans font-medium animate-pulse flex items-center gap-0.5">
+                  <div className="mt-1 text-[8.5px] text-amber-700 dark:text-amber-300/90 font-sans font-medium animate-pulse flex items-center gap-0.5">
                     <span>✂️ Kéo xé tại đây</span>
                   </div>
                 </div>
@@ -374,64 +382,64 @@ export function TicketView() {
             }
           >
             {/* Ticket Main Body Content */}
-            <div className="h-full w-full p-4 sm:p-5 flex flex-col justify-between text-white select-none relative">
+            <div className="h-full w-full p-4 sm:p-5 flex flex-col justify-between text-slate-900 dark:text-white select-none relative transition-colors duration-200">
               {/* Top Header Badge */}
               <div className="flex items-center justify-between gap-2 z-10">
-                <div className="flex items-center gap-1.5 px-2.5 py-1 rounded-lg bg-black/60 backdrop-blur-md border border-white/20 text-[11px] font-black uppercase tracking-wider text-emerald-400 shadow-sm">
-                  <Flame className="w-3.5 h-3.5 fill-emerald-400 text-emerald-400" />
+                <div className="flex items-center gap-1.5 px-2.5 py-1 rounded-lg bg-white/90 dark:bg-black/60 backdrop-blur-md border border-slate-200/90 dark:border-white/20 text-[11px] font-black uppercase tracking-wider text-emerald-700 dark:text-emerald-400 shadow-2xs">
+                  <Flame className="w-3.5 h-3.5 fill-emerald-600 dark:fill-emerald-400 text-emerald-600 dark:text-emerald-400" />
                   <span>FC RẤT CHUYÊN</span>
                 </div>
-                <div className="flex items-center gap-1 px-2 py-0.5 rounded-md bg-white/10 backdrop-blur-xs text-[10px] font-mono text-white/80 border border-white/10">
-                  <Award className="w-3 h-3 text-amber-400" />
+                <div className="flex items-center gap-1 px-2 py-0.5 rounded-md bg-white/90 dark:bg-white/10 backdrop-blur-xs text-[10px] font-mono text-slate-800 dark:text-white/80 border border-slate-200/90 dark:border-white/10 shadow-2xs">
+                  <Award className="w-3 h-3 text-amber-600 dark:text-amber-400" />
                   <span>VIP PASS</span>
                 </div>
               </div>
 
               {/* Center Match Banner */}
               <div className="my-auto py-2 z-10">
-                <div className="text-[10px] sm:text-xs font-semibold uppercase tracking-widest text-emerald-400">
+                <div className="text-[10px] sm:text-xs font-bold uppercase tracking-widest text-emerald-700 dark:text-emerald-400 drop-shadow-[0_1px_2px_rgba(255,255,255,0.8)] dark:drop-shadow-none">
                   GIAO LƯU THỂ LỰC CLB
                 </div>
-                <div className="text-lg sm:text-2xl font-black tracking-tight text-white drop-shadow-md">
+                <div className="text-lg sm:text-2xl font-black tracking-tight text-slate-950 dark:text-white drop-shadow-[0_1px_3px_rgba(255,255,255,0.9)] dark:drop-shadow-[0_2px_5px_rgba(0,0,0,0.85)]">
                   BUỔI THI ĐẤU CẦU LÔNG
                 </div>
 
                 {/* Court Location Details (The exact court location) */}
                 <div className="mt-2 space-y-1 text-xs">
-                  <div className="flex items-center gap-1.5 text-white/95 font-semibold">
-                    <MapPin className="w-3.5 h-3.5 text-rose-400 shrink-0" />
+                  <div className="flex items-center gap-1.5 text-slate-900 dark:text-white/95 font-semibold drop-shadow-[0_1px_2px_rgba(255,255,255,0.7)] dark:drop-shadow-none">
+                    <MapPin className="w-3.5 h-3.5 text-rose-600 dark:text-rose-400 shrink-0" />
                     <span className="truncate">{activeCourt.name}</span>
-                    <span className="text-white/40">•</span>
-                    <span className="text-amber-300 text-[11px] font-mono shrink-0">
+                    <span className="text-slate-300 dark:text-white/40">•</span>
+                    <span className="text-amber-800 dark:text-amber-300 bg-amber-500/15 dark:bg-transparent px-1.5 py-0.5 rounded dark:p-0 text-[11px] font-mono shrink-0 font-bold dark:font-normal">
                       {sessionData.courtNumber || "Sân 1, Sân 2"}
                     </span>
                   </div>
-                  <div className="text-[10.5px] text-white/70 pl-5 truncate">
+                  <div className="text-[10.5px] text-slate-600 dark:text-white/70 pl-5 truncate drop-shadow-[0_1px_2px_rgba(255,255,255,0.7)] dark:drop-shadow-none">
                     {activeCourt.address}
                   </div>
                 </div>
               </div>
 
               {/* Bottom Metadata Grid */}
-              <div className="pt-2 border-t border-dashed border-white/20 grid grid-cols-2 gap-2 text-[10px] font-mono text-white/80 z-10">
+              <div className="pt-2 border-t border-dashed border-slate-300 dark:border-white/20 grid grid-cols-2 gap-2 text-[10px] font-mono text-slate-700 dark:text-white/80 z-10">
                 <div className="flex items-center gap-1.5">
-                  <Calendar className="w-3 h-3 text-sky-400 shrink-0" />
+                  <Calendar className="w-3 h-3 text-sky-600 dark:text-sky-400 shrink-0" />
                   <span className="truncate">{displayDate}</span>
                 </div>
                 <div className="flex items-center gap-1.5">
-                  <Clock className="w-3 h-3 text-amber-400 shrink-0" />
+                  <Clock className="w-3 h-3 text-amber-600 dark:text-amber-400 shrink-0" />
                   <span>19:30 - 22:30 PM</span>
                 </div>
               </div>
 
               {/* Rubber "USED / ĐÃ CHECK-IN" Stamp when torn */}
               <div className="hidden group-data-[used]:flex absolute inset-0 items-center justify-center pointer-events-none z-30 transition-all duration-300">
-                <div className="rotate-[-12deg] border-4 border-rose-500/90 text-rose-500 font-black tracking-widest text-base sm:text-2xl px-5 py-2 rounded-xl uppercase shadow-2xl bg-black/60 backdrop-blur-xs flex flex-col items-center animate-in zoom-in-75 duration-200">
+                <div className="rotate-[-12deg] border-4 border-rose-600 dark:border-rose-500/90 text-rose-600 dark:text-rose-500 font-black tracking-widest text-base sm:text-2xl px-5 py-2 rounded-xl uppercase shadow-2xl bg-white/95 dark:bg-black/60 backdrop-blur-xs flex flex-col items-center animate-in zoom-in-75 duration-200">
                   <div className="flex items-center gap-1.5">
-                    <CheckCircle2 className="w-5 h-5 sm:w-6 sm:h-6 text-rose-500" />
+                    <CheckCircle2 className="w-5 h-5 sm:w-6 sm:h-6 text-rose-600 dark:text-rose-500" />
                     <span>ĐÃ CHECK-IN</span>
                   </div>
-                  <span className="text-[9px] sm:text-[10px] tracking-widest text-rose-400 font-mono">
+                  <span className="text-[9px] sm:text-[10px] tracking-widest text-rose-600 dark:text-rose-400 font-mono font-bold">
                     FC RẤT CHUYÊN • VERIFIED
                   </span>
                 </div>

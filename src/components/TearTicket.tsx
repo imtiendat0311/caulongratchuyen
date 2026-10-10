@@ -671,7 +671,7 @@ const TearTicket: React.FC<TearTicketProps> = ({
     >
       <div
         ref={stageRef}
-        className="absolute top-0 left-0 origin-top-left [width:var(--tt-w)] [height:var(--tt-h)] [transform:scale(var(--tt-fit))] [transition:transform_650ms_cubic-bezier(0.22,1,0.36,1)] group-data-[shift=x]:[transform:translateX(calc(var(--tt-stub)*var(--tt-fit)/2))_scale(var(--tt-fit))] group-data-[shift=y]:[transform:translateY(calc(var(--tt-stub)*var(--tt-fit)/2))_scale(var(--tt-fit))] group-data-[instant]:[transition-duration:0ms] motion-reduce:[transition:none]"
+        className="absolute top-0 left-0 origin-top-left [width:var(--tt-w)] [height:var(--tt-h)] [transform:scale(var(--tt-fit))] [transition:transform_650ms_cubic-bezier(0.22,1,0.36,1)] group-data-[shift=x]:[transform:translateX(calc(var(--tt-stub)*var(--tt-fit)/2))_scale(var(--tt-fit))] group-data-[shift=y]:[transform:translateY(calc(var(--tt-stub)*var(--tt-fit)/2))_scale(var(--tt-fit))] group-data-[instant]:[transition-duration:0ms] motion-reduce:[transition:none] filter drop-shadow-[0_12px_28px_rgba(0,0,0,0.12)] dark:drop-shadow-[0_18px_42px_rgba(0,0,0,0.5)]"
       >
         <motion.div className="absolute inset-0" style={{ transform: plane }}>
           <div ref={bodyRef} className="pointer-events-none absolute inset-0">
@@ -698,7 +698,7 @@ const TearTicket: React.FC<TearTicketProps> = ({
                     style={reduce ? undefined : { transform: art }}
                   />
                   {scrim ? (
-                    <div className="absolute inset-0 [background:linear-gradient(to_top,var(--tt-bg)_0%,color-mix(in_srgb,var(--tt-bg)_72%,transparent)_30%,color-mix(in_srgb,var(--tt-bg)_18%,transparent)_58%,transparent_80%)]" />
+                    <div className="absolute inset-0 [background:linear-gradient(to_top,var(--tt-bg)_0%,color-mix(in_srgb,var(--tt-bg)_85%,transparent)_35%,color-mix(in_srgb,var(--tt-bg)_40%,transparent)_65%,transparent_90%)]" />
                   ) : null}
                 </div>
               ) : null}
