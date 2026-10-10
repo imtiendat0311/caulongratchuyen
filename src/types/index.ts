@@ -5,6 +5,7 @@ export interface Member {
   bank_id?: string;
   account_no?: string;
   account_name?: string;
+  avatar_url?: string;
   created_at?: string;
 }
 

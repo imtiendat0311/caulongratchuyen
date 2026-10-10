@@ -260,24 +260,48 @@ export function subscribeBank(listener: () => void) {
 }
 
 // --- Members Store ---
+export const DEFAULT_MEMBERS: Member[] = [
+  // Nam (14)
+  { id: "mem-bong", name: "Bông", gender: "male" },
+  { id: "mem-dat", name: "Đạt", gender: "male" },
+  { id: "mem-dat-99", name: "Đạt 99", gender: "male" },
+  { id: "mem-hiep", name: "Hiệp", gender: "male" },
+  { id: "mem-hieu", name: "Hiếu", gender: "male" },
+  { id: "mem-hung", name: "Hùng", gender: "male" },
+  { id: "mem-huy", name: "Huy", gender: "male" },
+  { id: "mem-shin", name: "Shin", gender: "male" },
+  { id: "mem-thien", name: "Thiện", gender: "male" },
+  { id: "mem-tien", name: "Tiến", gender: "male" },
+  { id: "mem-tran", name: "Trần", gender: "male" },
+  { id: "mem-tu", name: "Tú", gender: "male" },
+  { id: "mem-tuyen", name: "Tuyến", gender: "male" },
+  { id: "mem-xuan-anh", name: "Xuân Anh", gender: "male" },
+  // Nữ (5)
+  { id: "mem-ha-linh", name: "Hà Linh", gender: "female" },
+  { id: "mem-meo", name: "Meo", gender: "female" },
+  { id: "mem-ngan-le", name: "Ngân Lê", gender: "female" },
+  { id: "mem-nguyen", name: "Nguyên", gender: "female" },
+  { id: "mem-thao-linh", name: "Thảo Linh", gender: "female" },
+];
+
 let membersState: Member[] | null = null;
 const membersListeners = new Set<() => void>();
 
 export function getMembersSnapshot(): Member[] {
-  if (typeof window === "undefined") return [];
+  if (typeof window === "undefined") return DEFAULT_MEMBERS;
   if (!membersState) {
     try {
       const raw = localStorage.getItem(MEMBERS_STORAGE_KEY);
       if (raw) {
         membersState = JSON.parse(raw);
       } else {
-        membersState = [];
+        membersState = DEFAULT_MEMBERS;
       }
     } catch {
-      membersState = [];
+      membersState = DEFAULT_MEMBERS;
     }
   }
-  return membersState ?? [];
+  return membersState ?? DEFAULT_MEMBERS;
 }
 
 export function setMembersState(next: Member[]) {

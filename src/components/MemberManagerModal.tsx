@@ -20,6 +20,7 @@ import { motion, AnimatePresence } from "framer-motion";
 import { Member, POPULAR_BANKS } from "@/types";
 import { SkeletonImage } from "./SkeletonImage";
 import { MonthYearPicker } from "./MonthYearPicker";
+import { getMemberAvatarUrl } from "@/lib/avatar";
 
 interface MemberManagerModalProps {
   isOpen: boolean;
@@ -242,9 +243,15 @@ export function MemberManagerModal({
         }`}
       >
         <div className="flex items-center justify-between gap-2 flex-wrap text-xs">
-          <div className="flex items-center gap-1.5 flex-wrap">
+          <div className="flex items-center gap-2 flex-wrap">
+            <img
+              src={getMemberAvatarUrl(m)}
+              alt={m.name}
+              className="w-6 h-6 rounded-full object-cover border border-[var(--border)] shrink-0 bg-[var(--bg)]"
+              loading="lazy"
+            />
             <span className="font-semibold text-[var(--text)]">
-              {isMale ? "👨" : "👩"} {m.name}
+              {m.name}
             </span>
 
             {isRecentlyAdded && (

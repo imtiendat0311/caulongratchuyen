@@ -41,6 +41,8 @@ import { HistoryGraphModal } from "./HistoryGraphModal";
 import { CostcoReceipt } from "./CostcoReceipt";
 import { CourtPickerAndMap, parseCourtsList } from "./CourtPickerAndMap";
 import { SkeletonImage } from "./SkeletonImage";
+import { HoverPreview, HoverPreviewTrigger } from "./HoverPreview";
+import { getMemberAvatarUrl } from "@/lib/avatar";
 import { BadmintonData, BankConfig, HistoryItem } from "@/types";
 import { generateBillIdentifiers } from "@/lib/bill-utils";
 import {
@@ -996,7 +998,16 @@ export function BadmintonCalculator() {
                   </button>
                 </div>
               ) : (
-                <>
+                <HoverPreview
+                  imagePosition="above"
+                  imageWidth={160}
+                  imageHeight={185}
+                  maxRotation={12}
+                  maxOffset={14}
+                  enterSpeed={0.2}
+                  exitSpeed={0.15}
+                  imageBorderRadius="1rem"
+                >
                   {/* Male attendees */}
                   {maleMembers.length > 0 && (
                     <div>
@@ -1007,20 +1018,31 @@ export function BadmintonCalculator() {
                         {maleMembers.map((m) => {
                           const isSelected = data.attendeeIds?.includes(m.id);
                           return (
-                            <motion.button
-                              whileTap={{ scale: 0.92 }}
+                            <HoverPreviewTrigger
                               key={m.id}
-                              type="button"
-                              onClick={() => toggleAttendee(m.id)}
-                              className={`py-1 px-2.5 rounded-full text-xs font-semibold transition-all cursor-pointer flex items-center gap-1 ${
-                                isSelected
-                                  ? "bg-[var(--accent)] text-white shadow-xs"
-                                  : "bg-[var(--card)] border border-[var(--border)] text-[var(--text)] hover:border-[var(--accent)]"
-                              }`}
+                              target={{
+                                id: m.id,
+                                text: m.name,
+                                imageUrl: getMemberAvatarUrl(m),
+                                subtitle: "Nam • FC Rất Chuyên",
+                                badge: m.id === monthlyHostId ? `👑 Host T${displayMonth}` : undefined,
+                                bankInfo: m.account_no ? `${m.bank_id || "MB"} • ${m.account_no}` : undefined,
+                              }}
                             >
-                              {isSelected && <Check className="w-3 h-3 stroke-[3]" />}
-                              <span>{m.name}</span>
-                            </motion.button>
+                              <motion.button
+                                whileTap={{ scale: 0.92 }}
+                                type="button"
+                                onClick={() => toggleAttendee(m.id)}
+                                className={`py-1 px-2.5 rounded-full text-xs font-semibold transition-all cursor-pointer flex items-center gap-1 ${
+                                  isSelected
+                                    ? "bg-[var(--accent)] text-white shadow-xs"
+                                    : "bg-[var(--card)] border border-[var(--border)] text-[var(--text)] hover:border-[var(--accent)]"
+                                }`}
+                              >
+                                {isSelected && <Check className="w-3 h-3 stroke-[3]" />}
+                                <span>{m.name}</span>
+                              </motion.button>
+                            </HoverPreviewTrigger>
                           );
                         })}
                       </div>
@@ -1029,7 +1051,7 @@ export function BadmintonCalculator() {
 
                   {/* Female attendees */}
                   {femaleMembers.length > 0 && (
-                    <div className="pt-1.5 border-t border-[var(--border)]">
+                    <div className="pt-1.5 border-t border-[var(--border)] mt-2">
                       <span className="block text-[10px] font-bold uppercase tracking-wider text-[var(--female)] mb-1.5">
                         Nữ ({femaleMembers.filter((m) => data.attendeeIds?.includes(m.id)).length}/{femaleMembers.length}):
                       </span>
@@ -1037,26 +1059,37 @@ export function BadmintonCalculator() {
                         {femaleMembers.map((m) => {
                           const isSelected = data.attendeeIds?.includes(m.id);
                           return (
-                            <motion.button
-                              whileTap={{ scale: 0.92 }}
+                            <HoverPreviewTrigger
                               key={m.id}
-                              type="button"
-                              onClick={() => toggleAttendee(m.id)}
-                              className={`py-1 px-2.5 rounded-full text-xs font-semibold transition-all cursor-pointer flex items-center gap-1 ${
-                                isSelected
-                                  ? "bg-[var(--female)] text-white shadow-xs"
-                                  : "bg-[var(--card)] border border-[var(--border)] text-[var(--text)] hover:border-[var(--female)]"
-                              }`}
+                              target={{
+                                id: m.id,
+                                text: m.name,
+                                imageUrl: getMemberAvatarUrl(m),
+                                subtitle: "Nữ • FC Rất Chuyên",
+                                badge: m.id === monthlyHostId ? `👑 Host T${displayMonth}` : undefined,
+                                bankInfo: m.account_no ? `${m.bank_id || "MB"} • ${m.account_no}` : undefined,
+                              }}
                             >
-                              {isSelected && <Check className="w-3 h-3 stroke-[3]" />}
-                              <span>{m.name}</span>
-                            </motion.button>
+                              <motion.button
+                                whileTap={{ scale: 0.92 }}
+                                type="button"
+                                onClick={() => toggleAttendee(m.id)}
+                                className={`py-1 px-2.5 rounded-full text-xs font-semibold transition-all cursor-pointer flex items-center gap-1 ${
+                                  isSelected
+                                    ? "bg-[var(--female)] text-white shadow-xs"
+                                    : "bg-[var(--card)] border border-[var(--border)] text-[var(--text)] hover:border-[var(--female)]"
+                                }`}
+                              >
+                                {isSelected && <Check className="w-3 h-3 stroke-[3]" />}
+                                <span>{m.name}</span>
+                              </motion.button>
+                            </HoverPreviewTrigger>
                           );
                         })}
                       </div>
                     </div>
                   )}
-                </>
+                </HoverPreview>
               )}
             </div>
 
