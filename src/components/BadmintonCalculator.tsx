@@ -24,7 +24,9 @@ import {
   Settings,
   Loader2,
   TrendingUp,
+  Ticket,
 } from "lucide-react";
+import Link from "next/link";
 import { motion, AnimatePresence } from "framer-motion";
 import { PixelCat, PixelRacket } from "./PixelArt";
 import { ThemeToggle } from "./ThemeToggle";
@@ -690,6 +692,16 @@ export function BadmintonCalculator() {
             <TrendingUp className="w-3.5 h-3.5 text-emerald-500" />
             <span>Biểu đồ</span>
           </motion.button>
+
+          {/* Ticket button (React Bits Tear Ticket) */}
+          <Link
+            href="/ticket"
+            className="flex items-center gap-1.5 h-8 px-2.5 rounded-xl text-xs font-medium text-[var(--text)] hover:bg-[var(--bg)] hover:text-amber-500 transition-colors cursor-pointer"
+            title="Mở vé vào sân thi đấu (Tear Ticket - React Bits)"
+          >
+            <Ticket className="w-3.5 h-3.5 text-amber-500" />
+            <span>Vé vào sân</span>
+          </Link>
 
           {/* QR button */}
           <motion.button
