@@ -21,11 +21,7 @@ import { Member, BankConfig } from "@/types";
 import { parseCourtsList } from "./CourtPickerAndMap";
 import { SkeletonImage } from "./SkeletonImage";
 import { RECEIPT_TEXTURE_LIGHT, RECEIPT_TEXTURE_DARK } from "@/lib/receipt-textures";
-import {
-  generateBillIdentifiers,
-  generateUpcBarcodeBars,
-  formatSerialNumber,
-} from "@/lib/bill-utils";
+import { generateBillIdentifiers } from "@/lib/bill-utils";
 import { RollingNumber } from "./RollingNumber";
 
 interface CostcoReceiptProps {
@@ -203,18 +199,9 @@ export function CostcoReceipt({
   const rawDigits = courtNumber ? courtNumber.replace(/[^0-9]/g, "") : "";
   const storeNum = rawDigits.slice(0, 4) || "01";
 
-  // Unique Bill Identifiers & Dynamic UPC-A Barcode
+  // Unique Bill Identifiers
   const defaultBillIds = useMemo(() => generateBillIdentifiers(date), [date]);
   const effectiveOrderNumber = orderNumber || defaultBillIds.orderNumber;
-  const effectiveSerialNumber = serialNumber || defaultBillIds.serialNumber;
-  const formattedSerial = useMemo(
-    () => formatSerialNumber(effectiveSerialNumber),
-    [effectiveSerialNumber]
-  );
-  const barcodeBars = useMemo(
-    () => generateUpcBarcodeBars(effectiveSerialNumber),
-    [effectiveSerialNumber]
-  );
 
   // Account display
   const bankAcc = hostMember?.account_no || bankConfig.accountNo || "";
@@ -224,9 +211,6 @@ export function CostcoReceipt({
     hostMember?.account_name ||
     bankConfig.accountName ||
     (hostMember ? hostMember.name.toUpperCase() : "FC RAT CHUYEN");
-  const maskedAcc = bankAcc
-    ? `**** **** **** ${bankAcc.slice(-4) || bankAcc}`
-    : "**** **** **** 8371";
 
   const hostDisplayName = hostMember ? hostMember.name : "Host nhóm";
 
@@ -985,62 +969,7 @@ export function CostcoReceipt({
             </div>
           </div>
 
-          {/* Card / Bank Transfer Info */}
-          <div className="text-[10px] leading-tight space-y-1 text-[var(--receipt-muted)] my-2">
-            <div className="flex justify-between items-baseline gap-1">
-              <span className="shrink-0">Số tài khoản</span>
-              <span className="font-semibold text-[var(--receipt-text)] truncate text-right">{maskedAcc}</span>
-            </div>
-            <div className="flex justify-between items-baseline gap-1">
-              <span className="shrink-0">Ngân hàng</span>
-              <span className="text-[var(--receipt-text)] truncate text-right">
-                {bankName} ({accName})
-              </span>
-            </div>
-            <div className="flex justify-between items-baseline gap-1">
-              <span className="shrink-0">Hình thức</span>
-              <span className="text-[var(--receipt-text)] truncate text-right">CHUYỂN KHOẢN VIETQR</span>
-            </div>
-            <div className="flex justify-between items-baseline gap-1">
-              <span className="shrink-0">Thời gian</span>
-              <span className="text-[var(--receipt-text)] truncate text-right">{date} 20:30:15 PM</span>
-            </div>
-            <div className="flex justify-between items-baseline gap-1">
-              <span className="shrink-0">Mã đơn hàng</span>
-              <span className="font-mono font-bold text-[var(--receipt-text)] truncate text-right">{effectiveOrderNumber}</span>
-            </div>
-            <div className="flex justify-between items-baseline gap-1 font-bold text-[var(--receipt-text)]">
-              <span className="shrink-0">Trạng thái</span>
-              <span className="truncate text-right">ĐÃ CHIA XONG</span>
-            </div>
-            <div className="flex justify-between items-baseline gap-1">
-              <span className="shrink-0">Hoàn tất</span>
-              <span className="text-[var(--receipt-text)] truncate text-right">{date} 22:15:00 PM</span>
-            </div>
-          </div>
 
-          {/* Dashed Separator */}
-          <div className="border-b border-dashed border-[var(--receipt-dashed)] my-3" />
-
-          {/* Barcode Section */}
-          <div className="flex flex-col items-center justify-center my-3 text-[var(--receipt-text)]">
-            {/* Dynamic UPC-A SVG Barcode */}
-            <svg
-              className="w-44 sm:w-56 h-10 sm:h-11 max-w-full"
-              viewBox="0 0 200 45"
-              fill="currentColor"
-            >
-              {barcodeBars.map((bar, idx) => (
-                <rect key={idx} x={bar.x} y={0} width={bar.width} height={45} />
-              ))}
-            </svg>
-            <div className="font-mono text-[10px] tracking-[0.25em] text-[var(--receipt-muted)] mt-1">
-              {formattedSerial}
-            </div>
-          </div>
-
-          {/* Dashed Separator */}
-          {qrUrl && <div className="border-b border-dashed border-[var(--receipt-dashed)] my-3" />}
 
           {/* VietQR Code Section (Before Footer of Receipt) */}
           {qrUrl && (
