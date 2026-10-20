@@ -5,7 +5,7 @@ export async function GET(request: NextRequest) {
   const bank = searchParams.get("bank");
   const account = searchParams.get("account");
   const name = searchParams.get("name") || "";
-  const info = searchParams.get("info") || "Cau long FC Rat Chuyen";
+  const info = searchParams.get("info");
 
   if (!bank || !account) {
     return new NextResponse("Missing bank or account", { status: 400 });
@@ -13,12 +13,23 @@ export async function GET(request: NextRequest) {
 
   const amount = searchParams.get("amount");
   const template = searchParams.get("template") || "qr_only";
-  const amountParam = amount ? `&amount=${encodeURIComponent(amount)}` : "";
-
   const cleanAccount = account.trim();
-  const remoteUrl = `https://img.vietqr.io/image/${bank}-${cleanAccount}-${template}.png?addInfo=${encodeURIComponent(
-    info
-  )}&accountName=${encodeURIComponent(name.trim())}${amountParam}`;
+
+  const params = new URLSearchParams();
+  if (name && name.trim()) {
+    params.set("accountName", name.trim());
+  }
+  if (info && info.trim()) {
+    params.set("addInfo", info.trim());
+  }
+  if (amount && amount.trim()) {
+    params.set("amount", amount.trim());
+  }
+
+  const queryString = params.toString();
+  const remoteUrl = `https://img.vietqr.io/image/${bank}-${cleanAccount}-${template}.png${
+    queryString ? `?${queryString}` : ""
+  }`;
 
   try {
     const res = await fetch(remoteUrl, {

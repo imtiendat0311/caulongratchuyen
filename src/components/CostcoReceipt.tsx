@@ -21,7 +21,6 @@ import { Member, BankConfig } from "@/types";
 import { parseCourtsList } from "./CourtPickerAndMap";
 import { SkeletonImage } from "./SkeletonImage";
 import { RECEIPT_TEXTURE_LIGHT, RECEIPT_TEXTURE_DARK } from "@/lib/receipt-textures";
-import { generateBillIdentifiers } from "@/lib/bill-utils";
 import { RollingNumber } from "./RollingNumber";
 
 interface CostcoReceiptProps {
@@ -199,10 +198,6 @@ export function CostcoReceipt({
   const rawDigits = courtNumber ? courtNumber.replace(/[^0-9]/g, "") : "";
   const storeNum = rawDigits.slice(0, 4) || "01";
 
-  // Unique Bill Identifiers
-  const defaultBillIds = useMemo(() => generateBillIdentifiers(date), [date]);
-  const effectiveOrderNumber = orderNumber || defaultBillIds.orderNumber;
-
   // Account display
   const bankAcc = hostMember?.account_no || bankConfig.accountNo || "";
   const bankId = hostMember?.bank_id || bankConfig.bankId || "MB";
@@ -214,20 +209,19 @@ export function CostcoReceipt({
 
   const hostDisplayName = hostMember ? hostMember.name : "Host nhóm";
 
+  // Pure transfer QR: No preset description/addInfo so payers can type custom note in Zalo/banking apps
   const directVietQrUrl =
     bankId && bankAcc.trim()
-      ? `https://img.vietqr.io/image/${bankId}-${bankAcc.trim()}-qr_only.png?addInfo=${encodeURIComponent(
-          `Cau long ${effectiveOrderNumber}`
-        )}&accountName=${encodeURIComponent(accName.trim())}`
+      ? `https://img.vietqr.io/image/${bankId}-${bankAcc.trim()}-qr_only.png?accountName=${encodeURIComponent(
+          accName.trim()
+        )}`
       : null;
 
   const proxyVietQrUrl =
     bankId && bankAcc.trim()
       ? `/api/vietqr?bank=${encodeURIComponent(bankId)}&account=${encodeURIComponent(
           bankAcc.trim()
-        )}&name=${encodeURIComponent(accName.trim())}&info=${encodeURIComponent(
-          "Cau long FC Rat Chuyen"
-        )}`
+        )}&name=${encodeURIComponent(accName.trim())}`
       : null;
 
   const qrUrl = proxyVietQrUrl || directVietQrUrl;
