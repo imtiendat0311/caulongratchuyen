@@ -917,21 +917,23 @@ export function BadmintonCalculator() {
       <div className="grid grid-cols-1 md:grid-cols-12 gap-4 md:gap-6 items-start w-full min-w-0">
         {/* Left Column: Inputs (Người chơi, Chi phí, Ghi chú) */}
         <div className="w-full min-w-0 md:col-span-7 space-y-4">
-          {/* Card: Sân Thi Đấu & Bản Đồ Địa Chỉ */}
-          <CourtPickerAndMap
-            courtName={data.courtName}
-            courtAddress={data.courtAddress}
-            courtNumber={data.courtNumber}
-            onCourtChange={(name, address, courtNum) => {
-              setBadmintonState((prev) => ({
-                ...prev,
-                courtName: name,
-                courtAddress: address,
-                courtNumber: courtNum || prev.courtNumber || "Sân 1, Sân 2",
-              }));
-            }}
-            onApplyCourtCost={(cost) => updateField("tienSan", cost)}
-          />
+          {/* Card: Sân Thi Đấu & Bản Đồ Địa Chỉ (Desktop/Tablet only) */}
+          <div className="hidden md:block">
+            <CourtPickerAndMap
+              courtName={data.courtName}
+              courtAddress={data.courtAddress}
+              courtNumber={data.courtNumber}
+              onCourtChange={(name, address, courtNum) => {
+                setBadmintonState((prev) => ({
+                  ...prev,
+                  courtName: name,
+                  courtAddress: address,
+                  courtNumber: courtNum || prev.courtNumber || "Sân 1, Sân 2",
+                }));
+              }}
+              onApplyCourtCost={(cost) => updateField("tienSan", cost)}
+            />
+          </div>
 
           {/* Card: Người chơi & Điểm danh thành viên & Khách ngày hôm nay */}
           <section className="app-card p-3.5 sm:p-5">
@@ -955,8 +957,8 @@ export function BadmintonCalculator() {
               </div>
             </div>
 
-            {/* Stable Members Attendance Check Section */}
-            <div className="mb-4 p-3 rounded-[12px] bg-[var(--bg)] border border-[var(--border)] space-y-2.5">
+            {/* Stable Members Attendance Check Section (Desktop/Tablet only) */}
+            <div className="hidden md:block mb-4 p-3 rounded-[12px] bg-[var(--bg)] border border-[var(--border)] space-y-2.5">
               <div className="flex items-center justify-between text-xs flex-wrap gap-1">
                 <span className="font-semibold text-[var(--text)] flex items-center gap-1.5">
                   <UserCheck className="w-3.5 h-3.5 text-[var(--accent2)]" />
@@ -1096,8 +1098,8 @@ export function BadmintonCalculator() {
               )}
             </div>
 
-            {/* Guest Attendees Section (Single-day guests / non-stable person) */}
-            <div className="mb-4 p-3 rounded-[12px] bg-[var(--bg)] border border-[var(--border)] space-y-2.5">
+            {/* Guest Attendees Section (Desktop/Tablet only) */}
+            <div className="hidden md:block mb-4 p-3 rounded-[12px] bg-[var(--bg)] border border-[var(--border)] space-y-2.5">
               <div className="flex items-center justify-between text-xs flex-wrap gap-1">
                 <span className="font-semibold text-[var(--text)] flex items-center gap-1.5">
                   <User className="w-3.5 h-3.5 text-amber-500 shrink-0" />

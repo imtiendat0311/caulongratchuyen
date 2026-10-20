@@ -55,7 +55,7 @@ export function NumberInput({
           {label}
         </label>
         {hint && (
-          <span className="text-[10px] sm:text-[11px] text-[var(--muted)] opacity-80 shrink-0">
+          <span className="hidden md:inline text-[10px] sm:text-[11px] text-[var(--muted)] opacity-80 shrink-0">
             {hint}
           </span>
         )}
