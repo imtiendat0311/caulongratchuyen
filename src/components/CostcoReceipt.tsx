@@ -22,6 +22,7 @@ import { parseCourtsList } from "./CourtPickerAndMap";
 import { SkeletonImage } from "./SkeletonImage";
 import { RECEIPT_TEXTURE_LIGHT, RECEIPT_TEXTURE_DARK } from "@/lib/receipt-textures";
 import { RollingNumber } from "./RollingNumber";
+import { buildVietQrImageUrls } from "@/lib/vietqr";
 
 interface CostcoReceiptProps {
   date: string; // DD/MM/YYYY
@@ -212,22 +213,18 @@ export function CostcoReceipt({
   const hostDisplayName = hostMember ? hostMember.name : "Host nhóm";
 
   // Pure transfer QR: No preset description/addInfo so payers can type custom note in Zalo/banking apps
-  // Note: Using .svg for direct URL because VietQR redirects .png with 301 without CORS headers
-  const directVietQrUrl =
-    bankId && bankAcc.trim()
-      ? `https://img.vietqr.io/image/${bankId}-${bankAcc.trim()}-qr_only.svg?accountName=${encodeURIComponent(
-          accName.trim()
-        )}`
-      : null;
+  const { proxy: proxyVietQrUrl } = useMemo(
+    () =>
+      buildVietQrImageUrls({
+        bankId,
+        accountNo: bankAcc,
+        accountName: accName,
+        template: "qr_only",
+      }),
+    [bankId, bankAcc, accName]
+  );
 
-  const proxyVietQrUrl =
-    bankId && bankAcc.trim()
-      ? `/api/vietqr?bank=${encodeURIComponent(bankId)}&account=${encodeURIComponent(
-          bankAcc.trim()
-        )}&name=${encodeURIComponent(accName.trim())}`
-      : null;
-
-  const qrUrl = proxyVietQrUrl || directVietQrUrl;
+  const qrUrl = proxyVietQrUrl;
 
   const [qrDataUrl, setQrDataUrl] = useState<string | null>(null);
   const [processedQrs, setProcessedQrs] = useState<{
@@ -237,32 +234,18 @@ export function CostcoReceipt({
   const [qrImageLoaded, setQrImageLoaded] = useState(false);
 
   useEffect(() => {
-    if (!directVietQrUrl) return;
+    if (!proxyVietQrUrl) return;
     let isCurrent = true;
 
     const loadQr = async () => {
       let blob: Blob | null = null;
-      // 1. Try same-origin proxy first (avoids Safari CORS & tracking prevention)
-      if (proxyVietQrUrl) {
-        try {
-          const res = await fetch(proxyVietQrUrl);
-          if (res.ok) {
-            blob = await res.blob();
-          }
-        } catch {
-          // fallback
+      try {
+        const res = await fetch(proxyVietQrUrl);
+        if (res.ok) {
+          blob = await res.blob();
         }
-      }
-      // 2. Fallback to direct VietQR URL
-      if (!blob && directVietQrUrl) {
-        try {
-          const res = await fetch(directVietQrUrl);
-          if (res.ok) {
-            blob = await res.blob();
-          }
-        } catch (e) {
-          console.warn("Direct VietQR fetch fallback error:", e);
-        }
+      } catch (fetchErr) {
+        console.warn("Lỗi fetch QR proxy:", fetchErr);
       }
 
       if (!blob || !isCurrent) return;
@@ -305,7 +288,7 @@ export function CostcoReceipt({
     return () => {
       isCurrent = false;
     };
-  }, [directVietQrUrl, proxyVietQrUrl]);
+  }, [proxyVietQrUrl]);
 
   const displayQrSrc = qrUrl
     ? isDarkReceipt
@@ -313,7 +296,7 @@ export function CostcoReceipt({
       : processedQrs?.light || null
     : null;
 
-  const fallbackQrSrc = qrDataUrl || proxyVietQrUrl || directVietQrUrl;
+  const fallbackQrSrc = qrDataUrl || proxyVietQrUrl;
   const activeQrDataUrl = displayQrSrc || fallbackQrSrc;
   const isQrReady = Boolean(processedQrs || qrDataUrl || qrImageLoaded);
 
@@ -432,7 +415,7 @@ export function CostcoReceipt({
         activeQrSource = await processQrToTransparent(qrDataUrl, isDarkReceipt);
       } else {
         try {
-          const fetchUrl = proxyVietQrUrl || directVietQrUrl || qrUrl;
+          const fetchUrl = proxyVietQrUrl || qrUrl;
           const res = await fetch(fetchUrl);
           if (res.ok) {
             const rawBlob = await res.blob();
@@ -1000,7 +983,7 @@ export function CostcoReceipt({
                 <img
                   ref={qrImgRef}
                   data-receipt-export-skip="true"
-                  src={activeQrDataUrl || proxyVietQrUrl || directVietQrUrl || ""}
+                  src={activeQrDataUrl || proxyVietQrUrl || ""}
                   onLoad={() => setQrImageLoaded(true)}
                   onError={(e) => {
                     console.warn("Lỗi nạp ảnh QR trên biên lai, khôi phục proxy URL:", e);
