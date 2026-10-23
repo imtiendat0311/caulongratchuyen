@@ -53,7 +53,9 @@ function processQrToTransparent(src: string, dark: boolean): Promise<string> {
   return new Promise((resolve) => {
     if (typeof window === "undefined") return resolve(src);
     const img = new Image();
-    img.crossOrigin = "anonymous";
+    if (!src.startsWith("data:")) {
+      img.crossOrigin = "anonymous";
+    }
     img.onload = () => {
       try {
         const w = img.naturalWidth || img.width;
@@ -311,7 +313,7 @@ export function CostcoReceipt({
       : processedQrs?.light || null
     : null;
 
-  const fallbackQrSrc = qrDataUrl || directVietQrUrl || qrUrl;
+  const fallbackQrSrc = qrDataUrl || proxyVietQrUrl || directVietQrUrl;
   const activeQrDataUrl = displayQrSrc || fallbackQrSrc;
   const isQrReady = Boolean(processedQrs || qrDataUrl || qrImageLoaded);
 
@@ -558,7 +560,9 @@ export function CostcoReceipt({
           const qrH = Math.round(targetRect.height * (canvasHeight / nodeRect.height));
 
           const qrImg = new Image();
-          qrImg.crossOrigin = "anonymous";
+          if (!activeQrSource.startsWith("data:")) {
+            qrImg.crossOrigin = "anonymous";
+          }
           qrImg.src = activeQrSource;
           await new Promise<void>((resolve, reject) => {
             if (qrImg.complete) return resolve();
@@ -996,9 +1000,11 @@ export function CostcoReceipt({
                 <img
                   ref={qrImgRef}
                   data-receipt-export-skip="true"
-                  crossOrigin="anonymous"
                   src={activeQrDataUrl || proxyVietQrUrl || directVietQrUrl || ""}
                   onLoad={() => setQrImageLoaded(true)}
+                  onError={() => {
+                    console.warn("Lỗi nạp ảnh QR trên biên lai");
+                  }}
                   alt="Mã VietQR thanh toán tiền sân"
                   className={`w-28 h-28 sm:w-32 sm:h-32 object-contain block mx-auto transition-all duration-300 ${
                     isDarkReceipt && !processedQrs
