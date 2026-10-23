@@ -144,14 +144,25 @@ function VietQRContent({
     ? `Cau long ${orderNumber} ${selectedGender === "nam" ? "Nam" : "Nu"}`
     : `Cau long ${selectedGender === "nam" ? "Nam" : "Nu"}`;
 
-  const qrUrl =
+  const proxyVietQrUrl =
     bankId && accountNo.trim()
-      ? `https://img.vietqr.io/image/${bankId}-${accountNo.trim()}-compact2.png?amount=${Math.round(
+      ? `/api/vietqr?bank=${encodeURIComponent(bankId)}&account=${encodeURIComponent(
+          accountNo.trim()
+        )}&name=${encodeURIComponent(accountName.trim())}&info=${encodeURIComponent(
+          description
+        )}&amount=${encodeURIComponent(Math.round(currentAmount))}&template=compact2`
+      : null;
+
+  const directVietQrUrl =
+    bankId && accountNo.trim()
+      ? `https://img.vietqr.io/image/${bankId}-${accountNo.trim()}-compact2.svg?amount=${Math.round(
           currentAmount
         )}&addInfo=${encodeURIComponent(description)}&accountName=${encodeURIComponent(
           accountName.trim()
         )}`
       : null;
+
+  const qrUrl = proxyVietQrUrl || directVietQrUrl;
 
   useEffect(() => {
     if (!qrUrl) {
@@ -162,13 +173,33 @@ function VietQRContent({
     let isCurrent = true;
     setIsQrLoading(true);
 
-    fetch(qrUrl)
-      .then((res) => res.blob())
-      .then((blob) => {
-        if (!isCurrent) return;
-        const blobUrl = URL.createObjectURL(blob);
-        const img = new Image();
-        img.onload = () => {
+    const loadQr = async () => {
+      let blob: Blob | null = null;
+      if (proxyVietQrUrl) {
+        try {
+          const res = await fetch(proxyVietQrUrl);
+          if (res.ok) blob = await res.blob();
+        } catch {
+          // fallback
+        }
+      }
+      if (!blob && directVietQrUrl) {
+        try {
+          const res = await fetch(directVietQrUrl);
+          if (res.ok) blob = await res.blob();
+        } catch (e) {
+          console.warn("Direct VietQR fetch fallback error:", e);
+        }
+      }
+
+      if (!blob || !isCurrent) {
+        if (isCurrent) setIsQrLoading(false);
+        return;
+      }
+
+      const blobUrl = URL.createObjectURL(blob);
+      const img = new Image();
+      img.onload = () => {
           try {
             const width = img.naturalWidth || img.width;
             const height = img.naturalHeight || img.height;
@@ -265,16 +296,14 @@ function VietQRContent({
           if (isCurrent) setIsQrLoading(false);
         };
         img.src = blobUrl;
-      })
-      .catch((err) => {
-        console.warn("Lỗi tải VietQR blob:", err);
-        if (isCurrent) setIsQrLoading(false);
-      });
+      };
+
+    loadQr();
 
     return () => {
       isCurrent = false;
     };
-  }, [qrUrl]);
+  }, [qrUrl, proxyVietQrUrl, directVietQrUrl]);
 
   const activeQrSrc = qrUrl
     ? isDarkQR
@@ -298,24 +327,22 @@ function VietQRContent({
       return await res.blob();
     }
 
-    const proxyUrl = `/api/vietqr?bank=${encodeURIComponent(bankId)}&account=${encodeURIComponent(
-      accountNo.trim()
-    )}&name=${encodeURIComponent(accountName.trim())}&info=${encodeURIComponent(
-      description
-    )}&amount=${encodeURIComponent(Math.round(currentAmount))}&template=compact2`;
-
-    try {
-      const res = await fetch(proxyUrl);
-      if (res.ok) return await res.blob();
-    } catch {
-      // fallback
+    if (proxyVietQrUrl) {
+      try {
+        const res = await fetch(proxyVietQrUrl);
+        if (res.ok) return await res.blob();
+      } catch {
+        // fallback
+      }
     }
 
-    try {
-      const res = await fetch(targetSrc);
-      if (res.ok) return await res.blob();
-    } catch (e) {
-      console.warn("Lỗi tải blob QR:", e);
+    if (directVietQrUrl) {
+      try {
+        const res = await fetch(directVietQrUrl);
+        if (res.ok) return await res.blob();
+      } catch (e) {
+        console.warn("Lỗi tải blob QR:", e);
+      }
     }
     return null;
   };

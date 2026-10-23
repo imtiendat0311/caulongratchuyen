@@ -17,6 +17,8 @@ export function SkeletonImage({
   wrapperClassName = "",
   skeletonClassName = "",
   showIcon = false,
+  loading = "lazy",
+  decoding = "async",
   onLoad,
   ...props
 }: SkeletonImageProps) {
@@ -42,6 +44,8 @@ export function SkeletonImage({
       <img
         src={src}
         alt={alt}
+        loading={loading}
+        decoding={decoding}
         className={`${className} transition-opacity duration-300 ${
           isLoaded ? "opacity-100" : "opacity-0"
         }`}

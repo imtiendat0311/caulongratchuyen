@@ -8,7 +8,10 @@ export async function GET(request: NextRequest) {
   const info = searchParams.get("info");
 
   if (!bank || !account) {
-    return new NextResponse("Missing bank or account", { status: 400 });
+    return new NextResponse("Missing bank or account", {
+      status: 400,
+      headers: { "Access-Control-Allow-Origin": "*" },
+    });
   }
 
   const amount = searchParams.get("amount");
@@ -27,34 +30,80 @@ export async function GET(request: NextRequest) {
   }
 
   const queryString = params.toString();
-  const remoteUrl = `https://img.vietqr.io/image/${bank}-${cleanAccount}-${template}.png${
+  // VietQR serves SVG with embedded base64 PNG without any 301 redirects
+  const remoteSvgUrl = `https://img.vietqr.io/image/${bank}-${cleanAccount}-${template}.svg${
     queryString ? `?${queryString}` : ""
   }`;
 
   try {
-    const res = await fetch(remoteUrl, {
+    const res = await fetch(remoteSvgUrl, {
       headers: {
-        Accept: "image/png,image/*;q=0.8",
+        Accept: "image/svg+xml,image/png,image/*;q=0.8",
+        "User-Agent": "Mozilla/5.0 (compatible; VietQRProxy/1.0)",
       },
       next: { revalidate: 86400 },
     });
 
-    if (!res.ok) {
-      return new NextResponse("Failed to fetch from VietQR", { status: res.status });
+    if (res.ok) {
+      const text = await res.text();
+      // VietQR SVGs embed the pure PNG data URI: <image ... href="data:image/png;base64,..."/>
+      const match = text.match(/href=["']data:image\/png;base64,([^"']+)["']/);
+      if (match) {
+        const pngBuffer = Buffer.from(match[1], "base64");
+        return new NextResponse(pngBuffer, {
+          status: 200,
+          headers: {
+            "Content-Type": "image/png",
+            "Cache-Control": "public, max-age=86400, stale-while-revalidate=604800",
+            "Access-Control-Allow-Origin": "*",
+          },
+        });
+      }
+
+      // If not embedding PNG, return raw SVG
+      return new NextResponse(text, {
+        status: 200,
+        headers: {
+          "Content-Type": res.headers.get("content-type") || "image/svg+xml",
+          "Cache-Control": "public, max-age=86400, stale-while-revalidate=604800",
+          "Access-Control-Allow-Origin": "*",
+        },
+      });
     }
 
-    const buffer = await res.arrayBuffer();
+    // Fallback: try fetching .png endpoint if .svg fails
+    const remotePngUrl = `https://img.vietqr.io/image/${bank}-${cleanAccount}-${template}.png${
+      queryString ? `?${queryString}` : ""
+    }`;
+    const fallbackRes = await fetch(remotePngUrl, {
+      headers: {
+        Accept: "image/*",
+        "User-Agent": "Mozilla/5.0 (compatible; VietQRProxy/1.0)",
+      },
+      next: { revalidate: 86400 },
+    });
 
+    if (!fallbackRes.ok) {
+      return new NextResponse("Failed to fetch from VietQR", {
+        status: fallbackRes.status,
+        headers: { "Access-Control-Allow-Origin": "*" },
+      });
+    }
+
+    const buffer = await fallbackRes.arrayBuffer();
     return new NextResponse(buffer, {
       status: 200,
       headers: {
-        "Content-Type": "image/png",
+        "Content-Type": fallbackRes.headers.get("content-type") || "image/png",
         "Cache-Control": "public, max-age=86400, stale-while-revalidate=604800",
         "Access-Control-Allow-Origin": "*",
       },
     });
   } catch (error) {
     console.error("VietQR proxy fetch error:", error);
-    return new NextResponse("Internal server error fetching QR", { status: 500 });
+    return new NextResponse("Internal server error fetching QR", {
+      status: 500,
+      headers: { "Access-Control-Allow-Origin": "*" },
+    });
   }
 }

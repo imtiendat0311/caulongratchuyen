@@ -210,9 +210,10 @@ export function CostcoReceipt({
   const hostDisplayName = hostMember ? hostMember.name : "Host nhóm";
 
   // Pure transfer QR: No preset description/addInfo so payers can type custom note in Zalo/banking apps
+  // Note: Using .svg for direct URL because VietQR redirects .png with 301 without CORS headers
   const directVietQrUrl =
     bankId && bankAcc.trim()
-      ? `https://img.vietqr.io/image/${bankId}-${bankAcc.trim()}-qr_only.png?accountName=${encodeURIComponent(
+      ? `https://img.vietqr.io/image/${bankId}-${bankAcc.trim()}-qr_only.svg?accountName=${encodeURIComponent(
           accName.trim()
         )}`
       : null;
@@ -996,7 +997,7 @@ export function CostcoReceipt({
                   ref={qrImgRef}
                   data-receipt-export-skip="true"
                   crossOrigin="anonymous"
-                  src={activeQrDataUrl || directVietQrUrl || qrUrl || ""}
+                  src={activeQrDataUrl || proxyVietQrUrl || directVietQrUrl || ""}
                   onLoad={() => setQrImageLoaded(true)}
                   alt="Mã VietQR thanh toán tiền sân"
                   className={`w-28 h-28 sm:w-32 sm:h-32 object-contain block mx-auto transition-all duration-300 ${
