@@ -1002,8 +1002,11 @@ export function CostcoReceipt({
                   data-receipt-export-skip="true"
                   src={activeQrDataUrl || proxyVietQrUrl || directVietQrUrl || ""}
                   onLoad={() => setQrImageLoaded(true)}
-                  onError={() => {
-                    console.warn("Lỗi nạp ảnh QR trên biên lai");
+                  onError={(e) => {
+                    console.warn("Lỗi nạp ảnh QR trên biên lai, khôi phục proxy URL:", e);
+                    if (proxyVietQrUrl && e.currentTarget.src !== proxyVietQrUrl) {
+                      e.currentTarget.src = proxyVietQrUrl;
+                    }
                   }}
                   alt="Mã VietQR thanh toán tiền sân"
                   className={`w-28 h-28 sm:w-32 sm:h-32 object-contain block mx-auto transition-all duration-300 ${

@@ -405,9 +405,29 @@ function VietQRContent({
       const blob = await getQrBlob();
       if (!blob) throw new Error("Không thể tải ảnh QR");
 
+      let pngBlob = blob;
+      if (blob.type !== "image/png") {
+        const img = new Image();
+        const url = URL.createObjectURL(blob);
+        await new Promise((resolve, reject) => {
+          img.onload = resolve;
+          img.onerror = reject;
+          img.src = url;
+        });
+        const canvas = document.createElement("canvas");
+        canvas.width = img.naturalWidth || img.width;
+        canvas.height = img.naturalHeight || img.height;
+        const ctx = canvas.getContext("2d");
+        ctx?.drawImage(img, 0, 0);
+        pngBlob = await new Promise<Blob>((resolve) =>
+          canvas.toBlob((b) => resolve(b || blob), "image/png")
+        );
+        URL.revokeObjectURL(url);
+      }
+
       const fileName = `ma-vietqr-${bankId}-${accountNo || "code"}.png`;
-      const file = new File([blob], fileName, { type: "image/png" });
-      const objectUrl = URL.createObjectURL(blob);
+      const file = new File([pngBlob], fileName, { type: "image/png" });
+      const objectUrl = URL.createObjectURL(pngBlob);
 
       const isIOS =
         typeof navigator !== "undefined" &&
@@ -771,8 +791,12 @@ function VietQRContent({
                   }`}
                   loading="eager"
                   onLoad={() => {
-                    if (processedQrs) {
-                      setIsQrLoading(false);
+                    setIsQrLoading(false);
+                  }}
+                  onError={(e) => {
+                    setIsQrLoading(false);
+                    if (proxyVietQrUrl && e.currentTarget.src !== proxyVietQrUrl) {
+                      e.currentTarget.src = proxyVietQrUrl;
                     }
                   }}
                 />
